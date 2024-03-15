@@ -1,0 +1,350 @@
+/* DEV TOOLS - À RETIRER EN PRODUCTION */
+
+.dev-tools-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 900px;
+    max-height: 85vh;
+    background: rgba(18, 20, 28, 0.98);
+    border: 2px solid #e4ae39;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    backdrop-filter: blur(10px);
+}
+
+.dev-tools-panel.hidden {
+    display: none;
+}
+
+.dev-tools-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #e4ae39, #d4a029);
+    border-radius: 14px 14px 0 0;
+    color: #000;
+}
+
+.dev-tools-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.dev-close-btn {
+    background: rgba(0, 0, 0, 0.2);
+    border: none;
+    color: #000;
+    font-size: 24px;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.dev-close-btn:hover {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.dev-tools-content {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.dev-current-deck {
+    margin-bottom: 20px;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+}
+
+.dev-current-deck h4 {
+    margin: 0 0 12px 0;
+    color: #e4ae39;
+    font-size: 14px;
+}
+
+.dev-deck-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 60px;
+}
+
+.dev-deck-card {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 32px 8px 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid;
+    border-radius: 8px;
+    transition: transform 0.2s;
+    min-width: 250px;
+}
+
+.dev-deck-card:hover {
+    transform: scale(1.02);
+}
+
+.dev-deck-card img {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.dev-deck-card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+}
+
+.dev-deck-card-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+}
+
+.dev-deck-card-effect {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.6);
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.dev-remove-btn {
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 0, 0, 0.7);
+    border: none;
+    color: #fff;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.dev-remove-btn:hover {
+    background: rgba(255, 0, 0, 0.9);
+}
+
+.dev-empty {
+    color: rgba(255, 255, 255, 0.4);
+    font-style: italic;
+    margin: 0;
+    text-align: center;
+}
+
+.dev-card-search {
+    margin-bottom: 16px;
+}
+
+.dev-card-search input {
+    width: 100%;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.dev-card-search input:focus {
+    border-color: #e4ae39;
+}
+
+.dev-card-search input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.dev-cards-container {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.dev-loading {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.5);
+    padding: 40px;
+}
+
+.dev-rarity-section {
+    margin-bottom: 24px;
+}
+
+.dev-rarity-title {
+    margin: 0 0 12px 0;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: rgba(255, 255, 255, 0.6);
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dev-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+}
+
+.dev-card-item {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 12px;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.dev-card-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+}
+
+.dev-card-preview {
+    width: 100%;
+    aspect-ratio: 1;
+    border: 2px solid;
+    border-radius: 6px;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dev-card-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.dev-card-info {
+    flex: 1;
+}
+
+.dev-card-name {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    line-height: 1.3;
+}
+
+.dev-card-rarity {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+}
+
+.dev-card-effect {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.4;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 6px 8px;
+    border-radius: 4px;
+    margin-top: 6px;
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+}
+
+.dev-add-btn {
+    width: 100%;
+    padding: 8px;
+    background: linear-gradient(135deg, #4b69ff, #4a90e2);
+    border: none;
+    border-radius: 6px;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.dev-add-btn:hover {
+    background: linear-gradient(135deg, #5b79ff, #5aa0f2);
+    transform: scale(1.05);
+}
+
+.dev-add-btn:active {
+    transform: scale(0.98);
+}
+
+/* Scrollbar styling */
+.dev-tools-content::-webkit-scrollbar,
+.dev-cards-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.dev-tools-content::-webkit-scrollbar-track,
+.dev-cards-container::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+}
+
+.dev-tools-content::-webkit-scrollbar-thumb,
+.dev-cards-container::-webkit-scrollbar-thumb {
+    background: rgba(228, 174, 57, 0.5);
+    border-radius: 4px;
+}
+
+.dev-tools-content::-webkit-scrollbar-thumb:hover,
+.dev-cards-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(228, 174, 57, 0.7);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .dev-tools-panel {
+        width: 95%;
+        max-height: 90vh;
+    }
+
+    .dev-cards-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 8px;
+    }
+
+    .dev-card-item {
+        padding: 8px;
+    }
+}

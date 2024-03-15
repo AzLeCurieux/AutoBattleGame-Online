@@ -1,0 +1,2733 @@
+/* =========================================
+   Styles pour la page d'inventaire
+   ========================================= */
+
+.inventory-container {
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 20px;
+    box-sizing: border-box;
+    overflow-y: auto;
+}
+
+.inventory-header {
+    text-align: center;
+    margin-bottom: 30px;
+    margin-top: 60px;
+}
+
+.inventory-header h1 {
+    font-size: clamp(24px, 5vw, 32px);
+    font-weight: 800;
+    color: #eac058;
+    margin-bottom: 8px;
+}
+
+.inventory-header p {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: clamp(12px, 2vw, 14px);
+}
+
+.inventory-content {
+    width: 95%;
+    max-width: 1200px;
+    background: rgba(16, 20, 36, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: clamp(16px, 3vw, 24px);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    min-height: 60vh;
+    /* Hauteur min pour éviter le saut */
+    display: flex;
+    flex-direction: column;
+}
+
+/* Filtres */
+.inventory-filters {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.filter-btn {
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.3);
+    color: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.filter-btn:hover {
+    background: rgba(234, 192, 88, 0.2);
+    border-color: #eac058;
+    color: #fff;
+}
+
+.filter-btn.active {
+    background: #eac058;
+    border-color: #eac058;
+    color: #000;
+    box-shadow: 0 0 10px rgba(234, 192, 88, 0.3);
+}
+
+/* Grille d'items */
+.loot-items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 20px;
+    flex: 1;
+    /* Remplir l'espace */
+}
+
+.loot-item-card {
+    background: rgba(30, 30, 40, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 16px;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.loot-item-card:hover {
+    transform: translateY(-5px) scale(1.02);
+    background: rgba(40, 40, 55, 0.8);
+    z-index: 2;
+}
+
+/* Effet visuel sur la carte */
+.loot-item-visual-container {
+    width: 100%;
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+    transition: transform 0.3s ease;
+}
+
+.loot-item-card:hover .loot-item-visual-container {
+    transform: scale(1.1);
+}
+
+.loot-item-emoji {
+    font-size: 48px;
+    text-align: center;
+    filter: drop-shadow(0 0 5px currentColor);
+}
+
+.loot-item-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.5));
+}
+
+.loot-item-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 6px;
+    text-align: center;
+    line-height: 1.2;
+    /* Limiter à 2 lignes */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.loot-item-rarity {
+    font-size: 10px;
+    font-weight: 800;
+    text-align: center;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid transparent;
+    /* Couleur via style inline */
+}
+
+.loot-item-value {
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.6);
+    text-align: center;
+}
+
+.loot-item-quantity {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+    /* Texte blanc sur fond coloré */
+    padding: 2px 8px;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.empty-inventory {
+    text-align: center;
+    padding: 40px;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 16px;
+    grid-column: 1 / -1;
+    /* Prendre toute la largeur */
+}
+
+/* Pagination */
+.inventory-pagination {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.pagination-info {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+}
+
+.pagination-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.pagination-btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.3);
+    color: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    min-width: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background: rgba(234, 192, 88, 0.2);
+    border-color: #eac058;
+    color: #eac058;
+}
+
+.pagination-btn.active {
+    background: #eac058;
+    border-color: #eac058;
+    color: #000;
+    font-weight: 700;
+}
+
+.pagination-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.pagination-dots {
+    color: rgba(255, 255, 255, 0.5);
+    padding: 0 4px;
+}
+
+/* Modal Détails Item */
+.item-detail-content {
+    background: #151925;
+    width: 90%;
+    max-width: 800px;
+    border-radius: 20px;
+    padding: 0;
+    position: relative;
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+    overflow: hidden;
+}
+
+.item-detail-body {
+    display: flex;
+    flex-direction: row;
+    min-height: 400px;
+}
+
+.item-detail-visual {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    position: relative;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.item-detail-visual img {
+    max-width: 100%;
+    max-height: 300px;
+    filter: drop-shadow(0 0 20px rgba(0, 0, 0, 0.5));
+    transition: transform 0.3s;
+}
+
+.item-detail-visual:hover img {
+    transform: scale(1.05);
+}
+
+.item-detail-info {
+    flex: 1;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.item-detail-title {
+    font-size: 32px;
+    font-weight: 800;
+    margin: 0 0 10px 0;
+    text-transform: uppercase;
+    line-height: 1.1;
+}
+
+.item-detail-rarity-tag {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 20px;
+    border: 1px solid;
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    align-self: flex-start;
+}
+
+.item-detail-description {
+    font-size: 16px;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 30px;
+    font-style: italic;
+    border-left: 3px solid rgba(255, 255, 255, 0.2);
+    padding-left: 15px;
+}
+
+.item-detail-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 20px;
+    border-radius: 12px;
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.stat-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.stat-label {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 14px;
+    text-transform: uppercase;
+}
+
+.stat-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.close-modal-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 32px;
+    cursor: pointer;
+    z-index: 10;
+    transition: color 0.2s;
+    line-height: 1;
+}
+
+.close-modal-btn:hover {
+    color: #fff;
+}
+
+@media (max-width: 768px) {
+    .item-detail-body {
+        flex-direction: column;
+    }
+
+    .item-detail-visual {
+        min-height: 250px;
+        border-right: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .item-detail-info {
+        padding: 20px;
+    }
+
+    .item-detail-title {
+        font-size: 24px;
+    }
+
+    .loot-items-grid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    }
+}
+
+/* =========================================
+   Styles existants pour le Loot System
+   ========================================= */
+
+/* Loot Quantity Modal */
+.loot-quantity-content {
+    text-align: center;
+    max-width: 400px;
+    background: rgba(16, 20, 36, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+}
+
+.loot-quantity-header h3 {
+    font-size: 28px;
+    color: #ffd700;
+    margin-bottom: 10px;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+}
+
+.loot-quantity-header p {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+.loot-quantity-display {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 16px;
+    padding: 30px;
+    margin: 20px 0;
+    border: 1px solid rgba(255, 215, 0, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.loot-quantity-display::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at center, rgba(255, 215, 0, 0.1) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.loot-quantity-number {
+    font-size: 80px;
+    font-weight: 900;
+    color: #ffffff;
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+    margin: 0;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    transition: color 0.3s, transform 0.1s;
+}
+
+.loot-quantity-number.highlight {
+    color: #ffd700;
+    transform: scale(1.1);
+    text-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
+}
+
+.loot-quantity-label {
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-top: 10px;
+    font-weight: 600;
+}
+
+.loot-quantity-actions {
+    margin-top: 30px;
+}
+
+#loot-quantity-spin-btn {
+    background: linear-gradient(135deg, #ffd700 0%, #f06b3f 100%);
+    border: none;
+    color: #000;
+    font-weight: 800;
+    padding: 15px 40px;
+    font-size: 18px;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 10px 20px rgba(240, 107, 63, 0.3);
+}
+
+#loot-quantity-spin-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 30px rgba(240, 107, 63, 0.5);
+}
+
+#loot-quantity-spin-btn:active {
+    transform: translateY(1px);
+}
+
+#loot-quantity-spin-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Styles existants pour la roulette verticale et autres... */
+.loot-wheel-container {
+    position: fixed;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 80px;
+    height: 280px;
+    /* Réduit */
+    background: rgba(16, 20, 36, 0.95);
+    border: 2px solid #ffd700;
+    border-radius: 12px;
+    overflow: hidden;
+    z-index: 1000;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+    display: none;
+    /* Caché par défaut */
+}
+
+.loot-wheel-track {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    transition: transform 4s cubic-bezier(0.1, 0.7, 0.1, 1);
+}
+
+.loot-wheel-item {
+    width: 100%;
+    height: 56px;
+    /* Ajusté pour correspondre à la hauteur de la roulette */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.loot-pointer {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 100%;
+    height: 56px;
+    border: 2px solid #ffffff;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    pointer-events: none;
+    z-index: 2;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Sidebar Gauche Container */
+.left-sidebar {
+    position: fixed;
+    top: 120px;
+    left: 20px;
+    bottom: 20px;
+    width: 220px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    z-index: 900;
+    pointer-events: none;
+    /* Permettre le clic au travers des zones vides */
+}
+
+.left-sidebar>* {
+    pointer-events: auto;
+    /* Réactiver le clic sur les enfants */
+}
+
+/* Summary */
+.loot-summary {
+    position: relative;
+    /* Changé de fixed à relative */
+    top: auto;
+    left: auto;
+    width: 100%;
+    background: rgba(16, 20, 36, 0.8);
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-size: 13px;
+    backdrop-filter: blur(5px);
+    max-height: 40vh;
+    /* Limiter la hauteur pour laisser de la place au deck */
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+.summary-header {
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #ffd700;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 5px;
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.summary-count {
+    font-weight: bold;
+    color: #a0a0a0;
+}
+
+.empty-summary {
+    color: rgba(255, 255, 255, 0.4);
+    text-align: center;
+    font-style: italic;
+}
+
+/* Notification */
+.loot-notification {
+    position: fixed;
+    top: 20%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    background: rgba(16, 20, 36, 0.95);
+    border: 2px solid #ffd700;
+    border-radius: 12px;
+    padding: 20px 40px;
+    color: white;
+    z-index: 2000;
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    pointer-events: none;
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+    text-align: center;
+}
+
+/* Version mini plus discrète */
+.loot-notification.mini {
+    top: 80px;
+    /* En haut, sous le header */
+    left: 50%;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(16, 20, 36, 0.9);
+    border: 1px solid rgba(255, 215, 0, 0.5);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+    border-radius: 30px;
+    min-width: 200px;
+}
+
+.loot-notification.mini .loot-notification-content {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.loot-notification.mini .loot-notification-icon {
+    font-size: 24px;
+}
+
+.loot-notification.mini .loot-notification-details {
+    text-align: left;
+}
+
+.loot-notification.mini .loot-notification-title {
+    font-size: 16px;
+    margin: 0;
+    color: #ffd700;
+}
+
+.loot-notification.mini .loot-notification-subtitle {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.loot-notification.show {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.loot-notification.mini.show {
+    transform: translate(-50%, 0) scale(1);
+}
+
+.loot-notification-title {
+    font-size: 24px;
+    font-weight: bold;
+    color: #ffd700;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+}
+
+.loot-notification-text {
+    font-size: 18px;
+}
+
+/* =========================================
+   Styles spécifiques pour la page Gambling
+   (Layout global réactivé)
+   ========================================= */
+
+body.gambling-page {
+    /* Plus de contrainte de hauteur 100vh */
+    margin: 0;
+    background: #0b0d17;
+    /* Fond par défaut */
+}
+
+.gambling-container {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 0;
+    box-sizing: border-box;
+    overflow: hidden;
+    /* Pas de scroll global */
+}
+
+/* Zone fixe en haut (100% de l'écran maintenant) */
+.gambling-fixed-top {
+    width: 100%;
+    height: 100vh;
+    min-height: 600px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 20px;
+    margin-top: -50px;
+    /* Move everything up by 50px */
+    box-sizing: border-box;
+    background: linear-gradient(180deg, rgba(16, 20, 36, 0.98) 0%, rgba(16, 20, 36, 0.95) 100%);
+    position: relative;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-bottom: 40px;
+    /* Add space at bottom */
+}
+
+.gambling-header {
+    text-align: center;
+    margin-bottom: 10px;
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    min-height: 40px;
+}
+
+.back-button {
+    position: fixed;
+    top: 24px;
+    left: 24px;
+    z-index: 1000;
+    background: rgba(16, 20, 36, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.7);
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    /* Si c'est un lien */
+}
+
+.back-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateX(-2px);
+}
+
+/* Roulette horizontale */
+.horizontal-wheel-container {
+    width: 95%;
+    max-width: 1400px;
+    background: rgba(16, 20, 36, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: clamp(16px, 3vw, 24px);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    margin: 0 auto 20px auto;
+    /* Centered horizontally */
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.horizontal-wheel-header {
+    text-align: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.horizontal-wheel-header h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: #eac058;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Tag de sélection dans le header */
+.selected-box-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px;
+    background: rgba(234, 192, 88, 0.15);
+    border: 1px solid rgba(234, 192, 88, 0.4);
+    border-radius: 20px;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.tag-label {
+    font-size: 1.2em;
+}
+
+.tag-value {
+    font-weight: 600;
+    color: #eac058;
+    font-size: 0.9em;
+    text-transform: uppercase;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.horizontal-wheel-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(12px, 2vw, 24px);
+    align-items: stretch;
+    width: 100%;
+}
+
+/* Conteneur pour roulette et probabilités côte à côte */
+.horizontal-wheel-wrapper>.horizontal-wheel-container-row {
+    display: flex;
+    gap: clamp(12px, 2vw, 24px);
+    align-items: flex-start;
+    /* Aligner les tops des éléments */
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+/* Colonne pour la roulette et le bouton */
+.wheel-column {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(15px, 3vw, 20px);
+    flex: 1;
+    min-width: 300px;
+    justify-content: flex-start;
+    align-items: stretch;
+    align-self: flex-start;
+    /* Aligner le top avec le top des probabilités */
+}
+
+.horizontal-wheel {
+    flex: 1;
+    min-width: 300px;
+    max-width: 100%;
+    /* Limiter la largeur pour ne pas dépasser sur les probabilités (350px max + 24px gap + marge) */
+    position: relative;
+    height: clamp(220px, 25vh, 280px);
+    min-height: clamp(220px, 25vh, 280px);
+    /* S'assurer que la hauteur est maintenue */
+    overflow: hidden;
+    /* Empêcher le débordement */
+    border-radius: 12px;
+    background: rgba(20, 20, 20, 0.9);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    align-self: flex-start;
+    /* Aligner le top avec le top des probabilités */
+    box-sizing: border-box;
+    /* Inclure les bordures dans la largeur */
+}
+
+.horizontal-wheel-items {
+    display: flex;
+    height: 100%;
+    align-items: center;
+    padding-left: 50%;
+    /* Start center */
+    will-change: transform;
+}
+
+/* Variables pour les cartes */
+:root {
+    --card-width: 200px;
+    --card-height: 280px;
+    --gap: 10px;
+}
+
+.horizontal-wheel-item {
+    flex: 0 0 var(--card-width);
+    height: 90%;
+    margin-right: var(--gap);
+    background: rgba(42, 42, 42, 0.8);
+    border-bottom: 6px solid transparent;
+    /* Couleur définie inline */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    position: relative;
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+    transition: background 0.3s;
+    border-radius: 8px;
+    overflow: hidden;
+    /* Empêcher le débordement des images */
+}
+
+.horizontal-wheel-item::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to top, var(--rarity-color), transparent 30%);
+    opacity: 0.2;
+    pointer-events: none;
+    border-radius: 8px;
+}
+
+.wheel-item-emoji {
+    font-size: 3rem;
+    z-index: 2;
+    margin-bottom: 8px;
+}
+
+/* Image de la carte dans la roulette */
+.wheel-item-image {
+    width: 85%;
+    height: auto;
+    max-height: 70%;
+    max-width: 100%;
+    /* S'assurer que l'image ne dépasse pas */
+    object-fit: contain;
+    z-index: 2;
+    margin-bottom: 10px;
+    filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.5));
+    display: block;
+    /* Éviter les espaces indésirables */
+}
+
+.wheel-item-text {
+    font-size: 0.9rem;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.8);
+    z-index: 2;
+    padding: 0 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.horizontal-wheel-indicator {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background-color: #ffd700;
+    transform: translateX(-50%);
+    z-index: 10;
+    box-shadow: 0 0 10px #ffd700;
+    pointer-events: none;
+}
+
+.horizontal-probabilities {
+    width: 100%;
+    min-width: 250px;
+    max-width: 350px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: clamp(12px, 2vw, 16px);
+    /* Hauteur automatique */
+    height: auto;
+    max-height: 400px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    /* Empêcher le débordement horizontal */
+    word-wrap: break-word;
+    /* Casser les mots longs */
+    overflow-wrap: break-word;
+    /* Alternative moderne */
+    box-sizing: border-box;
+    /* Inclure padding dans la largeur */
+    display: flex;
+    flex-direction: column;
+    align-self: flex-start;
+    /* Aligner le top avec le top de la roulette */
+}
+
+.probabilities-header {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+    text-align: center;
+    margin-bottom: 12px;
+    padding: 8px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* Table styles from previous step */
+.probabilities-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    table-layout: fixed;
+    /* Forcer la table à respecter la largeur */
+    word-wrap: break-word;
+}
+
+.probabilities-table th {
+    text-align: left;
+    padding: 8px;
+    color: #ffd700;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    font-weight: 600;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.probabilities-table td {
+    padding: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    vertical-align: middle;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-width: 0;
+    /* Permet au word-wrap de fonctionner dans les tables */
+}
+
+.horizontal-result {
+    display: none;
+    /* Masqué car remplacé par l'overlay */
+}
+
+/* Nouveaux contrôles Spin */
+.spin-controls-wrapper {
+    margin-top: clamp(20px, 4vw, 30px);
+    padding-top: clamp(20px, 4vw, 30px);
+    border-top: 2px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    align-items: center;
+    width: 100%;
+    order: 2;
+    /* Placer après le bouton de lancement */
+}
+
+.controls-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+}
+
+/* Wrapper pour le bouton de lancement (directement sous la roulette) */
+.wheel-column>.spin-button-wrapper {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+    /* Supprimer la ligne horizontale */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+/* Style général pour spin-button-wrapper (si utilisé ailleurs) */
+.spin-button-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+.quantity-selector {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.quantity-label {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.quantity-buttons {
+    display: flex;
+    gap: 8px;
+    background: transparent;
+    /* Plus de fond conteneur */
+    padding: 0;
+    border-radius: 0;
+    border: none;
+}
+
+.qty-btn {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 6px;
+    /* Coins plus carrés */
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 13px;
+    min-width: 40px;
+}
+
+.qty-btn:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.qty-btn.active {
+    background: #eac058;
+    color: #1a1d2e;
+    /* Texte sombre sur fond or */
+    border-color: #eac058;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(234, 192, 88, 0.2);
+}
+
+.qty-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* Toggle Animation Switch */
+.animation-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    white-space: nowrap;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 26px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.1);
+    transition: .4s;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: #888;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+.slider.round {
+    border-radius: 34px;
+}
+
+input:checked+.slider {
+    background-color: rgba(234, 192, 88, 0.3);
+    border-color: #eac058;
+}
+
+input:checked+.slider:before {
+    transform: translateX(24px);
+    background-color: #eac058;
+    box-shadow: 0 0 10px rgba(234, 192, 88, 0.5);
+}
+
+.toggle-label {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+.spin-button {
+    width: 100%;
+    max-width: 400px;
+    padding: 16px 24px;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #fff;
+    background: #1a1d2e;
+    /* Fond sombre sobre */
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    /* Coins moins arrondis */
+    transition: all 0.3s ease;
+    margin: 0 auto;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.spin-button:hover {
+    background: #23273a;
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+.spin-button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Effet de brillance subtil au survol */
+.spin-button::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+    transition: left 0.5s ease;
+}
+
+.spin-button:hover::after {
+    left: 100%;
+}
+
+.spin-button.btn-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #151725;
+    border-color: rgba(255, 255, 255, 0.05);
+    transform: none;
+    box-shadow: none;
+}
+
+#open-box-selection-btn {
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+}
+
+#open-box-selection-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+#open-box-selection-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Section Inventaire */
+/* Modal de sélection des caisses */
+.box-selection-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.box-selection-modal.active {
+    display: flex;
+}
+
+.box-selection-modal-content {
+    width: 90%;
+    max-width: 1200px;
+    max-height: 85vh;
+    background: rgba(16, 20, 36, 0.98);
+    border: 2px solid rgba(234, 192, 88, 0.3);
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(50px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.box-selection-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 30px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.box-selection-modal-header h2 {
+    font-size: clamp(20px, 4vw, 28px);
+    font-weight: 700;
+    color: #eac058;
+    margin: 0;
+}
+
+.box-selection-modal-header .close-modal-btn {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 36px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.box-selection-modal-header .close-modal-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    transform: rotate(90deg);
+}
+
+.box-selection-modal-body {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 30px;
+}
+
+.box-selection-menu {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+    box-sizing: border-box;
+}
+
+.box-selection-item {
+    background: rgba(30, 30, 40, 0.8);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
+}
+
+.box-selection-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(234, 192, 88, 0.1) 0%, rgba(234, 192, 88, 0) 100%);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.box-selection-item:hover {
+    transform: translateY(-4px);
+    border-color: rgba(234, 192, 88, 0.6);
+    box-shadow: 0 8px 20px rgba(234, 192, 88, 0.2);
+}
+
+.box-selection-item:hover::before {
+    opacity: 1;
+}
+
+.box-selection-item.selected {
+    border-color: #eac058;
+    background: rgba(234, 192, 88, 0.15);
+    box-shadow: 0 0 20px rgba(234, 192, 88, 0.4);
+}
+
+.box-selection-item.selected::before {
+    opacity: 1;
+}
+
+.box-selection-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.box-selection-count {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.7);
+    text-align: center;
+}
+
+.box-selection-count.highlight {
+    color: #eac058;
+    font-weight: 700;
+}
+
+.inventory-section {
+    width: 95%;
+    max-width: 1200px;
+    margin-top: 20px;
+}
+
+.inventory-section h2 {
+    font-size: clamp(18px, 3vw, 20px);
+    font-weight: 700;
+    color: #eac058;
+    margin-bottom: 16px;
+}
+
+.loot-inventory {
+    /* Pas de contrainte de hauteur */
+    overflow-y: visible;
+}
+
+.inventory-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.inventory-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.inventory-item-row:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.inventory-item-row.selected {
+    background: rgba(255, 215, 0, 0.15);
+    border-color: rgba(255, 215, 0, 0.5);
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.1);
+}
+
+/* =========================================
+   NOUVEAU : Overlay de Résultat (Style CS:GO)
+   ========================================= */
+
+.loot-result-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2000;
+    display: none;
+    /* Caché par défaut */
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    backdrop-filter: blur(15px);
+    /* Effet flou */
+    background: rgba(0, 0, 0, 0.8);
+    /* Fond sombre plus opaque pour bulk */
+}
+
+.loot-result-overlay.visible {
+    display: flex;
+    opacity: 1;
+}
+
+/* Fond animé coloré derrière la carte */
+.loot-result-overlay::before {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, var(--glow-color, rgba(255, 255, 255, 0.1)) 0%, transparent 70%);
+    opacity: 0.6;
+    animation: pulseGlow 3s infinite ease-in-out;
+    pointer-events: none;
+}
+
+@keyframes pulseGlow {
+    0% {
+        opacity: 0.4;
+        transform: scale(0.9);
+    }
+
+    50% {
+        opacity: 0.7;
+        transform: scale(1.1);
+    }
+
+    100% {
+        opacity: 0.4;
+        transform: scale(0.9);
+    }
+}
+
+.loot-reveal-container {
+    position: relative;
+    z-index: 2001;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 40px;
+    transform: scale(0.8);
+    transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.loot-result-overlay.visible .loot-reveal-container {
+    transform: scale(1);
+}
+
+.loot-card-reveal {
+    width: 300px;
+    height: 420px;
+    background: #1a1d2e;
+    border: 4px solid var(--rarity-color, #fff);
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 50px var(--rarity-color, rgba(255, 255, 255, 0.5));
+    position: relative;
+    padding: 20px;
+    animation: cardFloat 4s ease-in-out infinite;
+}
+
+@keyframes cardFloat {
+
+    0%,
+    100% {
+        transform: translateY(0) rotate(0deg);
+    }
+
+    50% {
+        transform: translateY(-20px) rotate(2deg);
+    }
+}
+
+.reveal-emoji {
+    font-size: 100px;
+    margin-bottom: 20px;
+    filter: drop-shadow(0 0 20px var(--rarity-color));
+}
+
+/* Image dans le reveal overlay */
+.reveal-image {
+    width: 100%;
+    height: 220px;
+    object-fit: contain;
+    margin-bottom: 20px;
+    filter: drop-shadow(0 0 20px var(--rarity-color));
+}
+
+.reveal-name {
+    font-size: 24px;
+    font-weight: 800;
+    color: #fff;
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 10px;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+}
+
+.reveal-rarity {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--rarity-color);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 6px 16px;
+    border-radius: 20px;
+}
+
+.loot-actions {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.5s ease 0.5s;
+    /* Délai pour apparaître après la carte */
+}
+
+.loot-result-overlay.visible .loot-actions {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* =========================================
+   NOUVEAU : Styles pour l'ouverture multiple (Bulk)
+   ========================================= */
+
+.bulk-reveal-container {
+    width: 90%;
+    max-width: 1200px;
+    height: 90vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 2002;
+}
+
+.bulk-title {
+    font-size: 32px;
+    color: #eac058;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    text-shadow: 0 0 20px rgba(234, 192, 88, 0.5);
+    opacity: 0;
+    animation: fadeInDown 0.5s ease forwards;
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.loot-grid-reveal {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 20px;
+    width: 100%;
+    overflow-y: auto;
+    padding: 20px;
+    max-height: 70vh;
+    /* Custom scrollbar */
+    scrollbar-width: none;
+}
+
+.loot-grid-reveal::-webkit-scrollbar {
+    display: none;
+}
+
+.loot-card-mini {
+    background: #1a1d2e;
+    border: 2px solid var(--rarity-color, #fff);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 15px;
+    position: relative;
+    aspect-ratio: 3/4;
+    opacity: 0;
+    transform: scale(0.8) translateY(20px);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+/* Animation de slot (défilement rapide) */
+.loot-card-mini.animating::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    animation: slotScan 0.2s infinite linear;
+    border-radius: 12px;
+    pointer-events: none;
+}
+
+@keyframes slotScan {
+    0% {
+        transform: translateY(-100%);
+    }
+
+    100% {
+        transform: translateY(100%);
+    }
+}
+
+.loot-card-mini.revealed {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    box-shadow: 0 0 30px var(--rarity-color, rgba(255, 255, 255, 0.3));
+}
+
+.loot-card-mini:hover {
+    transform: scale(1.05);
+    z-index: 10;
+}
+
+.mini-emoji {
+    font-size: 48px;
+    margin-bottom: 10px;
+    filter: drop-shadow(0 0 10px var(--rarity-color));
+    transition: transform 0.2s;
+}
+
+/* Image dans la mini carte bulk */
+.mini-image {
+    width: 90%;
+    height: auto;
+    max-height: 60%;
+    object-fit: contain;
+    margin-bottom: 10px;
+    filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.5));
+}
+
+.loot-card-mini.animating .mini-emoji {
+    filter: blur(2px);
+}
+
+.mini-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    text-align: center;
+    line-height: 1.2;
+    margin-bottom: 5px;
+}
+
+.mini-rarity {
+    font-size: 10px;
+    color: var(--rarity-color);
+    text-transform: uppercase;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .gambling-fixed-top {
+        height: 100vh;
+        min-height: 500px;
+        padding: 15px;
+    }
+
+    .box-selection-modal-content {
+        width: 95%;
+        max-height: 90vh;
+    }
+
+    .box-selection-menu {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 12px;
+    }
+
+    .box-selection-modal-body {
+        padding: 20px;
+    }
+
+    .box-selection-item {
+        padding: 12px;
+    }
+
+    .box-selection-name {
+        font-size: 14px;
+    }
+
+    .box-selection-count {
+        font-size: 12px;
+    }
+
+    .horizontal-wheel-wrapper {
+        flex-direction: column;
+    }
+
+    .horizontal-wheel-container-row {
+        flex-direction: column;
+    }
+
+    .horizontal-wheel {
+        width: 100%;
+        min-width: 100%;
+        max-width: 100%;
+        /* Sur mobile, prendre toute la largeur */
+    }
+
+    .wheel-column {
+        width: 100%;
+    }
+
+    .horizontal-probabilities {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .loot-grid-reveal {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 10px;
+    }
+
+    .mini-emoji {
+        font-size: 32px;
+    }
+
+    .controls-row {
+        gap: 12px;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .quantity-selector {
+        justify-content: center;
+        width: 100%;
+    }
+
+    .animation-toggle {
+        justify-content: center;
+        width: 100%;
+    }
+
+    #open-box-selection-btn {
+        width: 100%;
+    }
+
+    .spin-controls-wrapper {
+        gap: 15px;
+    }
+
+    .spin-button-wrapper {
+        margin-top: 15px;
+        padding-top: 15px;
+    }
+
+    .spin-button {
+        max-width: 100%;
+    }
+}
+
+/* Horizontal Loot Notifications (Above Combat Zone) */
+.horizontal-loot-notification {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    background: rgba(16, 20, 36, 0.95);
+    border: 2px solid var(--rarity-color, #ffd700);
+    border-radius: 12px;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    z-index: 1500;
+    opacity: 0;
+    transition: all 0.4s;
+    pointer-events: none;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+    min-width: 350px;
+    backdrop-filter: blur(10px);
+}
+
+.horizontal-loot-notification.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.loot-notif-icon {
+    width: 50px;
+    height: 50px;
+}
+
+.loot-notif-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.loot-notif-content {
+    flex: 1;
+}
+
+.loot-notif-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.loot-notif-rarity {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.loot-notif-multiplier {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--rarity-color);
+    border-radius: 8px;
+    padding: 8px 12px;
+}
+
+.multiplier-label {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--rarity-color);
+}
+
+/* Collapsible Summary Styles */
+.summary-header-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.summary-toggle-btn {
+    background: none;
+    border: none;
+    color: #ffd700;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0 5px;
+    transition: opacity 0.2s;
+}
+
+.summary-toggle-btn:hover {
+    opacity: 0.7;
+}
+
+.summary-icon {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    margin-right: 8px;
+}
+
+.summary-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.summary-content {
+    transition: all 0.3s ease;
+}
+
+/* Updated Horizontal Notifications - Single Line */
+.horizontal-loot-notification {
+    padding: 8px 16px;
+    min-width: 300px;
+    border-color: var(--case-color, #ffd700);
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.8), 0 0 8px var(--case-color, #ffd700);
+}
+
+.loot-notif-icon {
+    width: 36px;
+    height: 36px;
+}
+
+.loot-notif-title {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--case-color, #ffd700);
+}
+
+.loot-notif-multiplier {
+    padding: 4px 10px;
+}
+
+.multiplier-label {
+    font-size: 16px;
+}
+
+/* Probability Header with Info Button */
+.probabilities-header-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.info-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.info-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.info-icon {
+    color: #fff;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.tag-icon {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    margin-right: 8px;
+}
+
+/* Fix Info Button Display */
+.probabilities-header-wrapper {
+    display: flex !important;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.probabilities-header {
+    flex: 1;
+}
+
+/* Gambling Navigation */
+.gambling-nav {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+}
+
+.nav-btn {
+    padding: 10px 20px;
+    font-size: 14px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nav-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.info-btn-nav {
+    background: rgba(100, 150, 255, 0.2);
+    border-color: rgba(100, 150, 255, 0.4);
+}
+
+.info-btn-nav:hover {
+    background: rgba(100, 150, 255, 0.3);
+}
+
+/* Dynamic Background Shader */
+.shader-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    pointer-events: none;
+}
+
+/* Gambling Navigation */
+.gambling-nav {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    display: flex;
+    gap: 10px;
+    z-index: 100;
+}
+
+.back-button {
+    position: static !important;
+}
+
+.inventory-button {
+    background: rgba(16, 20, 36, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.inventory-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Fixed Info Button */
+.horizontal-probabilities-wrapper {
+    position: relative;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    width: 100%;
+}
+
+.horizontal-probabilities {
+    flex: 1;
+}
+
+.fixed-info-btn {
+    flex-shrink: 0;
+    margin-top: 5px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.fixed-info-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Fix Layout: Wheel + Probabilities Side-by-Side */
+.horizontal-wheel-container-row {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    width: 100%;
+}
+
+.wheel-column {
+    flex: 1;
+    min-width: 0;
+    /* Prevent flex overflow */
+}
+
+.horizontal-probabilities-wrapper {
+    width: 300px;
+    flex-shrink: 0;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.horizontal-probabilities {
+    flex: 1;
+}
+
+/* Fix Background Visibility */
+body.gambling-page {
+    background-color: #0b0d17;
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+    overflow: hidden;
+    /* Block scrolling */
+    height: 100vh;
+}
+
+.gambling-container {
+    background: transparent !important;
+}
+
+/* Hide main body background pseudo-element on gambling page */
+.gambling-page::before {
+    display: none !important;
+}
+
+/* Dynamic Background */
+.bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    pointer-events: none;
+}
+
+/* Navigation Buttons */
+/* Navigation Buttons - Floating */
+.nav-buttons-container {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    display: flex;
+    gap: 10px;
+    z-index: 100;
+}
+
+.nav-btn {
+    padding: 8px 16px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(16, 20, 36, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(5px);
+}
+
+.nav-btn:hover {
+    background: rgba(25, 30, 50, 0.9);
+    border-color: #ffd700;
+    color: #ffd700;
+}
+
+/* Transparent Containers for Dynamic Background */
+.gambling-fixed-top {
+    background: transparent !important;
+}
+
+.horizontal-wheel-container {
+    background: rgba(16, 20, 36, 0.6) !important;
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.horizontal-wheel-header {
+    background: transparent !important;
+}
+
+/* Floating Info Button */
+.floating-info-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 50px;
+    height: 50px;
+    background: rgba(16, 20, 36, 0.9);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    text-decoration: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 1000;
+}
+
+.floating-info-btn:hover {
+    transform: scale(1.1) rotate(10deg);
+    border-color: #ffd700;
+    color: #ffd700;
+    background: rgba(25, 30, 50, 0.95);
+}
+
+.floating-info-btn .info-icon {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+/* =========================================
+   Styles pour le Modal Unifié Inventaire / Deck
+   ========================================= */
+
+.inventory-deck-content {
+    width: 95%;
+    max-width: 1200px;
+    height: 85vh;
+    background: rgba(16, 20, 36, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    overflow: hidden;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.modal-tabs {
+    display: flex;
+    gap: 10px;
+}
+
+.tab-btn {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 18px;
+    font-weight: 700;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s;
+}
+
+.tab-btn:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px 8px 0 0;
+}
+
+.tab-btn.active {
+    color: #eac058;
+    border-bottom-color: #eac058;
+}
+
+.modal-body {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.tab-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Styles Inventaire (Adaptation) */
+.inventory-filters-bar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.filter-pill {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.3);
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+
+.filter-pill:hover,
+.filter-pill.active {
+    background: rgba(234, 192, 88, 0.2);
+    border-color: #eac058;
+    color: #fff;
+}
+
+.inventory-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 15px;
+    padding-bottom: 20px;
+}
+
+.pagination-bar {
+    margin-top: auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Styles Deck (Nouveau Layout) */
+.deck-layout {
+    display: flex;
+    gap: 20px;
+    height: 100%;
+}
+
+.deck-section-left {
+    width: 300px;
+    min-width: 300px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.deck-section-right {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    overflow: hidden;
+}
+
+.deck-section-left h4,
+.deck-section-right h4 {
+    color: #eac058;
+    margin-bottom: 15px;
+    font-size: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 10px;
+}
+
+.deck-selected-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.deck-card-slot {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 8px;
+    border-left: 4px solid #fff;
+    position: relative;
+    transition: all 0.2s;
+}
+
+.deck-card-slot:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(5px);
+}
+
+.deck-card-visual {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 6px;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+.deck-card-visual img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.deck-card-name {
+    font-weight: 700;
+    font-size: 14px;
+    color: #fff;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.remove-card-btn {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #ff4444;
+    color: white;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.deck-card-slot:hover .remove-card-btn {
+    opacity: 1;
+}
+
+.deck-available-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 10px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.deck-available-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+}
+
+.deck-available-card:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-3px);
+}
+
+.deck-available-card.selected {
+    opacity: 0.5;
+    filter: grayscale(0.8);
+}
+
+.selected-badge {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: #4CAF50;
+    color: white;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+.deck-card-visual-small {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 8px;
+}
+
+.deck-card-visual-small img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.deck-card-name-small {
+    font-size: 11px;
+    font-weight: 700;
+    text-align: center;
+    color: #fff;
+    line-height: 1.2;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.deck-card-rarity-small {
+    font-size: 9px;
+    text-transform: uppercase;
+    margin-top: 4px;
+    opacity: 0.8;
+}
+
+@media (max-width: 768px) {
+    .deck-layout {
+        flex-direction: column;
+    }
+
+    .deck-section-left {
+        width: 100%;
+        min-width: 0;
+        height: 250px;
+    }
+
+    .deck-selected-grid {
+        flex-direction: row;
+        overflow-x: auto;
+        overflow-y: hidden;
+    }
+
+    .deck-card-slot {
+        min-width: 150px;
+        border-left: none;
+        border-top: 4px solid #fff;
+    }
+}

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventaire - AutoBattleGame Online</title>
+    <link rel="icon" type="image/x-icon" href="/img/favicon.ico">
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/animations.css">
+    <link rel="stylesheet" href="/css/responsive.css">
+    <link rel="stylesheet" href="/css/loot.css">
+    <link rel="stylesheet" href="/css/loading.css">
+    <style>
+        /* Hide body by default to prevent FOUC */
+        body {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s ease-in;
+        }
+    </style>
+    <script>
+        // SECURITY: Blocking script to check authentication immediately before ANY resources load
+        (function () {
+            var token = localStorage.getItem('auth_token');
+            if (!token) {
+                // No token, redirect immediately and stop loading
+                window.location.replace('/login');
+                throw new Error('No authentication token');
+            }
+
+            // Token exists, show page
+            // Note: The server and API endpoints will validate the token's authenticity
+            document.addEventListener('DOMContentLoaded', function () {
+                // Validate token asynchronously with the server
+                fetch('/api/auth/profile', {
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                })
+                    .then(function (response) {
+                        if (!response.ok) {
+                            // Token invalid, clear and redirect
+                            localStorage.removeItem('auth_token');
+                            window.location.replace('/login');
+                        } else {
+                            // Token valid, show page
+                            document.body.style.visibility = 'visible';
+                            document.body.style.opacity = '1';
+                        }
+                    })
+                    .catch(function (error) {
+                        // Network error or invalid token, redirect
+                        console.error('Auth validation failed:', error);
+                        localStorage.removeItem('auth_token');
+                        window.location.replace('/login');
+                    });
+            });
+        })();
+    </script>
+</head>
+
+<body>
+    <div class="inventory-container">
+        <!-- Navbar injected by JS -->
+
+        <!-- Inventory Header Removed -->
+
+        <div class="inventory-content">
+            <div class="inventory-filters" id="inventory-filters">
+                <button class="filter-btn active" data-filter="all">Tous</button>
+                <button class="filter-btn" data-filter="consumer">⚪ Common</button>
+                <button class="filter-btn" data-filter="industrial">🔵 Uncommon</button>
+                <button class="filter-btn" data-filter="milspec">🔷 Rare</button>
+                <button class="filter-btn" data-filter="restricted">🟣 Mythical</button>
+                <button class="filter-btn" data-filter="classified">🟪 Legendary</button>
+                <button class="filter-btn" data-filter="covert">🔴 Ancient</button>
+                <button class="filter-btn" data-filter="melee">🟡 Melee</button>
+            </div>
+
+            <div id="loot-items-container" class="loot-items-grid">
+                <!-- Loading skeleton -->
+                <div class="loading-skeleton">
+                    <div class="skeleton-card"></div>
+                    <div class="skeleton-card"></div>
+                    <div class="skeleton-card"></div>
+                    <div class="skeleton-card"></div>
+                    <div class="skeleton-card"></div>
+                    <div class="skeleton-card"></div>
+                    <div class="skeleton-card"></div>
+                    <div class="skeleton-card"></div>
+                </div>
+            </div>
+
+            <!-- Pagination Container -->
+            <div id="inventory-pagination" class="inventory-pagination"></div>
+        </div>
+    </div>
+
+    <!-- Modal de détails item -->
+    <div id="item-detail-modal" class="modal">
+        <div class="item-detail-content">
+            <button class="close-modal-btn">&times;</button>
+            <div class="item-detail-body">
+                <div class="item-detail-visual">
+                    <!-- Image sera insérée ici -->
+                </div>
+                <div class="item-detail-info">
+                    <h2 class="item-detail-title"></h2>
+                    <div class="item-detail-rarity-tag"></div>
+                    <div class="item-detail-description"></div>
+                    <div class="item-detail-stats">
+                        <div class="stat-row">
+                            <span class="stat-label">Valeur estimée</span>
+                            <span class="stat-value item-value"></span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Quantité possédée</span>
+                            <span class="stat-value item-quantity"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Socket.io -->
+    <script src="/socket.io/socket.io.js"></script>
+
+    <!-- Scripts -->
+    <script src="/js/utils/AvatarUtils.js"></script>
+    <script src="/js/ui/Navbar.js"></script>
+    <script src="/js/utils/AnimationUtils.js"></script>
+    <script src="/js/online/ServerGameClient.js"></script>
+    <script src="/js/online/ServerValidator.js"></script>
+    <script>
+        // Empêcher OnlineManager de s'initialiser automatiquement sur la page inventory
+        window.INVENTORY_PAGE = true;
+    </script>
+    <script src="/js/online/OnlineManager.js"></script>
+    <script src="/js/utils/LocalStorageCleaner.js"></script>
+    <script src="/js/loot/lootData.js"></script>
+    <script src="/js/cards/CardSystem.js"></script>
+    <script src="/js/inventory/InventoryPage.js"></script>
+</body>
+
+</html>

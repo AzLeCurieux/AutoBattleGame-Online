@@ -1,0 +1,287 @@
+/* Modern Deck Styles */
+
+/* Layout Principal */
+.deck-container {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 10px 20px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+/* Header removed per user request */
+
+/* Workspace Grid */
+.deck-workspace {
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: 30px;
+    align-items: start;
+}
+
+@media (max-width: 1024px) {
+    .deck-workspace {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Zones Communes */
+.deck-active-zone,
+.deck-collection-zone {
+    background: rgba(20, 24, 40, 0.8);
+    border-radius: 20px;
+    padding: 25px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.zone-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding-bottom: 15px;
+}
+
+.zone-header h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    margin: 0;
+}
+
+.zone-subtitle {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+/* Deck Actif (Gauche) */
+.deck-active-zone {
+    position: sticky;
+    top: 90px;
+    max-height: calc(100vh - 120px);
+    display: flex;
+    flex-direction: column;
+}
+
+.active-deck-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    min-height: 200px;
+    overflow-y: auto;
+    padding-right: 5px;
+    margin-bottom: 20px;
+    flex: 1;
+}
+
+.active-deck-grid::-webkit-scrollbar {
+    width: 4px;
+}
+
+.active-deck-grid::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.active-deck-grid::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+}
+
+.empty-slot {
+    height: 80px;
+    border: 2px dashed rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.2);
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+.empty-slot:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+/* Collection (Droite) */
+.collection-filters {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.filter-group {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.filter-chip {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 6px 12px;
+    border-radius: 20px;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.filter-chip.smart {
+    border-color: rgba(100, 200, 255, 0.2);
+    color: #8ab4f8;
+}
+
+.filter-chip:hover,
+.filter-chip.active {
+    background: #e4ae39;
+    color: #000;
+    border-color: #e4ae39;
+}
+
+.filter-chip.smart:hover,
+.filter-chip.smart.active {
+    background: #4b69ff;
+    color: #fff;
+    border-color: #4b69ff;
+}
+
+.collection-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+/* Cartes Modernes */
+.loot-item-card {
+    background: linear-gradient(145deg, rgba(30, 35, 50, 0.9), rgba(20, 25, 40, 0.95));
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 15px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.loot-item-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    border-color: rgba(228, 174, 57, 0.3);
+}
+
+.loot-item-card.selected {
+    border-color: #e4ae39;
+    box-shadow: 0 0 0 2px rgba(228, 174, 57, 0.3);
+}
+
+/* Visuel Carte */
+.loot-item-visual-container {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.loot-item-emoji {
+    font-size: 56px;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+    transition: transform 0.3s ease;
+}
+
+.loot-item-card:hover .loot-item-emoji {
+    transform: scale(1.1);
+}
+
+/* Info Carte */
+.loot-item-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    text-align: center;
+    margin: 5px 0 0;
+}
+
+.loot-item-rarity {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 800;
+    text-align: center;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    align-self: center;
+}
+
+/* Effets Visibles - Modern & Subtle */
+.loot-item-effect,
+.loot-item-stats {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.4;
+    color: rgba(255, 255, 255, 0.85);
+    text-align: center;
+    margin-top: auto;
+    min-height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.loot-item-card:hover .loot-item-effect,
+.loot-item-card:hover .loot-item-stats {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(228, 174, 57, 0.3);
+    color: #ffd980;
+}
+
+.loot-item-effect strong,
+.stat-badge {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* Actions */
+.deck-actions {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.btn-lg {
+    padding: 14px 24px;
+    font-size: 16px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.loading-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 40px;
+    color: rgba(255, 255, 255, 0.4);
+    font-style: italic;
+}

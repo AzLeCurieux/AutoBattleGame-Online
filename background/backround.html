@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>mod name</title>
+  <script src="https://xemantic.github.io/shader-web-background/dist/shader-web-background.min.js"></script>
+  <script type="x-shader/x-fragment" id="image">
+    precision mediump float;
+    #define SPIN_EASE 0.8
+    #define spin_time 5.
+    #define spin_amount 0.3
+    #define contrast 3.
+
+    // #define PIXEL_SIZE_FAC 700.
+
+    // default colours
+    // #define colour_1 vec4(1.0,0.3725490196,0.3333333333,1.0)
+    // #define colour_2 vec4(0.0,0.6156862745,1.0,1.0)
+    // #define colour_3 vec4(0.2156862745,0.2588235294,0.2666666667,1.0)
+    
+    uniform vec2 iResolution;
+    uniform float iTime;
+    uniform vec3 colour_1;
+    uniform vec3 colour_2;
+    uniform vec3 colour_3;
+
+    void main( )
+    {
+      // uncomment to enable pixelated bg
+      // float pixel_size = length(iResolution.xy)/PIXEL_SIZE_FAC;
+      float pixel_size = 1.0;
+      vec2 uv = (floor(gl_FragCoord.xy*(1./pixel_size))*pixel_size - 0.5*iResolution.xy)/length(iResolution.xy) - vec2(0.12, 0.);
+      
+      float uv_len = length(uv);
+      
+      float speed = (spin_time*SPIN_EASE*0.2) + 302.2;
+      float new_pixel_angle = (atan(uv.y, uv.x)) + speed - SPIN_EASE*20.*(1.*spin_amount*uv_len + (1. - 1.*spin_amount));
+      
+      vec2 mid = vec2(0.5, 0.5);
+      uv = (vec2((uv_len * cos(new_pixel_angle) + mid.x), (uv_len * sin(new_pixel_angle) + mid.y)) - mid);
+      
+      uv *= 30.;
+      speed = iTime*(2.);
+      vec2 uv2 = vec2(uv.x+uv.y);
+
+      for(int i=0; i < 5; i++) {
+        uv2 += sin(max(uv.x, uv.y)) + uv;
+        uv  += 0.5*vec2(cos(5.1123314 + 0.353*uv2.y + speed*0.131121),sin(uv2.x - 0.113*speed));
+        uv  -= 1.0*cos(uv.x + uv.y) - 1.0*sin(uv.x*0.711 - uv.y);
+      }
+      
+      float contrast_mod = (0.25*contrast + 0.5*spin_amount + 1.2);
+      float paint_res =min(2., max(0.,length(uv)*(0.035)*contrast_mod));
+      float c1p = max(0.,1. - contrast_mod*abs(1.-paint_res));
+      float c2p = max(0.,1. - contrast_mod*abs(paint_res));
+      float c3p = 1. - min(1., c1p + c2p);
+
+      // Output to screen
+      gl_FragColor = (0.3/contrast)*vec4(colour_1, 1.0) + (1. - 0.3/contrast)*(vec4(colour_1, 1.0)*c1p + vec4(colour_2, 1.0)*c2p + vec4(colour_3*c3p, c3p));
+    }
+  </script>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <script>
+    let t = 0;
+    window.shaderInstance = null;
+    
+    // Variables pour stocker les couleurs du shader
+    window.shaderColors = {
+      colour_1: { r: 0.3, g: 0.3, b: 0.3 },
+      colour_2: { r: 0.15, g: 0.15, b: 0.15 },
+      colour_3: { r: 0.05, g: 0.05, b: 0.05 }
+    };
+    
+    // Fonction pour convertir hex en RGB normalisé (0-1)
+    window.hexToRgb = function(hex) {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? {
+        r: parseInt(result[1], 16) / 255,
+        g: parseInt(result[2], 16) / 255,
+        b: parseInt(result[3], 16) / 255
+      } : null;
+    };
+    
+    // Fonction pour générer des nuances à partir d'une couleur
+    window.generateShades = function(baseColor) {
+      const rgb = window.hexToRgb(baseColor);
+      if (!rgb) return null;
+      
+      // Nuance claire (augmente la luminosité)
+      const light = {
+        r: Math.min(1, rgb.r * 1.5 + 0.2),
+        g: Math.min(1, rgb.g * 1.5 + 0.2),
+        b: Math.min(1, rgb.b * 1.5 + 0.2)
+      };
+      
+      // Nuance moyenne (couleur de base)
+      const medium = {
+        r: rgb.r,
+        g: rgb.g,
+        b: rgb.b
+      };
+      
+      // Nuance foncée (réduit la luminosité)
+      const dark = {
+        r: Math.max(0, rgb.r * 0.3),
+        g: Math.max(0, rgb.g * 0.3),
+        b: Math.max(0, rgb.b * 0.3)
+      };
+      
+      return { light, medium, dark };
+    };
+    
+    // Fonction pour mettre à jour les couleurs
+    window.updateColors = function(color) {
+      const shades = window.generateShades(color);
+      if (!shades) return;
+      
+      // Mettre à jour les variables de couleur du shader
+      window.shaderColors.colour_1 = shades.light;
+      window.shaderColors.colour_2 = shades.medium;
+      window.shaderColors.colour_3 = shades.dark;
+      
+      // Mettre à jour le CSS
+      const rgb = window.hexToRgb(color);
+      const bgColor = `rgb(${Math.round(rgb.r * 255 * 0.1)}, ${Math.round(rgb.g * 255 * 0.1)}, ${Math.round(rgb.b * 255 * 0.1)})`;
+      const cardColor = `rgb(${Math.round(rgb.r * 255 * 0.2)}, ${Math.round(rgb.g * 255 * 0.2)}, ${Math.round(rgb.b * 255 * 0.2)})`;
+      
+      document.querySelector('.bg').style.background = bgColor;
+      document.querySelectorAll('.joker, #download').forEach(el => {
+        el.style.backgroundColor = cardColor;
+      });
+    };
+    
+    // Fonction pour mettre à jour les trois couleurs indépendantes
+    window.updateAdvancedColors = function(color1, color2, color3) {
+      const rgb1 = window.hexToRgb(color1);
+      const rgb2 = window.hexToRgb(color2);
+      const rgb3 = window.hexToRgb(color3);
+      
+      if (!rgb1 || !rgb2 || !rgb3) return;
+      
+      // Mettre à jour les variables de couleur du shader
+      window.shaderColors.colour_1 = { r: rgb1.r, g: rgb1.g, b: rgb1.b };
+      window.shaderColors.colour_2 = { r: rgb2.r, g: rgb2.g, b: rgb2.b };
+      window.shaderColors.colour_3 = { r: rgb3.r, g: rgb3.g, b: rgb3.b };
+      
+      // Mettre à jour le CSS avec la couleur moyenne
+      const bgColor = `rgb(${Math.round(rgb2.r * 255 * 0.1)}, ${Math.round(rgb2.g * 255 * 0.1)}, ${Math.round(rgb2.b * 255 * 0.1)})`;
+      const cardColor = `rgb(${Math.round(rgb2.r * 255 * 0.2)}, ${Math.round(rgb2.g * 255 * 0.2)}, ${Math.round(rgb2.b * 255 * 0.2)})`;
+      
+      document.querySelector('.bg').style.background = bgColor;
+      document.querySelectorAll('.joker, #download').forEach(el => {
+        el.style.backgroundColor = cardColor;
+      });
+    };
+    
+    requestAnimationFrame(function update() {
+      t += 1/120;
+      requestAnimationFrame(update);
+    });
+    
+    window.shaderInstance = shaderWebBackground.shade({
+      shaders: {
+        image: {
+          uniforms: {
+            iResolution: (gl, loc, ctx) => gl.uniform2f(loc, ctx.width, ctx.height),
+            iTime: (gl, loc, ctx) => gl.uniform1f(loc, t),
+            colour_1: (gl, loc) => {
+              gl.uniform3f(loc, window.shaderColors.colour_1.r, window.shaderColors.colour_1.g, window.shaderColors.colour_1.b);
+            },
+            colour_2: (gl, loc) => {
+              gl.uniform3f(loc, window.shaderColors.colour_2.r, window.shaderColors.colour_2.g, window.shaderColors.colour_2.b);
+            },
+            colour_3: (gl, loc) => {
+              gl.uniform3f(loc, window.shaderColors.colour_3.r, window.shaderColors.colour_3.g, window.shaderColors.colour_3.b);
+            }
+          }
+        }
+      }
+    });
+  </script>
+  <div class="bg">
+  </div>
+  <div class="color-picker-container">
+    <label for="colorPicker">Changer la couleur :</label>
+    <input type="color" id="colorPicker" value="#808080">
+    <button id="applyColor" class="apply-btn">Appliquer</button>
+    <label class="realtime-toggle">
+      <input type="checkbox" id="realtimeMode" checked>
+      <span>Temps réel</span>
+    </label>
+  </div>
+  <div class="color-picker-container advanced">
+    <label>Trois couleurs indépendantes :</label>
+    <div class="color-group">
+      <label for="color1">Couleur 1 (Claire) :</label>
+      <input type="color" id="color1" value="#4d4d4d">
+    </div>
+    <div class="color-group">
+      <label for="color2">Couleur 2 (Moyenne) :</label>
+      <input type="color" id="color2" value="#262626">
+    </div>
+    <div class="color-group">
+      <label for="color3">Couleur 3 (Foncée) :</label>
+      <input type="color" id="color3" value="#0d0d0d">
+    </div>
+    <button id="applyAdvancedColors" class="apply-btn">Appliquer</button>
+    <label class="realtime-toggle">
+      <input type="checkbox" id="realtimeModeAdvanced" checked>
+      <span>Temps réel</span>
+    </label>
+  </div>
+  <main>
+   
+  </main>
+  <script src="addjokers.js" defer></script>
+  <script>
+    // Attendre que le DOM soit chargé
+    document.addEventListener('DOMContentLoaded', function() {
+      const colorPicker = document.getElementById('colorPicker');
+      const applyBtn = document.getElementById('applyColor');
+      const realtimeMode = document.getElementById('realtimeMode');
+      
+      // Sélecteurs pour les trois couleurs indépendantes
+      const color1 = document.getElementById('color1');
+      const color2 = document.getElementById('color2');
+      const color3 = document.getElementById('color3');
+      const applyAdvancedBtn = document.getElementById('applyAdvancedColors');
+      const realtimeModeAdvanced = document.getElementById('realtimeModeAdvanced');
+      
+      let currentColor = '#808080';
+      
+      // Fonction pour appliquer la couleur
+      function applyColor() {
+        if (colorPicker && window.updateColors) {
+          currentColor = colorPicker.value;
+          window.updateColors(currentColor);
+        }
+      }
+      
+      // Fonction pour appliquer les trois couleurs indépendantes
+      function applyAdvancedColors() {
+        if (color1 && color2 && color3 && window.updateAdvancedColors) {
+          window.updateAdvancedColors(color1.value, color2.value, color3.value);
+        }
+      }
+      
+      // Gestion du premier menu (couleur unique)
+      if (colorPicker) {
+        // Mode temps réel : mise à jour à chaque changement
+        colorPicker.addEventListener('input', function(e) {
+          if (realtimeMode && realtimeMode.checked) {
+            currentColor = e.target.value;
+            window.updateColors(currentColor);
+          }
+        });
+        
+        // Écouter aussi le changement (quand on ferme le picker)
+        colorPicker.addEventListener('change', function(e) {
+          if (realtimeMode && realtimeMode.checked) {
+            currentColor = e.target.value;
+            window.updateColors(currentColor);
+          }
+        });
+        
+        // Bouton d'application manuelle
+        if (applyBtn) {
+          applyBtn.addEventListener('click', function() {
+            applyColor();
+          });
+        }
+        
+        // Initialiser avec la couleur par défaut
+        window.updateColors('#808080');
+      }
+      
+      // Gestion du menu avancé (trois couleurs indépendantes)
+      if (color1 && color2 && color3) {
+        // Fonction pour mettre à jour en temps réel
+        function updateAdvancedRealtime() {
+          if (realtimeModeAdvanced && realtimeModeAdvanced.checked) {
+            applyAdvancedColors();
+          }
+        }
+        
+        // Écouter les changements des trois sélecteurs
+        color1.addEventListener('input', updateAdvancedRealtime);
+        color1.addEventListener('change', updateAdvancedRealtime);
+        color2.addEventListener('input', updateAdvancedRealtime);
+        color2.addEventListener('change', updateAdvancedRealtime);
+        color3.addEventListener('input', updateAdvancedRealtime);
+        color3.addEventListener('change', updateAdvancedRealtime);
+        
+        // Bouton d'application manuelle
+        if (applyAdvancedBtn) {
+          applyAdvancedBtn.addEventListener('click', function() {
+            applyAdvancedColors();
+          });
+        }
+      }
+    });
+  </script>
+</body>
+</html>

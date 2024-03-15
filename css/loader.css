@@ -1,0 +1,75 @@
+/* Preloader / Loading Screen */
+.preloader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    filter: drop-shadow(0 0 2px #fff);
+    z-index: 999999;
+    transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
+}
+
+.preloader.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.crack {
+    position: absolute;
+    width: 10%;
+    aspect-ratio: 1;
+    background-color: #fef3fc;
+    clip-path: polygon(50% 0%,
+            61% 35%,
+            98% 35%,
+            68% 57%,
+            79% 91%,
+            50% 70%,
+            21% 91%,
+            32% 57%,
+            2% 35%,
+            39% 35%);
+    animation: rotate 6s infinite;
+}
+
+.crack2 {
+    width: 12%;
+    animation-delay: 1s;
+}
+
+.crack3 {
+    width: 14%;
+    animation-delay: 1.5s;
+}
+
+.crack4 {
+    width: 16%;
+    animation-delay: 2s;
+}
+
+.crack5 {
+    width: 18%;
+    animation-delay: 2.5s;
+}
+
+@keyframes rotate {
+    to {
+        rotate: 360deg;
+    }
+}
+
+/* Hide page content until loaded */
+body.loading {
+    overflow: hidden;
+}
+
+body.loading>*:not(.preloader) {
+    opacity: 0;
+    visibility: hidden;
+}

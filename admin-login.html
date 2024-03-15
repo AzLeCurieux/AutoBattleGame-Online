@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - AutoBattleGame</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+            padding: 30px;
+            background: rgba(20, 20, 30, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+
+        .login-header {
+            margin-bottom: 30px;
+        }
+
+        .login-header i {
+            font-size: 3em;
+            color: #e74c3c;
+            margin-bottom: 15px;
+        }
+
+        .login-header h2 {
+            color: #fff;
+            margin: 0;
+            font-size: 1.8em;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            color: #aaa;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            color: #fff;
+            font-size: 1em;
+            transition: border-color 0.2s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #e74c3c;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 12px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-login:hover {
+            background: #c0392b;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            margin-top: 15px;
+            font-size: 0.9em;
+            display: none;
+        }
+
+        .back-link {
+            display: block;
+            margin-top: 20px;
+            color: #666;
+            text-decoration: none;
+            font-size: 0.9em;
+        }
+
+        .back-link:hover {
+            color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="particles-js"></div>
+
+    <div class="login-container">
+        <div class="login-header">
+            <i class="fas fa-user-shield"></i>
+            <h2>Admin Access</h2>
+        </div>
+
+        <form id="admin-login-form">
+            <div class="form-group">
+                <label for="password">Mot de passe Admin</label>
+                <input type="password" id="password" class="form-control" placeholder="Entrez le mot de passe..."
+                    required autofocus>
+            </div>
+
+            <button type="submit" class="btn-login">Connexion</button>
+            <div id="error-msg" class="error-message">Mot de passe incorrect</div>
+        </form>
+
+        <a href="/" class="back-link">← Retour au site</a>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.particlesJS) {
+                particlesJS('particles-js', {
+                    particles: {
+                        number: { value: 30 },
+                        color: { value: '#e74c3c' },
+                        shape: { type: 'circle' },
+                        opacity: { value: 0.3 },
+                        size: { value: 3 },
+                        move: { enable: true, speed: 1 }
+                    }
+                });
+            }
+
+            const form = document.getElementById('admin-login-form');
+            const passwordInput = document.getElementById('password');
+            const errorMsg = document.getElementById('error-msg');
+            const btn = form.querySelector('button');
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const password = passwordInput.value;
+
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connexion...';
+                errorMsg.style.display = 'none';
+
+                try {
+                    const response = await fetch('/api/auth/admin-login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ password })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        localStorage.setItem('admin_token', data.token);
+                        window.location.href = '/monitoring';
+                    } else {
+                        errorMsg.textContent = data.message || 'Mot de passe incorrect';
+                        errorMsg.style.display = 'block';
+                        btn.disabled = false;
+                        btn.textContent = 'Connexion';
+                    }
+                } catch (error) {
+                    console.error('Login error:', error);
+                    errorMsg.textContent = 'Erreur de connexion';
+                    errorMsg.style.display = 'block';
+                    btn.disabled = false;
+                    btn.textContent = 'Connexion';
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

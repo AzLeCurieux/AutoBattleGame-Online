@@ -1,0 +1,646 @@
+/* Animations de combat - Optimisées pour Firefox (transform3d) */
+@keyframes attackMove {
+    0% { 
+        transform: translate3d(0, 0, 0); 
+    }
+    20% {
+        /* Anticipation : léger recul */
+        transform: translate3d(calc(var(--attack-delta-x) * -0.15), calc(var(--attack-delta-y) * -0.15), 0);
+    }
+    50% { 
+        /* Impact */
+        transform: translate3d(var(--attack-delta-x), var(--attack-delta-y), 0) scale3d(1.1, 1.1, 1); 
+    }
+    100% { 
+        /* Retour */
+        transform: translate3d(0, 0, 0); 
+    }
+}
+
+@keyframes enemyAttackMove {
+    0% { 
+        transform: translate3d(0, 0, 0); 
+    }
+    20% {
+        /* Anticipation */
+        transform: translate3d(calc(var(--enemy-attack-delta-x) * -0.15), calc(var(--enemy-attack-delta-y) * -0.15), 0);
+    }
+    50% { 
+        /* Impact */
+        transform: translate3d(var(--enemy-attack-delta-x), var(--enemy-attack-delta-y), 0) scale3d(1.1, 1.1, 1); 
+    }
+    100% { 
+        transform: translate3d(0, 0, 0); 
+    }
+}
+
+/* Optimisation Firefox : Simplification des filtres lourds */
+@keyframes damageFloat {
+    0% {
+        transform: translate3d(0, 0, 0) scale3d(0.8, 0.8, 1);
+        opacity: 0;
+        filter: brightness(1.2); /* Retrait de contrast() */
+    }
+    15% {
+        transform: translate3d(0, -5px, 0) scale3d(1.1, 1.1, 1);
+        opacity: 1;
+        filter: brightness(1.3); /* Retrait de contrast() */
+    }
+    50% {
+        opacity: 1;
+        filter: brightness(1.2); /* Retrait de contrast() */
+    }
+    100% {
+        transform: translate3d(0, -60px, 0) scale3d(0.9, 0.9, 1);
+        opacity: 0.7;
+        filter: brightness(1.1); /* Retrait de contrast() */
+    }
+}
+
+@keyframes critDamageFloat {
+    0% {
+        transform: translate3d(0, 0, 0) scale3d(0.5, 0.5, 1) rotate3d(0, 0, 1, -10deg);
+        opacity: 0;
+        filter: brightness(1.3); /* Retrait de contrast() */
+    }
+    20% {
+        transform: translate3d(0, -10px, 0) scale3d(1.3, 1.3, 1) rotate3d(0, 0, 1, 5deg);
+        opacity: 1;
+        filter: brightness(1.4); /* Retrait de contrast() */
+    }
+    40% {
+        transform: translate3d(0, -15px, 0) scale3d(1.1, 1.1, 1) rotate3d(0, 0, 1, -3deg);
+        opacity: 1;
+        filter: brightness(1.3); /* Retrait de contrast() */
+    }
+    70% {
+        opacity: 1;
+        filter: brightness(1.3); /* Retrait de contrast() */
+    }
+    100% {
+        transform: translate3d(0, -80px, 0) scale3d(1, 1, 1) rotate3d(0, 0, 1, 0deg);
+        opacity: 0.8;
+        filter: brightness(1.2); /* Retrait de contrast() */
+    }
+}
+
+/* Animation simplifiée pour les critiques */
+@keyframes critDamageFloatSimple {
+    0% {
+        transform: translate3d(0, 0, 0) scale3d(0.8, 0.8, 1);
+        opacity: 0;
+    }
+    20% {
+        transform: translate3d(0, -10px, 0) scale3d(1.1, 1.1, 1);
+        opacity: 1;
+    }
+    100% {
+        transform: translate3d(0, -60px, 0) scale3d(0.9, 0.9, 1);
+        opacity: 0;
+    }
+}
+
+/* Animation d'apparition spéciale pour les coups critiques */
+@keyframes critAppear {
+    0% {
+        transform: scale3d(0, 0, 1) rotate3d(0, 0, 1, -25deg);
+        opacity: 0;
+        filter: brightness(0.5);
+    }
+    30% {
+        transform: scale3d(1.4, 1.4, 1) rotate3d(0, 0, 1, 8deg);
+        opacity: 1;
+        filter: brightness(1.3);
+    }
+    50% {
+        transform: scale3d(1.1, 1.1, 1) rotate3d(0, 0, 1, -3deg);
+        filter: brightness(1.1);
+    }
+    70% {
+        transform: scale3d(1.15, 1.15, 1) rotate3d(0, 0, 1, 2deg);
+        filter: brightness(1.2);
+    }
+    100% {
+        transform: scale3d(1, 1, 1) rotate3d(0, 0, 1, 0deg);
+        opacity: 1;
+        filter: brightness(1);
+    }
+}
+
+/* Animation d'apparition simple pour les critiques */
+@keyframes critAppearSimple {
+    0% {
+        transform: scale3d(0.5, 0.5, 1);
+        opacity: 0;
+    }
+    50% {
+        transform: scale3d(1.1, 1.1, 1);
+        opacity: 1;
+    }
+    100% {
+        transform: scale3d(1, 1, 1);
+        opacity: 1;
+    }
+}
+
+/* Animation de pulsation pour les critiques - Optimisée */
+@keyframes critPulse {
+    0%, 100% {
+        transform: scale3d(1, 1, 1);
+        filter: brightness(1); /* Remplacement de drop-shadow */
+    }
+    50% {
+        transform: scale3d(1.08, 1.08, 1);
+        filter: brightness(1.3);
+    }
+}
+
+/* Animation de flash pour les coups critiques */
+@keyframes critFlash {
+    0% {
+        transform: translate(-50%, -50%) scale3d(0, 0, 1);
+        opacity: 1;
+    }
+    50% {
+        transform: translate(-50%, -50%) scale3d(1.5, 1.5, 1);
+        opacity: 0.8;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale3d(2, 2, 1);
+        opacity: 0;
+    }
+}
+
+@keyframes healthBarShake {
+    0%, 100% { transform: translate3d(0, 0, 0); }
+    50% { transform: translate3d(2px, 0, 0); }
+}
+
+@keyframes fighterHit {
+    0%, 100% { transform: scale3d(1, 1, 1); filter: brightness(1); }
+    50% { transform: scale3d(1.15, 1.15, 1); filter: brightness(1.3); }
+}
+
+/* Boss glow simplifié */
+@keyframes bossGlow {
+    0%, 100% {
+        opacity: 0.8;
+    }
+    50% {
+        opacity: 1;
+    }
+}
+
+/* Animation spéciale pour le record du leaderboard - Optimisée */
+@keyframes leaderboardRecordGlow {
+    0%, 100% {
+        transform: scale3d(1, 1, 1);
+        opacity: 0.9; /* Remplacement de drop-shadow */
+    }
+    50% {
+        transform: scale3d(1.15, 1.15, 1);
+        opacity: 1;
+    }
+}
+
+/* Animations de l'interface - Optimisées pour Firefox */
+@keyframes modalSlideIn {
+    from {
+        transform: translate3d(0, -20px, 0);
+        opacity: 0;
+    }
+    to {
+        transform: translate3d(0, 0, 0);
+        opacity: 1;
+    }
+}
+
+@keyframes buttonPulse {
+    0%, 100% {
+        transform: scale3d(1, 1, 1);
+    }
+    50% {
+        transform: scale3d(1.02, 1.02, 1);
+    }
+}
+
+/* Upgrade glow simplifié - utilise opacity au lieu de box-shadow */
+@keyframes upgradeGlow {
+    0%, 100% {
+        opacity: 0.7;
+    }
+    50% {
+        opacity: 1;
+    }
+}
+
+.modal-slide-in {
+    animation: modalSlideIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+}
+
+/* Animation de fermeture optimisée - évite le clipping */
+.modal-closing {
+    animation: modalSlideOut 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+}
+
+@keyframes modalSlideOut {
+    from {
+        transform: translate3d(0, 0, 0);
+        opacity: 1;
+    }
+    to {
+        transform: translate3d(0, -15px, 0);
+        opacity: 0;
+    }
+}
+
+.button-pulse {
+    animation: buttonPulse 0.2s ease-in-out;
+}
+
+.upgrade-glow {
+    animation: upgradeGlow 1.5s ease-in-out infinite;
+    border-color: #1e90ff;
+    box-shadow: 0 0 12px rgba(30, 144, 255, 0.4);
+}
+
+/* Animations de transition - Optimisées pour Firefox */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translate3d(0, 20px, 0);
+    }
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+@keyframes fadeOutDown {
+    from {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+    to {
+        opacity: 0;
+        transform: translate3d(0, 20px, 0);
+    }
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.3s ease-out;
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+}
+
+.fade-out-down {
+    animation: fadeOutDown 0.3s ease-out;
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+}
+
+/* Animations de victoire/défaite - Optimisées pour Firefox */
+@keyframes victoryBounce {
+    0%, 100% {
+        transform: translate3d(0, 0, 0);
+    }
+    50% {
+        transform: translate3d(0, -8px, 0);
+    }
+}
+
+@keyframes defeatShake {
+    0%, 100% { transform: translate3d(0, 0, 0); }
+    25% { transform: translate3d(-4px, 0, 0); }
+    75% { transform: translate3d(4px, 0, 0); }
+}
+
+.victory-bounce {
+    animation: victoryBounce 0.6s ease-in-out;
+}
+
+.defeat-shake {
+    animation: defeatShake 0.3s ease-in-out;
+}
+
+/* Animations de niveau - Optimisées pour Firefox */
+@keyframes levelUp {
+    0%, 100% {
+        transform: scale3d(1, 1, 1);
+    }
+    50% {
+        transform: scale3d(1.1, 1.1, 1);
+    }
+}
+
+.level-up {
+    animation: levelUp 0.5s ease-in-out;
+    will-change: transform;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+}
+
+/* Animations de l'or - Optimisées pour Firefox */
+@keyframes goldGain {
+    0%, 100% {
+        transform: scale3d(1, 1, 1);
+    }
+    50% {
+        transform: scale3d(1.05, 1.05, 1);
+    }
+}
+
+.gold-gain {
+    animation: goldGain 0.3s ease-in-out;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+}
+
+/* Animations de soin - Optimisées pour Firefox */
+@keyframes healEffect {
+    0%, 100% {
+        transform: scale3d(1, 1, 1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale3d(1.03, 1.03, 1);
+        opacity: 0.9;
+    }
+}
+
+.heal-effect {
+    animation: healEffect 0.4s ease-in-out;
+}
+
+/* Animations de chargement */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-spin {
+    animation: spin 1s linear infinite;
+    will-change: transform;
+}
+
+/* Animations de particules - Optimisées pour Firefox */
+@keyframes particleFloat {
+    0% {
+        transform: translate3d(0, 0, 0);
+        opacity: 1;
+    }
+    100% {
+        transform: translate3d(0, -80px, 0);
+        opacity: 0;
+    }
+}
+
+/* Animation de mort de l'ennemi - Fade out */
+@keyframes enemyDeath {
+    0% {
+        opacity: 1;
+        transform: scale3d(1, 1, 1);
+    }
+    100% {
+        opacity: 0;
+        transform: scale3d(0.8, 0.8, 1);
+    }
+}
+
+.enemy-dying {
+    animation: enemyDeath 0.5s ease-out forwards;
+    pointer-events: none;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+}
+
+#enemy-area.enemy-dying {
+    pointer-events: none;
+}
+
+/* Optimisation des particules pour Firefox et mode réduit */
+.particle {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    background-color: #ffd700;
+    border-radius: 50%;
+    animation: particleFloat 1.5s ease-out forwards;
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+}
+
+/* Firefox-specific : Réduire le nombre de particules ou les désactiver si nécessaire */
+@supports (-moz-appearance:none) {
+    .particle {
+        /* Moins de particules ou animation simplifiée sur Firefox */
+        width: 4px; /* Un peu plus gros pour compenser si on en met moins */
+        height: 4px;
+        will-change: opacity; /* Éviter transform si possible sur bcp d'éléments */
+    }
+}
+
+/* Classes d'animation - Optimisées pour Firefox */
+.attacking {
+    animation: attackMove 0.3s ease-in-out;
+    z-index: 15;
+    will-change: transform;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+}
+
+.enemy-attacking {
+    animation: enemyAttackMove 0.3s ease-in-out;
+    z-index: 15;
+    will-change: transform;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+}
+
+.damage-floating {
+    /* Pas d'animation pour les dégâts de base */
+    animation: none;
+    will-change: auto;
+    backface-visibility: visible;
+    transform: none;
+}
+
+/* Animation dynamique pour les dégâts de base - Simplifiée */
+@keyframes damageFloatDynamic {
+    0% {
+        transform: translate3d(0, 0, 0) scale3d(0.3, 0.3, 1) rotate3d(0, 0, 1, -15deg);
+        opacity: 0;
+        filter: brightness(0.5); /* Retrait de blur() pour perf */
+    }
+    20% {
+        transform: translate3d(0, -15px, 0) scale3d(1.3, 1.3, 1) rotate3d(0, 0, 1, 5deg);
+        opacity: 1;
+        filter: brightness(1.3);
+    }
+    40% {
+        transform: translate3d(0, -25px, 0) scale3d(1, 1, 1) rotate3d(0, 0, 1, -2deg);
+        filter: brightness(1.1);
+    }
+    60% {
+        transform: translate3d(0, -35px, 0) scale3d(0.95, 0.95, 1) rotate3d(0, 0, 1, 1deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translate3d(0, -70px, 0) scale3d(0.7, 0.7, 1) rotate3d(0, 0, 1, 0deg);
+        opacity: 0;
+        filter: brightness(0.8); /* Retrait de blur() */
+    }
+}
+
+/* Animation d'apparition pop dynamique - Simplifiée */
+@keyframes damagePop {
+    0% {
+        transform: scale3d(0, 0, 1) rotate3d(0, 0, 1, -20deg);
+        opacity: 0;
+        filter: brightness(0.3); /* Retrait de blur() et contrast() */
+    }
+    40% {
+        transform: scale3d(1.3, 1.3, 1) rotate3d(0, 0, 1, 10deg);
+        opacity: 1;
+        filter: brightness(1.4);
+    }
+    70% {
+        transform: scale3d(0.95, 0.95, 1) rotate3d(0, 0, 1, -3deg);
+        filter: brightness(1.2);
+    }
+    100% {
+        transform: scale3d(1, 1, 1) rotate3d(0, 0, 1, 0deg);
+        opacity: 1;
+        filter: brightness(1.1);
+    }
+}
+
+.damage-floating.crit {
+    animation: critDamageFloatSimple 1.2s ease-out forwards;
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+}
+
+/* Animation d'apparition spéciale pour le record du leaderboard */
+@keyframes leaderboardRecordAppear {
+    0% {
+        transform: translateX(-50%) translateY(-30px) scale3d(0.7, 0.7, 1) rotate3d(0, 0, 1, -5deg);
+        opacity: 0;
+        filter: brightness(0.5);
+    }
+    60% {
+        transform: translateX(-50%) translateY(5px) scale3d(1.1, 1.1, 1) rotate3d(0, 0, 1, 2deg);
+        opacity: 1;
+        filter: brightness(1.2);
+    }
+    100% {
+        transform: translateX(-50%) translateY(0) scale3d(1, 1, 1) rotate3d(0, 0, 1, 0deg);
+        opacity: 1;
+        filter: brightness(1);
+    }
+}
+
+/* Optimisation GPU pour Firefox - utilise transform3d et translateZ(0) */
+.attacking,
+.enemy-attacking,
+.damage-floating,
+.fighter-hit,
+.health-bar-shake,
+.button-pulse,
+.upgrade-glow,
+.victory-bounce,
+.defeat-shake,
+.level-up,
+.gold-gain,
+.heal-effect,
+.particle {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+}
+
+/* Détection spécifique pour Firefox pour désactiver certains effets lourds */
+@supports (-moz-appearance:none) {
+    .damage-floating, 
+    .crit {
+        will-change: transform, opacity !important;
+        filter: none !important; /* Désactive les filtres sur Firefox qui galère avec combo filter + transform */
+    }
+    
+    @keyframes damageFloat {
+        0% { transform: translate3d(0, 0, 0) scale3d(0.8, 0.8, 1); opacity: 0; }
+        15% { transform: translate3d(0, -5px, 0) scale3d(1.1, 1.1, 1); opacity: 1; }
+        100% { transform: translate3d(0, -60px, 0) scale3d(0.9, 0.9, 1); opacity: 0.7; }
+    }
+}
+
+/* ===== OPTIMISATIONS POUR PERFORMANCES RÉDUITES ===== */
+
+/* Détection de performances réduites via media query */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* Mode performance réduite - désactive animations lourdes */
+@media (prefers-reduced-motion: reduce) {
+    .boss-glow,
+    .upgrade-glow,
+    .loading-spin {
+        animation: none !important;
+    }
+    
+    .combat-zone::before,
+    .combat-zone::after {
+        animation: none !important;
+    }
+}
+
+/* Mode basse performance - simplifie encore plus */
+@media (max-width: 768px) {
+    .particle {
+        display: none; /* Désactive particules sur mobile */
+    }
+    
+    .damage-floating,
+    .damage-floating.crit {
+        animation-duration: 0.6s;
+    }
+    
+    .boss-glow {
+        animation-duration: 3s;
+    }
+}
+
+/* Animation sobre pour le nouveau record - une seule fois */
+@keyframes recordAppear {
+    0% {
+        transform: translateX(-50%) translateY(-20px) scale3d(0.9, 0.9, 1);
+        opacity: 0;
+    }
+    100% {
+        transform: translateX(-50%) translateY(0) scale3d(1, 1, 1);
+        opacity: 1;
+    }
+}
+
+
+
+

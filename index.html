@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JeuDéKaré - Main</title>
+    <link rel="icon" type="image/x-icon" href="/img/favicon.ico">
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/animations.css">
+    <link rel="stylesheet" href="/css/responsive.css">
+    <link rel="stylesheet" href="/css/loot.css">
+    <link rel="stylesheet" href="/css/cards.css">
+    <link rel="stylesheet" href="/css/squad-panel.css">
+    <link rel="stylesheet" href="/css/card-shop.css">
+    <link rel="stylesheet" href="/css/card-modifiers.css">
+
+    <!-- DEV TOOLS - À RETIRER EN PRODUCTION -->
+    <link rel="stylesheet" href="/css/dev-tools.css">
+
+    <style>
+        /* Hide body by default to prevent FOUC */
+        body {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s ease-in;
+            /* Rendre le fond transparent pour voir le shader */
+            background: transparent !important;
+        }
+
+        body::before {
+            display: none !important;
+        }
+
+        #game-container {
+            background: transparent !important;
+        }
+
+        #game-ui {
+            background: transparent !important;
+        }
+
+        /* S'assurer que le canvas du shader est derrière le contenu */
+        canvas {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: -1 !important;
+        }
+
+        /* Combat-zone avec bordure colorée selon le niveau */
+        .combat-zone {
+            border: 3px solid rgba(176, 195, 217, 0.4);
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(176, 195, 217, 0.3);
+            transition: border-color 1s ease, box-shadow 1s ease;
+        }
+    </style>
+    <script>
+        // SECURITY: Blocking script to check authentication immediately before ANY resources load
+        (function () {
+            var token = localStorage.getItem('auth_token');
+            if (!token) {
+                // No token, redirect immediately and stop loading
+                window.location.replace('/login');
+                // Throw error to stop script execution
+                throw new Error('No authentication token');
+            }
+
+            // Token exists, show page
+            // Note: The server and API endpoints will validate the token's authenticity
+            // This client-side check just ensures a token exists before showing content
+            document.addEventListener('DOMContentLoaded', function () {
+                // Validate token asynchronously with the server
+                fetch('/api/auth/profile', {
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                })
+                    .then(function (response) {
+                        if (!response.ok) {
+                            // Token invalid, clear and redirect
+                            localStorage.removeItem('auth_token');
+                            window.location.replace('/login');
+                        } else {
+                            // Token valid, show page
+                            document.body.style.visibility = 'visible';
+                            document.body.style.opacity = '1';
+                        }
+                    })
+                    .catch(function (error) {
+                        // Network error or invalid token, redirect
+                        console.error('Auth validation failed:', error);
+                        localStorage.removeItem('auth_token');
+                        window.location.replace('/login');
+                    });
+            });
+        })();
+    </script>
+    <script src="js/vendor/shader-web-background.min.js"></script>
+    <script type="x-shader/x-fragment" id="image">
+    precision mediump float;
+    #define SPIN_EASE 0.8
+    #define spin_time 5.
+    #define spin_amount 0.3
+    #define contrast 3.
+
+    uniform vec2 iResolution;
+    uniform float iTime;
+    uniform vec3 colour_1;
+    uniform vec3 colour_2;
+    uniform vec3 colour_3;
+
+    void main( )
+    {
+      float pixel_size = 1.0;
+      vec2 uv = (floor(gl_FragCoord.xy*(1./pixel_size))*pixel_size - 0.5*iResolution.xy)/length(iResolution.xy) - vec2(0.12, 0.);
+
+      float uv_len = length(uv);
+
+      float speed = (spin_time*SPIN_EASE*0.2) + 302.2;
+      float new_pixel_angle = (atan(uv.y, uv.x)) + speed - SPIN_EASE*20.*(1.*spin_amount*uv_len + (1. - 1.*spin_amount));
+
+      vec2 mid = vec2(0.5, 0.5);
+      uv = (vec2((uv_len * cos(new_pixel_angle) + mid.x), (uv_len * sin(new_pixel_angle) + mid.y)) - mid);
+
+      uv *= 30.;
+      speed = iTime*(2.);
+      vec2 uv2 = vec2(uv.x+uv.y);
+
+      for(int i=0; i < 5; i++) {
+        uv2 += sin(max(uv.x, uv.y)) + uv;
+        uv  += 0.5*vec2(cos(5.1123314 + 0.353*uv2.y + speed*0.131121),sin(uv2.x - 0.113*speed));
+        uv  -= 1.0*cos(uv.x + uv.y) - 1.0*sin(uv.x*0.711 - uv.y);
+      }
+
+      float contrast_mod = (0.25*contrast + 0.5*spin_amount + 1.2);
+      float paint_res =min(2., max(0.,length(uv)*(0.035)*contrast_mod));
+      float c1p = max(0.,1. - contrast_mod*abs(1.-paint_res));
+      float c2p = max(0.,1. - contrast_mod*abs(paint_res));
+      float c3p = 1. - min(1., c1p + c2p);
+
+      gl_FragColor = (0.3/contrast)*vec4(colour_1, 1.0) + (1. - 0.3/contrast)*(vec4(colour_1, 1.0)*c1p + vec4(colour_2, 1.0)*c2p + vec4(colour_3*c3p, c3p));
+    }
+    </script>
+</head>
+
+<body>
+    <div id="game-container">
+        <!-- Interface principale du jeu -->
+        <div id="game-ui">
+            <!-- Barre supérieure moderne (Générée par Navbar.js) -->
+            <!-- <header id="topbar">...</header> removed -->
+
+            <!-- Carte d'info au survol -->
+            <div id="hover-card" class="hover-card" style="display:none;"></div>
+
+            <!-- Modal Profil Moderne -->
+            <div id="profile-modal" class="modal">
+                <div class="modal-content profile-modal-content">
+                    <div class="modal-header">
+                        <h3>Mon Profil</h3>
+                        <button id="profile-close" class="btn btn-secondary">✕</button>
+                    </div>
+
+                    <!-- Onglets -->
+                    <div class="profile-tabs">
+                        <button class="profile-tab active" data-tab="info">Informations</button>
+                        <button class="profile-tab" data-tab="stats">Statistiques</button>
+                        <button class="profile-tab" data-tab="avatar">Photo de profil</button>
+                    </div>
+
+                    <div class="modal-body profile-modal-body">
+                        <!-- Onglet Informations -->
+                        <div class="profile-tab-content active" id="tab-info">
+                            <div class="profile-info-header">
+                                <img id="profile-info-avatar" class="profile-avatar-large" src="" alt="avatar" />
+                                <div class="profile-info-meta">
+                                    <h2 id="profile-info-username">Utilisateur</h2>
+                                    <div class="profile-info-line">
+                                        <span class="label">Dernière connexion:</span>
+                                        <span id="profile-info-last">-</span>
+                                    </div>
+                                    <div class="profile-info-line">
+                                        <span class="label">Membre depuis:</span>
+                                        <span id="profile-info-created">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Onglet Statistiques -->
+                        <div class="profile-tab-content" id="tab-stats">
+                            <div class="profile-stats-grid">
+                                <div class="profile-stat-card">
+                                    <div class="stat-icon">🏆</div>
+                                    <div class="stat-content">
+                                        <div class="stat-label">Meilleur niveau</div>
+                                        <div class="stat-value" id="profile-stat-best-level">0</div>
+                                    </div>
+                                </div>
+                                <div class="profile-stat-card">
+                                    <div class="stat-icon">💰</div>
+                                    <div class="stat-content">
+                                        <div class="stat-label">Or total gagné</div>
+                                        <div class="stat-value" id="profile-stat-total-gold">0</div>
+                                    </div>
+                                </div>
+                                <div class="profile-stat-card">
+                                    <div class="stat-icon">🎮</div>
+                                    <div class="stat-content">
+                                        <div class="stat-label">Parties jouées</div>
+                                        <div class="stat-value" id="profile-stat-games">0</div>
+                                    </div>
+                                </div>
+                                <div class="profile-stat-card">
+                                    <div class="stat-icon">🎁</div>
+                                    <div class="stat-content">
+                                        <div class="stat-label">Caisses trouvées</div>
+                                        <div class="stat-value" id="profile-stat-loot-boxes">0</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Onglet Photo de profil -->
+                        <div class="profile-tab-content" id="tab-avatar">
+                            <div class="profile-avatar-section">
+                                <div class="avatar-preview-container">
+                                    <img id="profile-avatar-preview" class="avatar-preview" src="" alt="Aperçu" />
+                                    <div class="avatar-preview-label">Aperçu</div>
+                                </div>
+                                <div class="avatar-input-section">
+                                    <label for="profile-avatar-url" class="modal-label">URL de la photo de
+                                        profil</label>
+                                    <input id="profile-avatar-url" type="url"
+                                        placeholder="https://exemple.com/avatar.png" class="modal-input"
+                                        autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"
+                                        inputmode="url" />
+                                    <div class="modal-footer"
+                                        style="justify-content:flex-start; gap:8px; margin:12px 0; padding:0;">
+                                        <button id="profile-save"
+                                            class="btn btn-primary btn-compact">Enregistrer</button>
+                                    </div>
+                                    <div class="modal-hint">Formats sûrs: https/http. Pour un téléchargement, utilisez
+                                        un hébergeur fiable (CDN/Cloud).</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button id="profile-close-btn" class="btn btn-secondary">Fermer</button>
+                    </div>
+                </div>
+            </div>
+
+
+
+            <!-- Tableau récapitulatif des caisses lootées (colonne verticale à gauche) -->
+            <!-- Sidebar gauche avec Onglets -->
+            <div id="left-sidebar" class="left-sidebar" style="display: block;">
+
+                <!-- Navigation des onglets -->
+                <div class="sidebar-tabs">
+                    <button class="sidebar-tab active" data-target="tab-squad">Squad</button>
+                    <button class="sidebar-tab" data-target="tab-loot">Loot</button>
+                </div>
+
+                <!-- Contenu des onglets -->
+                <div class="sidebar-content">
+
+                    <!-- Onglet Squad (Deck Preview) -->
+                    <div id="tab-squad" class="tab-pane active">
+                        <div id="deck-preview-container"></div>
+                    </div>
+
+                    <!-- Onglet Loot (Summary) -->
+                    <div id="tab-loot" class="tab-pane">
+                        <div id="loot-summary" class="loot-summary">
+                            <!-- Le récapitulatif sera généré dynamiquement -->
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Zone de combat -->
+            <div id="battle-area" class="prefight">
+                <!-- Statistiques au-dessus de l'arène -->
+                <div class="combat-stats" style="flex-wrap: wrap; gap: 8px;">
+                    <div class="stat-pill level">
+                        <span id="level-text" class="value">Level 01</span>
+                    </div>
+                    <div class="stat-pill gold">
+                        <span id="gold-text" class="value">Gold: 0</span>
+                    </div>
+                    <!-- DEV: God Mode Toggle -->
+                    <button id="god-mode-btn" class="stat-pill" style="cursor: pointer; background: #ff4444; border: 2px solid #cc0000; color: white; font-weight: bold; padding: 6px 12px; font-size: 11px;" title="DEV: Toggle God Mode">
+                        🛡️ GOD
+                    </button>
+                    <!-- DEV: Level Skip Buttons -->
+                    <button id="level-skip-1-btn" class="stat-pill" style="cursor: pointer; background: #4444ff; border: 2px solid #0000cc; color: white; font-weight: bold; padding: 6px 12px; font-size: 11px;" title="DEV: Skip +1 Level">
+                        ⬆️ +1
+                    </button>
+                    <button id="level-skip-9-btn" class="stat-pill" style="cursor: pointer; background: #ff44ff; border: 2px solid #cc00cc; color: white; font-weight: bold; padding: 6px 12px; font-size: 11px;" title="DEV: Skip +9 Levels (to boss)">
+                        ⏩ +9
+                    </button>
+                </div>
+
+                <!-- Affichage du deck en jeu -->
+                <div id="deck-display" class="deck-display-panel">
+                    <div class="deck-display-header">
+                        <span>Mon Deck</span>
+                        <span id="deck-count-game">0/5</span>
+                    </div>
+                    <div id="deck-cards-list" class="deck-cards-list"></div>
+                </div>
+
+                <div class="combat-zone"></div>
+                <div id="player-area">
+                    <div id="player" class="fighter"></div>
+                    <div id="player-health-bar" class="health-bar">
+                        <div id="player-health-fill" class="health-fill"></div>
+                        <div id="player-health-text" class="health-text">1000 / 1000</div>
+                    </div>
+                </div>
+
+                <div id="enemy-area">
+                    <div id="enemy" class="fighter enemy"></div>
+                    <div id="enemy-health-bar" class="health-bar">
+                        <div id="enemy-health-fill" class="health-fill"></div>
+                        <div id="enemy-health-text" class="health-text">400 / 400</div>
+                    </div>
+                </div>
+
+                <!-- Zone d'historique et passifs en bas -->
+                <div class="battle-bottom-info">
+                    <!-- Gains de passifs -->
+                    <div id="passives-gains" class="passives-gains"></div>
+                    <!-- Historique récent (dernières lignes) -->
+                    <div id="history-preview" class="history-preview">
+                        <div id="history-last-lines" class="history-last-lines"></div>
+                        <button id="history-toggle-btn" class="history-toggle-btn"
+                            title="Voir l'historique complet">📜</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal d'historique complet -->
+            <div id="history-modal" class="modal">
+                <div class="modal-content history-modal-content">
+                    <div class="modal-header">
+                        <h3>Historique Complet</h3>
+                        <button id="history-close" class="btn btn-secondary">✕</button>
+                    </div>
+                    <div id="history-full-list" class="history-full-list">
+                        <!-- L'historique complet sera généré ici -->
+                    </div>
+                    <div class="modal-footer">
+                        <button id="history-clear" class="btn btn-secondary">Effacer</button>
+                        <button id="history-close2" class="btn btn-secondary">Fermer</button>
+                    </div>
+                </div>
+            </div>
+
+
+
+            <!-- Boutons de contrôle -->
+            <div id="control-buttons">
+                <button id="fight-btn" class="btn btn-primary">Fight</button>
+                <button id="stop-btn" class="btn btn-secondary">Stop</button>
+                <button id="camp-btn" class="btn btn-camp">Camp</button>
+                <button id="restart-btn" class="btn btn-danger">Restart</button>
+            </div>
+
+            <!-- Panneau online -->
+            <div id="online-panel" class="online-panel">
+                <div id="leaderboard" class="leaderboard-section">
+                    <!-- Sera rempli par OnlineManager -->
+                </div>
+                <div id="online-players" class="online-players-section">
+                    <!-- Sera rempli par OnlineManager -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Interface du camp -->
+        <div id="camp-modal" class="modal">
+            <div class="modal-content">
+                <div class="camp-header">
+                    <h3>Camp</h3>
+                </div>
+                <div class="camp-stats">
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-icon">⚔️</div>
+                            <div class="stat-info">
+                                <div class="stat-label">Dégâts</div>
+                                <div id="stat-damage" class="stat-value">200</div>
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-icon">❤️</div>
+                            <div class="stat-info">
+                                <div class="stat-label">Vie</div>
+                                <div id="stat-health" class="stat-value">1000 / 1000</div>
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-icon">💥</div>
+                            <div class="stat-info">
+                                <div class="stat-label">Crit Chance</div>
+                                <div id="stat-crit-chance" class="stat-value">1%</div>
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-icon">⚡</div>
+                            <div class="stat-info">
+                                <div class="stat-label">Crit Dégâts</div>
+                                <div id="stat-crit-damage" class="stat-value">50%</div>
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-icon">💰</div>
+                            <div class="stat-info">
+                                <div class="stat-label">Or</div>
+                                <div id="stat-gold" class="stat-value">0</div>
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-icon">🏆</div>
+                            <div class="stat-info">
+                                <div class="stat-label">Niveau</div>
+                                <div id="stat-level" class="stat-value">1</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Section des améliorations passives -->
+                <div class="camp-passives-section">
+                    <div class="camp-passives-header">
+                        <h4>💫 Améliorations Passives</h4>
+                    </div>
+                    <div id="camp-passive-list" class="camp-passive-list">
+                        <!-- Les passifs seront générés dynamiquement -->
+                    </div>
+                </div>
+                <div class="camp-actions">
+                    <button id="heal-btn" class="btn btn-heal">
+                        Heal<br>
+                        <span class="cost">5 GOLD</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- NOUVEAU: Modal Boutique de Cartes -->
+        <div id="shop-modal" class="modal">
+            <div class="modal-content shop-modal-content">
+                <div class="shop-header">
+                    <h2>🛒 Boutique de Cartes</h2>
+                    <div class="shop-gold-display">
+                        <span class="gold-icon">💰</span>
+                        <span id="shop-gold-amount">0</span> or
+                    </div>
+                </div>
+
+                <!-- Cartes à acheter -->
+                <div class="shop-section">
+                    <h3>Cartes disponibles</h3>
+                    <div id="shop-cards-grid" class="shop-grid"></div>
+                </div>
+
+                <!-- Deck actuel avec option de vendre -->
+                <div class="shop-section">
+                    <h3>Votre Deck (<span id="deck-count-shop">0</span>/5)</h3>
+                    <div id="shop-deck-grid" class="shop-grid deck-sell-grid"></div>
+                </div>
+
+                <div class="shop-footer">
+                    <button id="close-shop-btn" class="btn btn-primary">
+                        Continuer la partie
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal d'améliorations -->
+        <div id="upgrade-modal" class="modal">
+            <div class="modal-content upgrade-content">
+                <div class="upgrade-header">
+                    <h3>Choisissez une Amélioration</h3>
+                    <p>Sélectionnez l'amélioration qui vous aidera le plus dans votre aventure</p>
+                </div>
+                <div id="upgrade-options" class="upgrade-options">
+                    <!-- Les options d'amélioration seront générées dynamiquement -->
+                </div>
+            </div>
+        </div>
+
+
+
+        <!-- Zone pour les dégâts flottants -->
+        <div id="damage-overlay"></div>
+
+        <!-- Modal d'information sur les passifs -->
+        <div id="passive-info-modal" class="modal">
+            <div class="modal-content passive-info-content">
+                <div class="passive-info-header">
+                    <h3>Améliorations Passives</h3>
+                    <p>Vos améliorations de boss actives</p>
+                </div>
+                <div id="passive-list" class="passive-list">
+                    <!-- Les passifs seront générés dynamiquement -->
+                </div>
+                <div class="passive-info-footer">
+                    <button id="close-passive-info" class="btn btn-secondary">Fermer</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de tirage de quantité de caisses -->
+        <div id="loot-quantity-modal" class="modal">
+            <div class="modal-content loot-quantity-content">
+                <div class="loot-quantity-header">
+                    <h3>Récompense de Boss !</h3>
+                    <p>Vous avez vaincu le boss ! Tirez au sort votre récompense.</p>
+                </div>
+                <div class="loot-quantity-display">
+                    <div id="loot-quantity-number" class="loot-quantity-number">?</div>
+                    <div class="loot-quantity-label">Caisses</div>
+                </div>
+                <div class="loot-quantity-actions">
+                    <button id="loot-quantity-spin-btn" class="btn btn-primary btn-lg">Lancer le tirage</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Socket.io -->
+    <script src="/socket.io/socket.io.js"></script>
+
+    <!-- Scripts -->
+    <script src="/js/utils/AudioManager.js"></script>
+    <script src="/js/utils/AnimationUtils.js"></script>
+    <script src="/js/utils/AvatarUtils.js"></script>
+    <script src="/js/utils/Random.js"></script>
+    <script src="/js/game/Damage.js"></script>
+    <script src="/js/game/Fighter.js"></script>
+    <script src="/js/game/Player.js"></script>
+    <script src="/js/game/Enemy.js"></script>
+    <script src="/js/battle/Level.js"></script>
+    <script src="/js/battle/BossUpgrade.js"></script>
+    <script src="/js/battle/BossUpgrades.js"></script>
+    <script src="/js/battle/AttackAnimation.js"></script>
+    <script src="/js/battle/Upgrades.js"></script>
+    <script src="/js/game/CreateEnemies.js"></script>
+
+    <script src="/js/ui/Navbar.js"></script>
+    <script src="/js/ui/UIController.js"></script>
+    <script src="/js/online/ServerGameClient.js"></script>
+    <script src="/js/online/ServerValidator.js"></script>
+    <script src="/js/online/OnlineManager.js"></script>
+    <script src="/js/loot/lootData.js"></script>
+    <script src="/js/loot/LootBoxSystem.js"></script>
+    <script src="/js/cards/CardSystem.js"></script>
+    <script src="/js/cards/CardEffects.js"></script>
+    <script src="/js/cards/CardEffectHandler.js"></script>
+    <script src="/js/cards/CardEffectVisuals.js"></script>
+    <script src="/js/cards/CardModifiers.js"></script>
+    <script src="/js/shop/CardShop.js"></script>
+
+
+
+    <script src="/js/ui/DeckUI.js"></script>
+    <script src="/js/Game.js"></script>
+    <script src="/js/main.js"></script>
+
+    <script>
+        // Sidebar Tabs Logic
+        document.addEventListener('DOMContentLoaded', () => {
+            const tabs = document.querySelectorAll('.sidebar-tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // Remove active class from all tabs
+                    tabs.forEach(t => t.classList.remove('active'));
+                    // Add active class to clicked tab
+                    tab.classList.add('active');
+
+                    // Hide all tab panes
+                    document.querySelectorAll('.tab-pane').forEach(pane => {
+                        pane.classList.remove('active');
+                    });
+
+                    // Show target pane
+                    const targetId = tab.dataset.target;
+                    const targetPane = document.getElementById(targetId);
+                    if (targetPane) {
+                        targetPane.classList.add('active');
+                    }
+                });
+            });
+        });
+    </script>
+
+    <!-- Shader Background System -->
+    <script>
+        // Variables de temps pour l'animation du shader
+        let t = 0;
+        let shaderAnimationEnabled = false; // Désactivé par défaut (pas en combat)
+
+        // Couleurs actuelles du shader
+        window.shaderColors = {
+            colour_1: { r: 0.58, g: 0.07, b: 0.07 }, // Rouge par défaut
+            colour_2: { r: 0.15, g: 0.15, b: 0.15 }, // Gris foncé
+            colour_3: { r: 0.05, g: 0.05, b: 0.05 }  // Noir
+        };
+
+        // Couleurs cibles pour les transitions
+        window.targetColors = {
+            colour_1: { r: 0.58, g: 0.07, b: 0.07 },
+            colour_2: { r: 0.15, g: 0.15, b: 0.15 },
+            colour_3: { r: 0.05, g: 0.05, b: 0.05 }
+        };
+
+        // Vitesse de transition (plus petit = plus lent et doux)
+        const TRANSITION_SPEED = 0.03;
+
+        // Fonction pour interpoler doucement les couleurs
+        function lerpColor(current, target, speed) {
+            return {
+                r: current.r + (target.r - current.r) * speed,
+                g: current.g + (target.g - current.g) * speed,
+                b: current.b + (target.b - current.b) * speed
+            };
+        }
+
+        // Fonction pour obtenir les couleurs en fonction du niveau du joueur
+        function getLevelBackgroundColors(level) {
+            // Déterminer la couleur de base selon le niveau (basé sur les catégories de caisses)
+            let baseColor;
+
+            if (level < 40) {
+                // Case 1-39: Consumer Grade #b0c3d9
+                baseColor = { r: 0.69, g: 0.76, b: 0.85 };
+            } else if (level < 50) {
+                // Case 40-49: Industrial Grade #5e98d9
+                baseColor = { r: 0.37, g: 0.60, b: 0.85 };
+            } else if (level < 60) {
+                // Case 50-59: Mil-spec #4b69ff
+                baseColor = { r: 0.29, g: 0.41, b: 1.0 };
+            } else if (level < 70) {
+                // Case 60-69: #74388a
+                baseColor = { r: 0.45, g: 0.22, b: 0.54 };
+            } else if (level < 80) {
+                // Case 70-79: #8a3883
+                baseColor = { r: 0.54, g: 0.22, b: 0.51 };
+            } else if (level < 90) {
+                // Case 80-89: #e506bc
+                baseColor = { r: 0.90, g: 0.02, b: 0.74 };
+            } else if (level < 100) {
+                // Case 90-99: Covert #eb4b4b
+                baseColor = { r: 0.92, g: 0.29, b: 0.29 };
+            } else {
+                // Case 100+: Melee/Gold #e4ae39
+                baseColor = { r: 0.89, g: 0.68, b: 0.22 };
+            }
+
+            // Créer les variations (clair, normal, foncé)
+            const lighten = (color, amount) => ({
+                r: Math.min(1, color.r + amount),
+                g: Math.min(1, color.g + amount),
+                b: Math.min(1, color.b + amount)
+            });
+
+            const darken = (color, amount) => ({
+                r: Math.max(0, color.r - amount),
+                g: Math.max(0, color.g - amount),
+                b: Math.max(0, color.b - amount)
+            });
+
+            return {
+                colour_1: lighten(baseColor, 0.2),
+                colour_2: baseColor,
+                colour_3: darken(baseColor, 0.3)
+            };
+        }
+
+        // Fonction pour activer le fond animé (en combat)
+        window.enableBackgroundAnimation = function () {
+            shaderAnimationEnabled = true;
+        };
+
+        // Fonction pour désactiver le fond animé (hors combat)
+        window.disableBackgroundAnimation = function () {
+            shaderAnimationEnabled = false;
+        };
+
+        // Fonction pour mettre à jour les couleurs du fond selon le niveau
+        window.updateBackgroundForLevel = function (level) {
+            const colors = getLevelBackgroundColors(level);
+            window.setShaderColors(colors.colour_1, colors.colour_2, colors.colour_3);
+
+            // Mettre à jour la bordure de la combat-zone
+            const combatZone = document.querySelector('.combat-zone');
+            if (combatZone) {
+                // Convertir la couleur RGB (0-1) en format rgba CSS
+                const r = Math.round(colors.colour_2.r * 255);
+                const g = Math.round(colors.colour_2.g * 255);
+                const b = Math.round(colors.colour_2.b * 255);
+
+                combatZone.style.borderColor = `rgba(${r}, ${g}, ${b}, 0.5)`;
+                combatZone.style.boxShadow = `0 0 30px rgba(${r}, ${g}, ${b}, 0.4), inset 0 0 50px rgba(${r}, ${g}, ${b}, 0.1)`;
+            }
+        };
+
+        // Boucle d'animation du shader
+        requestAnimationFrame(function update() {
+            // Incrémenter le temps seulement si l'animation est activée
+            if (shaderAnimationEnabled) {
+                t += 1 / 120;
+            }
+
+            // Interpoler les couleurs vers les cibles
+            window.shaderColors.colour_1 = lerpColor(window.shaderColors.colour_1, window.targetColors.colour_1, TRANSITION_SPEED);
+            window.shaderColors.colour_2 = lerpColor(window.shaderColors.colour_2, window.targetColors.colour_2, TRANSITION_SPEED);
+            window.shaderColors.colour_3 = lerpColor(window.shaderColors.colour_3, window.targetColors.colour_3, TRANSITION_SPEED);
+
+            requestAnimationFrame(update);
+        });
+
+        // Fonction pour changer les couleurs avec transition douce
+        window.setShaderColors = function (c1, c2, c3) {
+            window.targetColors.colour_1 = c1;
+            window.targetColors.colour_2 = c2;
+            window.targetColors.colour_3 = c3;
+        };
+
+        // Initialiser le shader
+        window.shaderInstance = shaderWebBackground.shade({
+            shaders: {
+                image: {
+                    uniforms: {
+                        iResolution: (gl, loc, ctx) => gl.uniform2f(loc, ctx.width, ctx.height),
+                        iTime: (gl, loc, ctx) => gl.uniform1f(loc, t),
+                        colour_1: (gl, loc) => {
+                            gl.uniform3f(loc, window.shaderColors.colour_1.r, window.shaderColors.colour_1.g, window.shaderColors.colour_1.b);
+                        },
+                        colour_2: (gl, loc) => {
+                            gl.uniform3f(loc, window.shaderColors.colour_2.r, window.shaderColors.colour_2.g, window.shaderColors.colour_2.b);
+                        },
+                        colour_3: (gl, loc) => {
+                            gl.uniform3f(loc, window.shaderColors.colour_3.r, window.shaderColors.colour_3.g, window.shaderColors.colour_3.b);
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+
+    <!-- DEV: God Mode Toggle Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const godModeBtn = document.getElementById('god-mode-btn');
+
+            if (godModeBtn) {
+                godModeBtn.addEventListener('click', () => {
+                    if (window.game && window.game.player) {
+                        const isEnabled = window.game.player.toggleGodMode();
+
+                        // Update button appearance
+                        if (isEnabled) {
+                            godModeBtn.style.background = '#44ff44';
+                            godModeBtn.style.borderColor = '#00cc00';
+                            godModeBtn.textContent = '🛡️ GOD';
+                            godModeBtn.title = 'DEV: God Mode ON - Click to disable';
+                        } else {
+                            godModeBtn.style.background = '#ff4444';
+                            godModeBtn.style.borderColor = '#cc0000';
+                            godModeBtn.textContent = '🛡️ GOD';
+                            godModeBtn.title = 'DEV: God Mode OFF - Click to enable';
+                        }
+
+                        // Visual feedback
+                        godModeBtn.style.transform = 'scale(1.1)';
+                        setTimeout(() => {
+                            godModeBtn.style.transform = 'scale(1)';
+                        }, 200);
+                    } else {
+                        console.warn('Game or player not initialized yet');
+                    }
+                });
+
+                // Add smooth transition
+                godModeBtn.style.transition = 'all 0.3s ease';
+            }
+
+            // DEV: Level Skip Buttons
+            const levelSkip1Btn = document.getElementById('level-skip-1-btn');
+            const levelSkip9Btn = document.getElementById('level-skip-9-btn');
+
+            if (levelSkip1Btn) {
+                levelSkip1Btn.addEventListener('click', () => {
+                    if (window.game && window.game.level) {
+                        const currentLevel = window.game.level.getLevel();
+                        window.game.level.setLevel(currentLevel + 1);
+                        console.log(`⏩ DEV: Skipped to level ${currentLevel + 1}`);
+
+                        // Visual feedback
+                        levelSkip1Btn.style.transform = 'scale(1.1)';
+                        setTimeout(() => {
+                            levelSkip1Btn.style.transform = 'scale(1)';
+                        }, 200);
+                    } else {
+                        console.warn('Game or level not initialized yet');
+                    }
+                });
+                levelSkip1Btn.style.transition = 'all 0.3s ease';
+            }
+
+            if (levelSkip9Btn) {
+                levelSkip9Btn.addEventListener('click', () => {
+                    if (window.game && window.game.level) {
+                        const currentLevel = window.game.level.getLevel();
+                        window.game.level.setLevel(currentLevel + 9);
+                        console.log(`⏩⏩⏩ DEV: Skipped to level ${currentLevel + 9}`);
+
+                        // Visual feedback
+                        levelSkip9Btn.style.transform = 'scale(1.1)';
+                        setTimeout(() => {
+                            levelSkip9Btn.style.transform = 'scale(1)';
+                        }, 200);
+                    } else {
+                        console.warn('Game or level not initialized yet');
+                    }
+                });
+                levelSkip9Btn.style.transition = 'all 0.3s ease';
+            }
+        });
+    </script>
+
+    <!-- DEV TOOLS - À RETIRER EN PRODUCTION -->
+    <script src="/js/dev/DevTools.js"></script>
+</body>
+
+</html>

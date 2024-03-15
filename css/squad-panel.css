@@ -1,0 +1,182 @@
+/* Sidebar Tabs Styles */
+
+.sidebar-tabs {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 5px;
+}
+
+.sidebar-tab {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.sidebar-tab:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-tab.active {
+    color: #e4ae39;
+    background: rgba(228, 174, 57, 0.1);
+    border-bottom: 2px solid #e4ae39;
+    border-radius: 6px 6px 0 0;
+}
+
+.tab-pane {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.tab-pane.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Squad & Loot Panel Styles (Updated) */
+
+.squad-loot-panel {
+    /* Removed background/border to blend with tab content if desired, 
+       or kept if user wants a card look inside the tab. 
+       Let's keep it clean but remove the outer padding/margin if it's inside a tab. */
+    background: rgba(20, 24, 40, 0.6);
+    border-radius: 12px;
+    padding: 15px;
+    /* margin-bottom: 20px; removed margin as it's inside tab */
+}
+
+/* Removed panel-header styles as requested to remove header */
+.panel-header {
+    display: none;
+}
+
+/* Squad Section */
+.squad-section {
+    margin-bottom: 20px;
+}
+
+.section-title {
+    font-size: 12px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.4);
+    margin-bottom: 10px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.mini-deck-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+}
+
+.mini-card {
+    aspect-ratio: 1;
+    background: linear-gradient(145deg, rgba(30, 35, 50, 0.9), rgba(20, 25, 40, 0.95));
+    border: 1px solid var(--rarity-color);
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+    cursor: help;
+    transition: transform 0.2s;
+}
+
+.mini-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.mini-card-visual {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mini-card-visual img {
+    width: 80%;
+    height: 80%;
+    object-fit: contain;
+}
+
+.mini-card-visual .emoji {
+    font-size: 20px;
+}
+
+.mini-card-rarity-indicator {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--rarity-color);
+    box-shadow: 0 -2px 8px var(--rarity-color);
+}
+
+/* Effects Section */
+.effects-section {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    padding: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.effects-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.effect-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.8);
+    line-height: 1.4;
+}
+
+.effect-bullet {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    margin-top: 6px;
+    flex-shrink: 0;
+    box-shadow: 0 0 8px currentColor;
+}
+
+.effect-text {
+    flex: 1;
+}
+
+.empty-state,
+.no-effects {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 12px;
+    font-style: italic;
+    padding: 10px;
+}

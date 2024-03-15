@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <rect width="200" height="200" fill="#1a1a2e"/>
+  <rect x="60" y="80" width="80" height="80" fill="#3a3a5e"/>
+  <rect x="40" y="60" width="30" height="40" fill="#3a3a5e"/>
+  <rect x="130" y="60" width="30" height="40" fill="#3a3a5e"/>
+  <rect x="80" y="120" width="40" height="40" fill="#2a2a4e"/>
+  <text x="100" y="185" font-family="sans-serif" font-size="12" fill="#888" text-anchor="middle">keep</text>
+</svg>

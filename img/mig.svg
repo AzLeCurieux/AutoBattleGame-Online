@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <rect width="200" height="200" fill="#1a1a2e"/>
+  <polygon points="30,100 170,80 170,120" fill="#3a3a5e"/>
+  <polygon points="80,80 120,40 130,80" fill="#2a2a4e"/>
+  <polygon points="90,120 110,160 120,120" fill="#2a2a4e"/>
+  <text x="100" y="190" font-family="sans-serif" font-size="12" fill="#888" text-anchor="middle">mig</text>
+</svg>

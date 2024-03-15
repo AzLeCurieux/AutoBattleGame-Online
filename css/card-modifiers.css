@@ -1,0 +1,351 @@
+/**
+ * Effets visuels pour les modificateurs de cartes (inspiré de Balatro)
+ * Foil, Holographic, Polychrome, Negative
+ */
+
+/* Badge de modificateur */
+.card-modifier-badge {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: bold;
+    text-transform: uppercase;
+    z-index: 10;
+    pointer-events: none;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+    letter-spacing: 0.5px;
+}
+
+/* === FOIL - Effet métallique === */
+.card-foil {
+    position: relative;
+    overflow: hidden;
+}
+
+.card-foil::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        45deg,
+        transparent 30%,
+        rgba(255, 255, 255, 0.1) 40%,
+        rgba(255, 255, 255, 0.3) 50%,
+        rgba(255, 255, 255, 0.1) 60%,
+        transparent 70%
+    );
+    animation: foil-shine 3s linear infinite;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.card-foil .card-modifier-badge {
+    background: linear-gradient(135deg, #c0c0c0, #e8e8e8, #c0c0c0);
+    color: #333;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.5);
+}
+
+@keyframes foil-shine {
+    0% {
+        transform: translateX(-100%) translateY(-100%) rotate(45deg);
+    }
+    100% {
+        transform: translateX(100%) translateY(100%) rotate(45deg);
+    }
+}
+
+/* === HOLOGRAPHIC - Effet holographique arc-en-ciel === */
+.card-holographic {
+    position: relative;
+    overflow: hidden;
+}
+
+.card-holographic::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        45deg,
+        rgba(255, 0, 0, 0.1),
+        rgba(255, 127, 0, 0.1),
+        rgba(255, 255, 0, 0.1),
+        rgba(0, 255, 0, 0.1),
+        rgba(0, 0, 255, 0.1),
+        rgba(75, 0, 130, 0.1),
+        rgba(148, 0, 211, 0.1)
+    );
+    background-size: 200% 200%;
+    animation: holographic-shift 4s ease infinite;
+    pointer-events: none;
+    z-index: 1;
+    mix-blend-mode: color-dodge;
+}
+
+.card-holographic::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        transparent
+    );
+    animation: holographic-wave 2s linear infinite;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.card-holographic .card-modifier-badge {
+    background: linear-gradient(135deg,
+        #ff0080,
+        #ff8c00,
+        #40e0d0,
+        #ff0080
+    );
+    background-size: 200% 200%;
+    animation: holographic-badge 3s linear infinite;
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 0 0 10px rgba(255, 0, 128, 0.5);
+}
+
+@keyframes holographic-shift {
+    0%, 100% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+}
+
+@keyframes holographic-wave {
+    0% {
+        transform: translateX(-100%) rotate(45deg);
+    }
+    100% {
+        transform: translateX(100%) rotate(45deg);
+    }
+}
+
+@keyframes holographic-badge {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+/* === POLYCHROME - Effet multicolore éclatant === */
+.card-polychrome {
+    position: relative;
+    overflow: hidden;
+    animation: polychrome-pulse 2s ease-in-out infinite;
+}
+
+.card-polychrome::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: repeating-conic-gradient(
+        from 0deg,
+        #ff0000 0deg 30deg,
+        #ff7f00 30deg 60deg,
+        #ffff00 60deg 90deg,
+        #00ff00 90deg 120deg,
+        #0000ff 120deg 150deg,
+        #4b0082 150deg 180deg,
+        #9400d3 180deg 210deg,
+        #ff0000 210deg 240deg,
+        #ff7f00 240deg 270deg,
+        #ffff00 270deg 300deg,
+        #00ff00 300deg 330deg,
+        #0000ff 330deg 360deg
+    );
+    opacity: 0.3;
+    animation: polychrome-spin 8s linear infinite;
+    pointer-events: none;
+    z-index: 1;
+    mix-blend-mode: overlay;
+}
+
+.card-polychrome::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(
+        circle at 50% 50%,
+        rgba(255, 255, 255, 0.2),
+        transparent 70%
+    );
+    animation: polychrome-glow 2s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.card-polychrome .card-modifier-badge {
+    background: linear-gradient(
+        90deg,
+        #ff0000,
+        #ff7f00,
+        #ffff00,
+        #00ff00,
+        #0000ff,
+        #4b0082,
+        #9400d3,
+        #ff0000
+    );
+    background-size: 400% 100%;
+    animation: polychrome-badge-flow 3s linear infinite;
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
+    font-weight: 900;
+}
+
+@keyframes polychrome-spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes polychrome-pulse {
+    0%, 100% {
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 25px rgba(255, 255, 255, 0.6);
+    }
+}
+
+@keyframes polychrome-glow {
+    0%, 100% {
+        opacity: 0.3;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+@keyframes polychrome-badge-flow {
+    0% {
+        background-position: 0% 50%;
+    }
+    100% {
+        background-position: 400% 50%;
+    }
+}
+
+/* === NEGATIVE - Effet négatif/inversé === */
+.card-negative {
+    position: relative;
+    overflow: hidden;
+    filter: invert(1) hue-rotate(180deg);
+    animation: negative-flicker 4s ease-in-out infinite;
+}
+
+.card-negative::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(
+        circle at center,
+        rgba(0, 0, 0, 0) 0%,
+        rgba(0, 0, 0, 0.3) 100%
+    );
+    pointer-events: none;
+    z-index: 1;
+}
+
+.card-negative::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    box-shadow: inset 0 0 30px rgba(255, 255, 255, 0.3);
+    pointer-events: none;
+    z-index: 2;
+    animation: negative-pulse 2s ease-in-out infinite;
+}
+
+.card-negative .card-modifier-badge {
+    background: linear-gradient(135deg, #000000, #333333, #000000);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+    filter: invert(1) hue-rotate(180deg); /* Inverser le badge pour qu'il soit lisible */
+    font-weight: 900;
+    letter-spacing: 1px;
+}
+
+@keyframes negative-flicker {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.95;
+    }
+}
+
+@keyframes negative-pulse {
+    0%, 100% {
+        box-shadow: inset 0 0 30px rgba(255, 255, 255, 0.3);
+    }
+    50% {
+        box-shadow: inset 0 0 40px rgba(255, 255, 255, 0.5);
+    }
+}
+
+/* Améliorer la lisibilité du texte sur les cartes modifiées */
+.card-foil .card-name,
+.card-holographic .card-name,
+.card-polychrome .card-name,
+.card-negative .card-name,
+.card-foil .card-effect,
+.card-holographic .card-effect,
+.card-polychrome .card-effect,
+.card-negative .card-effect {
+    position: relative;
+    z-index: 5;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+}
+
+/* Animation subtile au hover */
+.card-foil:hover,
+.card-holographic:hover,
+.card-polychrome:hover,
+.card-negative:hover {
+    transform: scale(1.02);
+    transition: transform 0.2s ease;
+}

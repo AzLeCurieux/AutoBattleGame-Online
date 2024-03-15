@@ -1,0 +1,122 @@
+/* Loading Skeleton Styles */
+
+.loading-skeleton {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+    animation: fadeIn 0.3s ease;
+}
+
+.skeleton-card {
+    background: linear-gradient(90deg,
+            rgba(30, 35, 50, 0.4) 0%,
+            rgba(40, 45, 60, 0.6) 50%,
+            rgba(30, 35, 50, 0.4) 100%);
+    background-size: 200% 100%;
+    border-radius: 16px;
+    height: 320px;
+    position: relative;
+    overflow: hidden;
+    animation: skeletonPulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.05) 50%,
+            transparent 100%);
+    animation: skeletonShimmer 2s ease-in-out infinite;
+}
+
+@keyframes skeletonPulse {
+
+    0%,
+    100% {
+        opacity: 0.6;
+        background-position: 200% 0;
+    }
+
+    50% {
+        opacity: 0.8;
+        background-position: -200% 0;
+    }
+}
+
+@keyframes skeletonShimmer {
+    0% {
+        transform: translateX(-100%);
+    }
+
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+/* Fade in cards progressively */
+@keyframes cardFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.loot-item-card {
+    animation: cardFadeIn 0.3s ease forwards;
+    opacity: 0;
+}
+
+/* Stagger animation for cards */
+.loot-item-card:nth-child(1) {
+    animation-delay: 0.05s;
+}
+
+.loot-item-card:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.loot-item-card:nth-child(3) {
+    animation-delay: 0.15s;
+}
+
+.loot-item-card:nth-child(4) {
+    animation-delay: 0.2s;
+}
+
+.loot-item-card:nth-child(5) {
+    animation-delay: 0.25s;
+}
+
+.loot-item-card:nth-child(6) {
+    animation-delay: 0.3s;
+}
+
+.loot-item-card:nth-child(7) {
+    animation-delay: 0.35s;
+}
+
+.loot-item-card:nth-child(8) {
+    animation-delay: 0.4s;
+}
+
+.loot-item-card:nth-child(9) {
+    animation-delay: 0.45s;
+}
+
+.loot-item-card:nth-child(10) {
+    animation-delay: 0.5s;
+}
+
+.loot-item-card:nth-child(n+11) {
+    animation-delay: 0.5s;
+}

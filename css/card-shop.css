@@ -1,0 +1,207 @@
+/* ==========================================
+   BOUTIQUE DE CARTES (Style Balatro)
+   ========================================== */
+
+/* Modal de boutique */
+#shop-modal .shop-modal-content {
+    max-width: 1000px;
+    width: 95%;
+    max-height: 90vh;
+    overflow-y: auto;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border: 2px solid #4ade80;
+    border-radius: 15px;
+    padding: 30px;
+}
+
+.shop-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.shop-header h2 {
+    margin: 0;
+    color: #4ade80;
+    font-size: 28px;
+}
+
+.shop-gold-display {
+    font-size: 24px;
+    font-weight: bold;
+    color: #ffd700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.gold-icon {
+    font-size: 28px;
+}
+
+.shop-section {
+    margin-bottom: 30px;
+}
+
+.shop-section h3 {
+    margin: 0 0 15px 0;
+    color: #4ade80;
+    font-size: 20px;
+}
+
+.shop-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 15px;
+}
+
+.deck-sell-grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+}
+
+/* Carte de boutique */
+.shop-card {
+    position: relative;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid var(--rarity-color, #fff);
+    border-radius: 10px;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.shop-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px var(--rarity-color);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.shop-card.cannot-afford {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(50%);
+}
+
+.shop-card.cannot-afford:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.shop-card-price {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: linear-gradient(135deg, #ffd700, #ffed4e);
+    color: #000;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-weight: bold;
+    font-size: 14px;
+    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.4);
+}
+
+.shop-card.cannot-afford .shop-card-price {
+    background: #666;
+    color: #ccc;
+}
+
+/* Carte du deck avec bouton vendre */
+.deck-card-shop {
+    position: relative;
+}
+
+.sell-btn {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+    transition: all 0.2s;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+}
+
+.sell-btn:hover {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    transform: translateX(-50%) scale(1.05);
+}
+
+.sell-price {
+    color: #ffd700;
+    font-weight: bold;
+}
+
+.shop-footer {
+    margin-top: 30px;
+    text-align: center;
+    border-top: 2px solid rgba(255, 255, 255, 0.1);
+    padding-top: 20px;
+}
+
+.shop-footer .btn {
+    padding: 12px 30px;
+    font-size: 16px;
+    background: linear-gradient(135deg, #4ade80, #22c55e);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(74, 222, 128, 0.3);
+}
+
+.shop-footer .btn:hover {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(74, 222, 128, 0.4);
+}
+
+/* Animations */
+@keyframes cardPurchase {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.2) rotate(5deg);
+    }
+
+    100% {
+        transform: scale(0) rotate(15deg);
+    }
+}
+
+.shop-card.purchasing {
+    animation: cardPurchase 0.5s ease-out forwards;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .shop-modal-content {
+        width: 98%;
+        padding: 20px;
+    }
+
+    .shop-header h2 {
+        font-size: 22px;
+    }
+
+    .shop-gold-display {
+        font-size: 18px;
+    }
+
+    .shop-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 10px;
+    }
+}

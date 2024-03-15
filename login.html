@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion - JeuDéKaré</title>
+    <link rel="icon" type="image/x-icon" href="/img/favicon.ico">
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #e50914;
+            --primary-hover: #f40612;
+            --bg-dark: #141414;
+            --glass-bg: rgba(30, 30, 30, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-main: #ffffff;
+            --text-muted: #b3b3b3;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: radial-gradient(circle at 50% 50%, #2a2a2a 0%, #141414 100%);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* Animated Background Elements */
+        .bg-shape {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.4;
+            z-index: -1;
+            animation: float 10s infinite alternate;
+        }
+
+        .shape-1 {
+            width: 300px;
+            height: 300px;
+            background: #e50914;
+            top: 10%;
+            left: 20%;
+        }
+
+        .shape-2 {
+            width: 400px;
+            height: 400px;
+            background: #4b69ff;
+            bottom: 10%;
+            right: 20%;
+            animation-delay: -5s;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translate(0, 0);
+            }
+
+            100% {
+                transform: translate(30px, 50px);
+            }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            margin-bottom: 40px;
+            font-size: 1.1rem;
+        }
+
+        /* View Transitions */
+        .view-section {
+            display: none;
+            width: 100%;
+            flex-direction: column;
+            align-items: center;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .view-section.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* Search Bar */
+        .search-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin-bottom: 40px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 15px 45px 15px 20px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--glass-border);
+            border-radius: 30px;
+            color: #fff;
+            font-size: 16px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            background: rgba(0, 0, 0, 0.6);
+            border-color: rgba(255, 255, 255, 0.3);
+            outline: none;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
+        /* Profiles Grid */
+        .profiles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 30px;
+            width: 100%;
+            max-width: 900px;
+            max-height: 60vh;
+            overflow-y: auto;
+            padding: 20px;
+            /* Custom Scrollbar */
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+        }
+
+        .profiles-grid::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .profiles-grid::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .profiles-grid::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+        }
+
+        .profile-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            cursor: pointer;
+            group: profile;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .profile-card:hover {
+            transform: translateY(-10px);
+        }
+
+        .avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 15px;
+            background-size: cover;
+            background-position: center;
+            background-color: #222;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            border: 3px solid transparent;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .profile-card:hover .avatar {
+            border-color: #fff;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .profile-name {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            font-weight: 400;
+            text-align: center;
+            transition: color 0.3s;
+            max-width: 100%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .profile-card:hover .profile-name {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        /* Add Profile Button */
+        .add-btn-content {
+            font-size: 4rem;
+            color: var(--text-muted);
+            transition: color 0.3s;
+        }
+
+        .profile-card:hover .add-btn-content {
+            color: #fff;
+        }
+
+        /* Forms (Login / Create) */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 50px;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+
+        .user-preview {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .user-preview .avatar {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 15px;
+            cursor: default;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+            width: 100%;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .form-input:focus {
+            background: rgba(0, 0, 0, 0.5);
+            border-color: var(--primary);
+            outline: none;
+        }
+
+        /* PIN Input */
+        .pin-container {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .pin-digit {
+            width: 55px;
+            height: 65px;
+            font-size: 32px;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            color: #fff;
+            transition: all 0.2s;
+            /* Hide caret */
+            caret-color: transparent;
+        }
+
+        .pin-digit:focus {
+            border-color: var(--primary);
+            background: rgba(0, 0, 0, 0.5);
+            outline: none;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(229, 9, 20, 0.2);
+        }
+
+        /* Buttons */
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 12px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(229, 9, 20, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(229, 9, 20, 0.4);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--text-muted);
+        }
+
+        .btn-secondary:hover {
+            border-color: #fff;
+            color: #fff;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Auth Type Toggle */
+        .auth-options {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 5px;
+            border-radius: 10px;
+        }
+
+        .auth-option {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 8px;
+            color: var(--text-muted);
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .auth-option.selected {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Feedback */
+        .error-message {
+            color: #ff4d4d;
+            background: rgba(255, 77, 77, 0.1);
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            display: none;
+            border-left: 3px solid #ff4d4d;
+        }
+
+        .loading {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            backdrop-filter: blur(5px);
+            border-radius: 20px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Utility */
+        .hidden {
+            display: none !important;
+        }
+
+        /* Animation for wrong password */
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            20%,
+            60% {
+                transform: translateX(-10px);
+            }
+
+            40%,
+            80% {
+                transform: translateX(10px);
+            }
+        }
+
+        .shake {
+            animation: shake 0.4s ease;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-shape shape-1"></div>
+    <div class="bg-shape shape-2"></div>
+
+    <div class="container">
+
+        <!-- VIEW 1: PROFILES -->
+        <div id="view-profiles" class="view-section active">
+            <h1>Qui joue aujourd'hui ?</h1>
+            <p class="subtitle">Sélectionnez votre profil pour continuer</p>
+
+            <div class="search-wrapper">
+                <input type="text" id="search-input" class="search-input" placeholder="Rechercher un profil...">
+                <span class="search-icon">🔍</span>
+            </div>
+
+            <div id="profiles-grid" class="profiles-grid">
+                <div class="profile-card" id="btn-create-profile">
+                    <div class="avatar">
+                        <span class="add-btn-content">+</span>
+                    </div>
+                    <span class="profile-name">Ajouter</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW 2: LOGIN -->
+        <div id="view-login" class="view-section">
+            <div class="glass-panel">
+                <div class="user-preview">
+                    <div id="login-avatar" class="avatar"></div>
+                    <h2 id="login-username" style="margin-bottom: 5px;">Username</h2>
+                    <span style="color: var(--text-muted); font-size: 0.9rem;">Bon retour !</span>
+                </div>
+
+                <div id="login-error" class="error-message"></div>
+
+                <!-- PIN Input -->
+                <div id="login-pin-area" class="hidden">
+                    <p style="margin-bottom: 10px; color: var(--text-muted);">Entrez votre code PIN</p>
+                    <div class="pin-container">
+                        <input type="password" class="pin-digit" maxlength="1" inputmode="numeric" autocomplete="off">
+                        <input type="password" class="pin-digit" maxlength="1" inputmode="numeric" autocomplete="off">
+                        <input type="password" class="pin-digit" maxlength="1" inputmode="numeric" autocomplete="off">
+                        <input type="password" class="pin-digit" maxlength="1" inputmode="numeric" autocomplete="off">
+                    </div>
+                </div>
+
+                <!-- Password Input -->
+                <div id="login-pass-area" class="form-group hidden">
+                    <label class="form-label">Mot de passe</label>
+                    <input type="password" id="login-password" class="form-input" placeholder="Votre mot de passe">
+                </div>
+
+                <button id="btn-login-submit" class="btn btn-primary">Se connecter</button>
+                <button id="btn-login-cancel" class="btn btn-secondary">Changer de profil</button>
+            </div>
+        </div>
+
+        <!-- VIEW 3: CREATE -->
+        <div id="view-create" class="view-section">
+            <div class="glass-panel">
+                <h2 style="margin-bottom: 30px;">Créer un profil</h2>
+
+                <div id="create-error" class="error-message"></div>
+
+                <div class="form-group">
+                    <label class="form-label">Nom du profil</label>
+                    <input type="text" id="create-username" class="form-input" placeholder="Ex: GigaChad123"
+                        maxlength="20">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Type de sécurité</label>
+                    <div class="auth-options">
+                        <div class="auth-option selected" data-type="pin">Code PIN</div>
+                        <div class="auth-option" data-type="password">Mot de passe</div>
+                    </div>
+                </div>
+
+                <div id="create-pin-area">
+                    <label class="form-label">Code PIN (4 chiffres)</label>
+                    <input type="text" id="create-pin" class="form-input" placeholder="Ex: 1234" maxlength="4"
+                        inputmode="numeric">
+                </div>
+
+                <div id="create-pass-area" class="hidden">
+                    <label class="form-label">Mot de passe</label>
+                    <input type="password" id="create-password" class="form-input" placeholder="Minimum 6 caractères">
+                </div>
+
+                <button id="btn-create-submit" class="btn btn-primary" style="margin-top: 20px;">Créer le
+                    profil</button>
+                <button id="btn-create-cancel" class="btn btn-secondary">Annuler</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        /**
+         * AUTO BATTLE GAME - AUTHENTICATION SYSTEM
+         */
+
+        // State
+        const state = {
+            users: [],
+            selectedUser: null,
+            createType: 'pin'
+        };
+
+        // Elements
+        const views = {
+            profiles: document.getElementById('view-profiles'),
+            login: document.getElementById('view-login'),
+            create: document.getElementById('view-create')
+        };
+        const grid = document.getElementById('profiles-grid');
+        const searchInput = document.getElementById('search-input');
+
+        // Initialization
+        async function init() {
+            setupEventListeners();
+            await loadUsers();
+        }
+
+        // --- LOGIC: LOAD USERS ---
+        async function loadUsers() {
+            try {
+                const res = await fetch('/api/auth/users');
+                const contentType = res.headers.get('content-type');
+                let realUsers = [];
+
+                if (contentType && contentType.includes('application/json')) {
+                    const data = await res.json();
+                    if (data.success) {
+                        realUsers = data.data;
+                    }
+                }
+
+                // Utiliser uniquement les vrais utilisateurs
+                state.users = [...realUsers];
+                renderProfiles(state.users);
+
+            } catch (e) {
+                console.error('Fetch error:', e);
+                // En cas d'erreur, afficher une liste vide plutôt que des mocks
+                state.users = [];
+                renderProfiles(state.users);
+            }
+        }
+
+        function renderProfiles(users) {
+            const createBtn = document.getElementById('btn-create-profile');
+            grid.innerHTML = '';
+
+            users.forEach(user => {
+                const card = document.createElement('div');
+                card.className = 'profile-card';
+                card.onclick = () => selectProfile(user);
+
+                const avatarUrl = getAvatarUrl(user.avatar, user.username);
+
+                card.innerHTML = `
+                    <div class="avatar" style="background-image: url('${avatarUrl}')"></div>
+                    <span class="profile-name">${escapeHtml(user.username)}</span>
+                `;
+                grid.appendChild(card);
+            });
+
+            grid.appendChild(createBtn);
+        }
+
+        // --- LOGIC: NAVIGATION ---
+        function showView(viewId) {
+            Object.values(views).forEach(el => el.classList.remove('active'));
+            views[viewId].classList.add('active');
+            resetForms();
+        }
+
+        function selectProfile(user) {
+            state.selectedUser = user;
+
+            document.getElementById('login-username').textContent = user.username;
+            document.getElementById('login-avatar').style.backgroundImage = `url('${getAvatarUrl(user.avatar, user.username)}')`;
+
+            const pinArea = document.getElementById('login-pin-area');
+            const passArea = document.getElementById('login-pass-area');
+
+            if (user.hasPin) {
+                pinArea.classList.remove('hidden');
+                passArea.classList.add('hidden');
+                setTimeout(() => document.querySelector('.pin-digit').focus(), 100);
+            } else {
+                pinArea.classList.add('hidden');
+                passArea.classList.remove('hidden');
+                setTimeout(() => document.getElementById('login-password').focus(), 100);
+            }
+
+            showView('login');
+        }
+
+        // --- LOGIC: AUTHENTICATION ---
+        async function handleLogin() {
+            if (!state.selectedUser) return;
+
+            let password = '';
+            if (state.selectedUser.hasPin) {
+                const digits = document.querySelectorAll('#login-pin-area .pin-digit');
+                password = Array.from(digits).map(d => d.value).join('');
+                if (password.length < 4) return showError('login-error', 'Code PIN incomplet');
+            } else {
+                password = document.getElementById('login-password').value;
+                if (!password) return showError('login-error', 'Mot de passe requis');
+            }
+
+            setLoading(true);
+
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: state.selectedUser.username,
+                        password
+                    })
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    localStorage.setItem('auth_token', data.data.token);
+                    localStorage.setItem('user_info', JSON.stringify(data.data));
+                    window.location.href = '/';
+                } else {
+                    showError('login-error', 'Code incorrect');
+                    document.querySelector('.glass-panel').classList.add('shake');
+                    setTimeout(() => document.querySelector('.glass-panel').classList.remove('shake'), 500);
+                    if (state.selectedUser.hasPin) {
+                        document.querySelectorAll('#login-pin-area .pin-digit').forEach(d => d.value = '');
+                        document.querySelector('#login-pin-area .pin-digit').focus();
+                    }
+                }
+            } catch (e) {
+                showError('login-error', 'Erreur de connexion');
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // --- LOGIC: REGISTRATION ---
+        async function handleCreate() {
+            const username = document.getElementById('create-username').value.trim();
+            let password = '';
+
+            if (!username || username.length < 3) return showError('create-error', 'Le nom doit faire au moins 3 caractères');
+            if (!/^[a-zA-Z0-9_]+$/.test(username)) return showError('create-error', 'Lettres, chiffres et _ uniquement');
+
+            if (state.createType === 'pin') {
+                password = document.getElementById('create-pin').value;
+                if (!/^\d{4}$/.test(password)) return showError('create-error', 'Le PIN doit contenir exactement 4 chiffres');
+            } else {
+                password = document.getElementById('create-password').value;
+                if (password.length < 6) return showError('create-error', 'Le mot de passe doit faire au moins 6 caractères');
+            }
+
+            setLoading(true);
+
+            try {
+                const res = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username,
+                        password,
+                        isPin: state.createType === 'pin',
+                        avatar: 'default'
+                    })
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    localStorage.setItem('auth_token', data.data.token);
+                    window.location.href = '/';
+                } else {
+                    showError('create-error', data.message || 'Erreur lors de la création');
+                }
+            } catch (e) {
+                showError('create-error', 'Impossible de joindre le serveur');
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // --- UTILS ---
+        function setupEventListeners() {
+            searchInput.addEventListener('input', (e) => {
+                const term = e.target.value.toLowerCase();
+                const filtered = state.users.filter(u => u.username.toLowerCase().includes(term));
+                renderProfiles(filtered);
+            });
+
+            document.getElementById('btn-create-profile').addEventListener('click', () => showView('create'));
+            document.getElementById('btn-create-cancel').addEventListener('click', () => showView('profiles'));
+            document.getElementById('btn-login-cancel').addEventListener('click', () => showView('profiles'));
+
+            document.getElementById('btn-login-submit').addEventListener('click', handleLogin);
+            document.getElementById('btn-create-submit').addEventListener('click', handleCreate);
+
+            document.querySelectorAll('.auth-option').forEach(opt => {
+                opt.addEventListener('click', () => {
+                    document.querySelectorAll('.auth-option').forEach(o => o.classList.remove('selected'));
+                    opt.classList.add('selected');
+                    state.createType = opt.dataset.type;
+
+                    if (state.createType === 'pin') {
+                        document.getElementById('create-pin-area').classList.remove('hidden');
+                        document.getElementById('create-pass-area').classList.add('hidden');
+                    } else {
+                        document.getElementById('create-pin-area').classList.add('hidden');
+                        document.getElementById('create-pass-area').classList.remove('hidden');
+                    }
+                });
+            });
+
+            setupPinInputs('#login-pin-area .pin-digit', handleLogin);
+
+            document.getElementById('login-password').addEventListener('keypress', e => { if (e.key === 'Enter') handleLogin(); });
+            document.getElementById('create-password').addEventListener('keypress', e => { if (e.key === 'Enter') handleCreate(); });
+            document.getElementById('create-pin').addEventListener('keypress', e => { if (e.key === 'Enter') handleCreate(); });
+        }
+
+        function setupPinInputs(selector, submitCallback) {
+            const inputs = document.querySelectorAll(selector);
+            inputs.forEach((input, index) => {
+                input.addEventListener('input', (e) => {
+                    if (e.target.value.length === 1) {
+                        if (index < inputs.length - 1) {
+                            inputs[index + 1].focus();
+                        } else if (submitCallback) {
+                            submitCallback();
+                        }
+                    }
+                });
+
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Backspace' && !e.target.value && index > 0) {
+                        inputs[index - 1].focus();
+                    }
+                });
+            });
+        }
+
+        function getAvatarUrl(avatar, username) {
+            // Check if it's a valid image URL
+            if (avatar && (avatar.startsWith('http') || avatar.startsWith('data:'))) {
+                return avatar;
+            }
+
+            // Generate Letter Avatar for all others (including 'default', preset names, or null)
+            // Neutral background color as requested
+            const color = '#333333';
+
+            const str = username || 'User';
+            const letter = str.charAt(0).toUpperCase();
+
+            // Create SVG string
+            const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="${color}"/><text x="50" y="55" font-family="Arial, sans-serif" font-weight="bold" font-size="50" fill="white" text-anchor="middle" dy=".3em">${letter}</text></svg>`;
+
+            // Encode to Base64 to avoid quote issues in HTML attributes
+            // unescape(encodeURIComponent(s)) is needed to handle Unicode characters properly in btoa
+            return `data:image/svg+xml;base64,${window.btoa(unescape(encodeURIComponent(svg)))}`;
+        }
+
+        function showError(elementId, msg) {
+            const el = document.getElementById(elementId);
+            el.textContent = msg;
+            el.style.display = 'block';
+        }
+
+        function resetForms() {
+            document.querySelectorAll('.error-message').forEach(e => e.style.display = 'none');
+            document.querySelectorAll('input').forEach(i => i.value = '');
+            state.createType = 'pin';
+            document.querySelectorAll('.auth-option')[0].click();
+        }
+
+        function setLoading(isLoading) {
+            if (isLoading) {
+                const loader = document.createElement('div');
+                loader.className = 'loading';
+                loader.innerHTML = '<div class="spinner"></div>';
+                document.body.appendChild(loader);
+            } else {
+                const loader = document.querySelector('.loading');
+                if (loader) loader.remove();
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return text;
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        init();
+
+    </script>
+</body>
+
+</html>

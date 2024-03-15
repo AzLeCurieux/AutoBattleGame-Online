@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gambling - AutoBattleGame Online</title>
+    <link rel="icon" type="image/x-icon" href="/img/favicon.ico">
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/animations.css">
+    <link rel="stylesheet" href="/css/responsive.css">
+    <link rel="stylesheet" href="/css/loot.css">
+
+    <style>
+        /* Hide body by default to prevent FOUC (Flash of Unauthenticated Content) */
+        body {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s ease-in;
+        }
+    </style>
+    <script>
+        // SECURITY: Blocking script to check authentication immediately before ANY resources load
+        (function () {
+            var token = localStorage.getItem('auth_token');
+            if (!token) {
+                // No token, redirect immediately and stop loading
+                window.location.replace('/login');
+                throw new Error('No authentication token');
+            }
+
+            // Token exists, show page
+            // Note: The server and API endpoints will validate the token's authenticity
+            document.addEventListener('DOMContentLoaded', function () {
+                // Validate token asynchronously with the server
+                fetch('/api/auth/profile', {
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                })
+                    .then(function (response) {
+                        if (!response.ok) {
+                            // Token invalid, clear and redirect
+                            localStorage.removeItem('auth_token');
+                            window.location.replace('/login');
+                        } else {
+                            // Token valid, show page
+                            document.body.style.visibility = 'visible';
+                            document.body.style.opacity = '1';
+                        }
+                    })
+                    .catch(function (error) {
+                        // Network error or invalid token, redirect
+                        console.error('Auth validation failed:', error);
+                        localStorage.removeItem('auth_token');
+                        window.location.replace('/login');
+                    });
+            });
+        })();
+    </script>
+    <script src="js/vendor/shader-web-background.min.js"></script>
+    <script type="x-shader/x-fragment" id="image">
+    precision mediump float;
+    #define SPIN_EASE 0.8
+    #define spin_time 5.
+    #define spin_amount 0.3
+    #define contrast 3.
+
+    uniform vec2 iResolution;
+    uniform float iTime;
+    uniform vec3 colour_1;
+    uniform vec3 colour_2;
+    uniform vec3 colour_3;
+
+    void main( )
+    {
+      float pixel_size = 1.0;
+      vec2 uv = (floor(gl_FragCoord.xy*(1./pixel_size))*pixel_size - 0.5*iResolution.xy)/length(iResolution.xy) - vec2(0.12, 0.);
+      
+      float uv_len = length(uv);
+      
+      float speed = (spin_time*SPIN_EASE*0.2) + 302.2;
+      float new_pixel_angle = (atan(uv.y, uv.x)) + speed - SPIN_EASE*20.*(1.*spin_amount*uv_len + (1. - 1.*spin_amount));
+      
+      vec2 mid = vec2(0.5, 0.5);
+      uv = (vec2((uv_len * cos(new_pixel_angle) + mid.x), (uv_len * sin(new_pixel_angle) + mid.y)) - mid);
+      
+      uv *= 30.;
+      speed = iTime*(2.);
+      vec2 uv2 = vec2(uv.x+uv.y);
+
+      for(int i=0; i < 5; i++) {
+        uv2 += sin(max(uv.x, uv.y)) + uv;
+        uv  += 0.5*vec2(cos(5.1123314 + 0.353*uv2.y + speed*0.131121),sin(uv2.x - 0.113*speed));
+        uv  -= 1.0*cos(uv.x + uv.y) - 1.0*sin(uv.x*0.711 - uv.y);
+      }
+      
+      float contrast_mod = (0.25*contrast + 0.5*spin_amount + 1.2);
+      float paint_res =min(2., max(0.,length(uv)*(0.035)*contrast_mod));
+      float c1p = max(0.,1. - contrast_mod*abs(1.-paint_res));
+      float c2p = max(0.,1. - contrast_mod*abs(paint_res));
+      float c3p = 1. - min(1., c1p + c2p);
+
+      gl_FragColor = (0.3/contrast)*vec4(colour_1, 1.0) + (1. - 0.3/contrast)*(vec4(colour_1, 1.0)*c1p + vec4(colour_2, 1.0)*c2p + vec4(colour_3*c3p, c3p));
+    }
+    </script>
+</head>
+
+<body class="gambling-page">
+    <div class="bg"></div>
+    <div class="gambling-container">
+        <!-- Navbar injected by JS -->
+
+        <!-- Zone fixe en haut : Roulette et contrôles -->
+        <div class="gambling-fixed-top">
+            <div class="gambling-header">
+                <div class="selected-box-tag" id="selected-box-tag" style="display: none;">
+                    <img src="" id="selected-box-icon" class="tag-icon" alt="" />
+                    <span class="tag-value" id="selected-box-name-tag">-</span>
+                </div>
+            </div>
+
+            <div class="horizontal-wheel-container">
+                <div class="horizontal-wheel-header">
+                    <h2>Roulette de Loot</h2>
+                </div>
+                <div class="horizontal-wheel-wrapper">
+                    <div class="horizontal-wheel-container-row">
+                        <div class="wheel-column">
+                            <div class="horizontal-wheel">
+                                <div class="horizontal-wheel-items" id="horizontal-wheel-items">
+                                    <!-- Les items seront générés dynamiquement -->
+                                </div>
+                                <div class="horizontal-wheel-indicator"></div>
+                            </div>
+
+                            <!-- Bouton Lancer la Roulette (sous la roulette, aligné avec le bas des probabilités) -->
+                            <div class="spin-button-wrapper">
+                                <button id="spin-horizontal-btn" class="spin-button btn btn-primary">
+                                    🎰 Lancer la Roulette
+                                </button>
+                            </div>
+                        </div>
+                        <div class="horizontal-probabilities" id="horizontal-probabilities">
+                            <div class="probabilities-header-wrapper">
+                                <div class="probabilities-header">Sélectionnez une caisse pour voir les probabilités
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Zone de contrôle : Quantité + Animation + Choisir une caisse (alignés) -->
+                <div class="spin-controls-wrapper">
+                    <div class="controls-row">
+                        <div class="quantity-selector">
+                            <span class="quantity-label">Quantité :</span>
+                            <div class="quantity-buttons">
+                                <button class="qty-btn active" data-qty="1">x1</button>
+                                <button class="qty-btn" data-qty="3">x3</button>
+                                <button class="qty-btn" data-qty="5">x5</button>
+                                <button class="qty-btn" data-qty="10">x10</button>
+                            </div>
+                        </div>
+
+                        <div class="animation-toggle">
+                            <label class="switch">
+                                <input type="checkbox" id="animation-switch" checked>
+                                <span class="slider round"></span>
+                            </label>
+                            <span class="toggle-label">Animations</span>
+                        </div>
+
+                        <!-- Bouton pour ouvrir le menu de sélection -->
+                        <button id="open-box-selection-btn" class="btn btn-secondary">
+                            📦 Choisir une Caisse
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de sélection des caisses -->
+    <div id="box-selection-modal" class="box-selection-modal">
+        <div class="box-selection-modal-content">
+            <div class="box-selection-modal-header">
+                <h2>📦 Sélectionner une Caisse</h2>
+                <button class="close-modal-btn" id="close-box-selection-modal">×</button>
+            </div>
+            <div class="box-selection-modal-body">
+                <div id="box-selection-menu" class="box-selection-menu">
+                    <!-- Le menu de sélection sera rempli dynamiquement -->
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- Overlay de résultat type CS:GO (Simple) -->
+    <div id="loot-result-overlay" class="loot-result-overlay">
+        <div class="loot-reveal-container">
+            <div class="loot-card-reveal">
+                <!-- Contenu généré dynamiquement -->
+            </div>
+            <div class="loot-actions">
+                <button id="collect-loot-btn" class="btn btn-primary btn-lg">CONTINUER</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay de résultat multiple (Grid) -->
+    <div id="bulk-result-overlay" class="loot-result-overlay">
+        <div class="bulk-reveal-container">
+            <h2 class="bulk-title">RÉCOMPENSES OBTENUES</h2>
+            <div class="loot-grid-reveal" id="loot-grid-reveal">
+                <!-- Cartes générées dynamiquement -->
+            </div>
+            <div class="loot-actions">
+                <button id="collect-bulk-btn" class="btn btn-primary btn-lg">TOUT RÉCUPÉRER</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Socket.io -->
+    <script src="/socket.io/socket.io.js"></script>
+
+    <!-- Scripts -->
+    <script src="/js/utils/AvatarUtils.js"></script>
+    <script src="/js/ui/Navbar.js"></script>
+    <script src="/js/utils/AnimationUtils.js"></script>
+    <script src="/js/online/ServerGameClient.js"></script>
+    <script src="/js/online/ServerValidator.js"></script>
+    <script>
+        // Empêcher OnlineManager de s'initialiser automatiquement sur la page gambling
+        window.GAMBLING_PAGE = true;
+    </script>
+    <script src="/js/online/OnlineManager.js"></script>
+    <script src="/js/loot/lootData.js"></script>
+    <script src="/js/loot/LootBoxSystem.js"></script>
+    <script src="/js/gambling/GamblingPage.js"></script>
+    <a href="/probability-charts.html" class="floating-info-btn" title="Voir les graphiques détaillés" target="_blank">
+        <span class="info-icon">ℹ</span>
+    </a>
+
+    <!-- Bouton flottant pour ajuster les couleurs -->
+    <button class="floating-color-btn" id="color-settings-btn" title="Ajuster les couleurs">
+        <span class="color-icon">🎨</span>
+    </button>
+
+    <!-- Modal de réglage des couleurs -->
+    <div id="color-settings-modal" class="color-settings-modal" style="display: none;">
+        <div class="color-settings-content">
+            <div class="color-settings-header">
+                <h3>🎨 Ajuster les Couleurs</h3>
+                <button class="close-color-settings">×</button>
+            </div>
+            <div class="color-settings-body">
+                <div class="color-control">
+                    <label>Couleur 1 (Principale)</label>
+                    <input type="color" id="color-1-picker" value="#951313">
+                </div>
+                <div class="color-control">
+                    <label>Couleur 2 (Secondaire)</label>
+                    <input type="color" id="color-2-picker" value="#262626">
+                </div>
+                <div class="color-control">
+                    <label>Couleur 3 (Fond)</label>
+                    <input type="color" id="color-3-picker" value="#0d0d0d">
+                </div>
+                <div class="color-presets">
+                    <h4>Préréglages</h4>
+                    <div class="preset-buttons">
+                        <button class="preset-btn" data-preset="default">Par défaut</button>
+                        <button class="preset-btn" data-preset="blue">Bleu</button>
+                        <button class="preset-btn" data-preset="purple">Violet</button>
+                        <button class="preset-btn" data-preset="green">Vert</button>
+                        <button class="preset-btn" data-preset="gold">Or</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* Bouton flottant pour les couleurs */
+        .floating-color-btn {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .floating-color-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .color-icon {
+            font-size: 24px;
+        }
+
+        /* Modal de réglage des couleurs */
+        .color-settings-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .color-settings-content {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .color-settings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .color-settings-header h3 {
+            margin: 0;
+            color: #fff;
+            font-size: 20px;
+        }
+
+        .close-color-settings {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 30px;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.3s;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            line-height: 1;
+        }
+
+        .close-color-settings:hover {
+            opacity: 1;
+        }
+
+        .color-settings-body {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .color-control {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .color-control label {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .color-control input[type="color"] {
+            width: 100%;
+            height: 50px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            cursor: pointer;
+            background: transparent;
+        }
+
+        .color-presets {
+            margin-top: 10px;
+        }
+
+        .color-presets h4 {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .preset-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .preset-btn {
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 13px;
+        }
+
+        .preset-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+    </style>
+
+    <script>
+        let t = 0;
+        window.shaderInstance = null;
+
+        // Variables pour stocker les couleurs du shader avec transitions douces
+        window.shaderColors = {
+            colour_1: { r: 0.58, g: 0.07, b: 0.07 }, // #951313
+            colour_2: { r: 0.15, g: 0.15, b: 0.15 }, // #262626
+            colour_3: { r: 0.05, g: 0.05, b: 0.05 }  // #0d0d0d
+        };
+
+        // Couleurs cibles pour les transitions
+        window.targetColors = {
+            colour_1: { r: 0.58, g: 0.07, b: 0.07 },
+            colour_2: { r: 0.15, g: 0.15, b: 0.15 },
+            colour_3: { r: 0.05, g: 0.05, b: 0.05 }
+        };
+
+        // Vitesse de transition (plus petit = plus lent et doux)
+        const TRANSITION_SPEED = 0.03;
+
+        // Fonction pour interpoler doucement les couleurs
+        function lerpColor(current, target, speed) {
+            return {
+                r: current.r + (target.r - current.r) * speed,
+                g: current.g + (target.g - current.g) * speed,
+                b: current.b + (target.b - current.b) * speed
+            };
+        }
+
+        requestAnimationFrame(function update() {
+            t += 1 / 120;
+
+            // Interpoler les couleurs vers les cibles
+            window.shaderColors.colour_1 = lerpColor(window.shaderColors.colour_1, window.targetColors.colour_1, TRANSITION_SPEED);
+            window.shaderColors.colour_2 = lerpColor(window.shaderColors.colour_2, window.targetColors.colour_2, TRANSITION_SPEED);
+            window.shaderColors.colour_3 = lerpColor(window.shaderColors.colour_3, window.targetColors.colour_3, TRANSITION_SPEED);
+
+            requestAnimationFrame(update);
+        });
+
+        // Fonction pour changer les couleurs avec transition douce
+        window.setShaderColors = function (c1, c2, c3) {
+            window.targetColors.colour_1 = c1;
+            window.targetColors.colour_2 = c2;
+            window.targetColors.colour_3 = c3;
+        };
+
+        window.shaderInstance = shaderWebBackground.shade({
+            shaders: {
+                image: {
+                    uniforms: {
+                        iResolution: (gl, loc, ctx) => gl.uniform2f(loc, ctx.width, ctx.height),
+                        iTime: (gl, loc, ctx) => gl.uniform1f(loc, t),
+                        colour_1: (gl, loc) => {
+                            gl.uniform3f(loc, window.shaderColors.colour_1.r, window.shaderColors.colour_1.g, window.shaderColors.colour_1.b);
+                        },
+                        colour_2: (gl, loc) => {
+                            gl.uniform3f(loc, window.shaderColors.colour_2.r, window.shaderColors.colour_2.g, window.shaderColors.colour_2.b);
+                        },
+                        colour_3: (gl, loc) => {
+                            gl.uniform3f(loc, window.shaderColors.colour_3.r, window.shaderColors.colour_3.g, window.shaderColors.colour_3.b);
+                        }
+                    }
+                }
+            }
+        });
+
+        // Gestion du modal de couleurs
+        document.addEventListener('DOMContentLoaded', function () {
+            const colorBtn = document.getElementById('color-settings-btn');
+            const colorModal = document.getElementById('color-settings-modal');
+            const closeBtn = document.querySelector('.close-color-settings');
+            const color1Picker = document.getElementById('color-1-picker');
+            const color2Picker = document.getElementById('color-2-picker');
+            const color3Picker = document.getElementById('color-3-picker');
+
+            // Fonction pour convertir hex en RGB normalisé (0-1)
+            function hexToRgb(hex) {
+                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+                return result ? {
+                    r: parseInt(result[1], 16) / 255,
+                    g: parseInt(result[2], 16) / 255,
+                    b: parseInt(result[3], 16) / 255
+                } : null;
+            }
+
+            // Fonction pour convertir RGB normalisé en hex
+            function rgbToHex(r, g, b) {
+                const toHex = (n) => {
+                    const hex = Math.round(n * 255).toString(16);
+                    return hex.length === 1 ? '0' + hex : hex;
+                };
+                return '#' + toHex(r) + toHex(g) + toHex(b);
+            }
+
+            // Ouvrir le modal
+            colorBtn.addEventListener('click', function () {
+                colorModal.style.display = 'flex';
+                // Mettre à jour les couleurs des pickers avec les valeurs actuelles
+                color1Picker.value = rgbToHex(window.shaderColors.colour_1.r, window.shaderColors.colour_1.g, window.shaderColors.colour_1.b);
+                color2Picker.value = rgbToHex(window.shaderColors.colour_2.r, window.shaderColors.colour_2.g, window.shaderColors.colour_2.b);
+                color3Picker.value = rgbToHex(window.shaderColors.colour_3.r, window.shaderColors.colour_3.g, window.shaderColors.colour_3.b);
+            });
+
+            // Fermer le modal
+            closeBtn.addEventListener('click', function () {
+                colorModal.style.display = 'none';
+            });
+
+            // Fermer en cliquant en dehors
+            colorModal.addEventListener('click', function (e) {
+                if (e.target === colorModal) {
+                    colorModal.style.display = 'none';
+                }
+            });
+
+            // Mettre à jour les couleurs en temps réel
+            color1Picker.addEventListener('input', function (e) {
+                const rgb = hexToRgb(e.target.value);
+                if (rgb) window.setShaderColors(rgb, window.targetColors.colour_2, window.targetColors.colour_3);
+            });
+
+            color2Picker.addEventListener('input', function (e) {
+                const rgb = hexToRgb(e.target.value);
+                if (rgb) window.setShaderColors(window.targetColors.colour_1, rgb, window.targetColors.colour_3);
+            });
+
+            color3Picker.addEventListener('input', function (e) {
+                const rgb = hexToRgb(e.target.value);
+                if (rgb) window.setShaderColors(window.targetColors.colour_1, window.targetColors.colour_2, rgb);
+            });
+
+            // Préréglages de couleurs
+            const presets = {
+                default: {
+                    c1: { r: 0.58, g: 0.07, b: 0.07 },
+                    c2: { r: 0.15, g: 0.15, b: 0.15 },
+                    c3: { r: 0.05, g: 0.05, b: 0.05 }
+                },
+                blue: {
+                    c1: { r: 0.1, g: 0.3, b: 0.7 },
+                    c2: { r: 0.05, g: 0.15, b: 0.35 },
+                    c3: { r: 0.02, g: 0.05, b: 0.15 }
+                },
+                purple: {
+                    c1: { r: 0.5, g: 0.1, b: 0.7 },
+                    c2: { r: 0.25, g: 0.05, b: 0.35 },
+                    c3: { r: 0.1, g: 0.02, b: 0.15 }
+                },
+                green: {
+                    c1: { r: 0.1, g: 0.6, b: 0.2 },
+                    c2: { r: 0.05, g: 0.3, b: 0.1 },
+                    c3: { r: 0.02, g: 0.12, b: 0.04 }
+                },
+                gold: {
+                    c1: { r: 0.9, g: 0.7, b: 0.1 },
+                    c2: { r: 0.6, g: 0.4, b: 0.05 },
+                    c3: { r: 0.2, g: 0.15, b: 0.02 }
+                }
+            };
+
+            // Gérer les clics sur les préréglages
+            document.querySelectorAll('.preset-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const preset = this.dataset.preset;
+                    const colors = presets[preset];
+                    if (colors) {
+                        window.setShaderColors(colors.c1, colors.c2, colors.c3);
+                        // Mettre à jour les pickers
+                        setTimeout(() => {
+                            color1Picker.value = rgbToHex(colors.c1.r, colors.c1.g, colors.c1.b);
+                            color2Picker.value = rgbToHex(colors.c2.r, colors.c2.g, colors.c2.b);
+                            color3Picker.value = rgbToHex(colors.c3.r, colors.c3.g, colors.c3.b);
+                        }, 100);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>
