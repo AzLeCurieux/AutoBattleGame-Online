@@ -1,2 +1,3 @@
 2025-02-01T10:15:00: feat: add card modifier preview in inventory UI
 2025-02-01T14:32:00: fix: resolve tooltip overflow on small screen cards
+2025-02-02T11:08:00: feat: implement modifier stacking display in battle log
