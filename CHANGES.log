@@ -3,3 +3,4 @@
 2025-02-02T11:08:00: feat: implement modifier stacking display in battle log
 2025-02-02T15:45:00: refactor: extract card tooltip into reusable component
 2025-02-05T20:13:00: fix: correct damage calculation when modifier applied twice
+2025-02-08T10:30:00: feat: add animated card flip on reveal in loot box opening
