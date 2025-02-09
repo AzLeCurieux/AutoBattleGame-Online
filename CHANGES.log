@@ -5,3 +5,4 @@
 2025-02-05T20:13:00: fix: correct damage calculation when modifier applied twice
 2025-02-08T10:30:00: feat: add animated card flip on reveal in loot box opening
 2025-02-08T16:55:00: perf: debounce inventory search input
+2025-02-09T12:20:00: fix: resolve z-index issue with card modal overlay
