@@ -7,3 +7,4 @@
 2025-02-08T16:55:00: perf: debounce inventory search input
 2025-02-09T12:20:00: fix: resolve z-index issue with card modal overlay
 2025-02-14T19:40:00: chore: update dependencies to latest patch versions
+2025-02-15T09:15:00: feat: add rarity color coding to inventory list
