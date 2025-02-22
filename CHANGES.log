@@ -10,3 +10,4 @@
 2025-02-15T09:15:00: feat: add rarity color coding to inventory list
 2025-02-15T14:50:00: feat: implement sort by rarity in inventory
 2025-02-16T11:30:00: fix: resolve filter reset on page navigation
+2025-02-21T21:05:00: fix: correct XP reward calculation for boss fights
