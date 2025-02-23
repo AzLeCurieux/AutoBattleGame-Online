@@ -13,3 +13,4 @@
 2025-02-21T21:05:00: fix: correct XP reward calculation for boss fights
 2025-02-22T10:45:00: feat: add confirmation dialog for card discard
 2025-02-22T15:20:00: feat: highlight newly acquired cards in inventory
+2025-02-23T13:00:00: fix: resolve inventory pagination edge case on last page
