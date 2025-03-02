@@ -16,3 +16,4 @@
 2025-02-23T13:00:00: fix: resolve inventory pagination edge case on last page
 2025-03-01T10:00:00: feat: add deck validation before battle start
 2025-03-01T15:30:00: fix: prevent duplicate card IDs in deck builder
+2025-03-02T12:15:00: refactor: simplify DeckUI state management
