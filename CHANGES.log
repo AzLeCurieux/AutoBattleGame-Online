@@ -19,3 +19,4 @@
 2025-03-02T12:15:00: refactor: simplify DeckUI state management
 2025-03-05T20:30:00: chore: clean up unused CSS classes in main.css
 2025-03-07T19:45:00: fix: resolve mobile touch event on card drag
+2025-03-08T10:20:00: feat: add win streak tracking to player profile
