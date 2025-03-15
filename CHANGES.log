@@ -25,3 +25,4 @@
 2025-03-09T16:40:00: refactor: move streak logic to Player.js
 2025-03-12T21:00:00: fix: correct socket room cleanup on disconnect
 2025-03-15T09:30:00: feat: add game history log for last 10 battles
+2025-03-15T15:00:00: feat: implement battle replay summary screen
