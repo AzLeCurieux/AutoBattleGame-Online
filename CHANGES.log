@@ -27,3 +27,4 @@
 2025-03-15T09:30:00: feat: add game history log for last 10 battles
 2025-03-15T15:00:00: feat: implement battle replay summary screen
 2025-03-16T13:20:00: fix: resolve history log overflow after long session
+2025-03-21T18:30:00: perf: cache frequent DB queries for leaderboard
