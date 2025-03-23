@@ -30,3 +30,4 @@
 2025-03-21T18:30:00: perf: cache frequent DB queries for leaderboard
 2025-03-22T10:10:00: feat: add sound toggle in game settings
 2025-03-22T15:45:00: fix: persist sound preference in localStorage
+2025-03-23T12:00:00: chore: add JSDoc comments to GameManager methods
