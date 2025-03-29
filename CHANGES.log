@@ -33,3 +33,4 @@
 2025-03-23T12:00:00: chore: add JSDoc comments to GameManager methods
 2025-03-28T20:00:00: fix: correct card effect order during combo resolution
 2025-03-29T09:55:00: feat: implement visual combo counter during battle
+2025-03-29T14:30:00: feat: add screen shake effect on critical hit
