@@ -35,3 +35,4 @@
 2025-03-29T09:55:00: feat: implement visual combo counter during battle
 2025-03-29T14:30:00: feat: add screen shake effect on critical hit
 2025-03-30T12:45:00: fix: reduce screen shake intensity on mobile
+2025-04-04T19:20:00: chore: reorganize route files for clarity
