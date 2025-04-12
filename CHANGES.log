@@ -40,3 +40,4 @@
 2025-04-05T15:10:00: feat: implement ban audit log
 2025-04-06T11:50:00: fix: resolve ban status not propagating to active sessions
 2025-04-11T20:15:00: fix: patch JWT validation bypass on admin routes
+2025-04-12T09:45:00: feat: add rate limiting to loot box purchase endpoint
