@@ -44,3 +44,4 @@
 2025-04-12T14:25:00: perf: reduce payload size on game state broadcast
 2025-04-13T12:30:00: refactor: simplify ServerGameManager event handlers
 2025-04-18T18:50:00: fix: correct shop stock refresh interval
+2025-04-19T10:05:00: feat: add limited-time card rotation to shop
