@@ -47,3 +47,4 @@
 2025-04-19T10:05:00: feat: add limited-time card rotation to shop
 2025-04-19T15:40:00: feat: display shop reset timer in UI
 2025-04-20T13:15:00: fix: resolve timer desync between client and server
+2025-04-25T19:30:00: chore: update README with API route documentation
