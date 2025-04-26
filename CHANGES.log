@@ -49,3 +49,4 @@
 2025-04-20T13:15:00: fix: resolve timer desync between client and server
 2025-04-25T19:30:00: chore: update README with API route documentation
 2025-04-26T09:20:00: feat: add player statistics page
+2025-04-26T14:55:00: feat: chart win/loss ratio over time
