@@ -50,3 +50,4 @@
 2025-04-25T19:30:00: chore: update README with API route documentation
 2025-04-26T09:20:00: feat: add player statistics page
 2025-04-26T14:55:00: feat: chart win/loss ratio over time
+2025-04-27T12:40:00: fix: resolve chart render on Firefox
