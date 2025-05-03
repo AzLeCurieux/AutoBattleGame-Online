@@ -53,3 +53,4 @@
 2025-04-27T12:40:00: fix: resolve chart render on Firefox
 2025-05-02T20:10:00: refactor: unify error response format across routes
 2025-05-03T10:25:00: feat: add deck preset saving and loading
+2025-05-03T15:00:00: feat: allow up to 3 named deck presets
