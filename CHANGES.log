@@ -55,3 +55,4 @@
 2025-05-03T10:25:00: feat: add deck preset saving and loading
 2025-05-03T15:00:00: feat: allow up to 3 named deck presets
 2025-05-04T13:35:00: fix: resolve preset overwrite without confirmation
+2025-05-09T19:45:00: fix: correct DB migration for preset storage
