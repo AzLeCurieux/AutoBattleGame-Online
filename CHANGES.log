@@ -57,3 +57,4 @@
 2025-05-04T13:35:00: fix: resolve preset overwrite without confirmation
 2025-05-09T19:45:00: fix: correct DB migration for preset storage
 2025-05-10T10:15:00: feat: add card collection progress tracker
+2025-05-10T14:50:00: feat: show completion percentage per rarity
