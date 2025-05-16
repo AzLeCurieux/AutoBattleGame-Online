@@ -59,3 +59,4 @@
 2025-05-10T10:15:00: feat: add card collection progress tracker
 2025-05-10T14:50:00: feat: show completion percentage per rarity
 2025-05-11T12:20:00: fix: resolve collection count off-by-one on full set
+2025-05-16T18:30:00: perf: lazy load card art on scroll in collection view
