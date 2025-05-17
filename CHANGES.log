@@ -61,3 +61,4 @@
 2025-05-11T12:20:00: fix: resolve collection count off-by-one on full set
 2025-05-16T18:30:00: perf: lazy load card art on scroll in collection view
 2025-05-17T09:40:00: feat: add 'new' badge on cards added this session
+2025-05-17T14:15:00: fix: clear new badge after viewing card detail
