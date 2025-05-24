@@ -63,3 +63,4 @@
 2025-05-17T09:40:00: feat: add 'new' badge on cards added this session
 2025-05-17T14:15:00: fix: clear new badge after viewing card detail
 2025-05-18T11:55:00: refactor: move badge logic to inventory module
+2025-05-23T20:00:00: chore: add .env.example to repository
