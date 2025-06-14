@@ -73,3 +73,4 @@
 2025-06-06T19:10:00: fix: minor CSS inconsistencies on battle screen
 2025-06-07T10:50:00: fix: resolve NaN damage display on first round
 2025-06-08T12:25:00: chore: update node engine version in package.json
+2025-06-14T10:40:00: fix: correct enemy scaling formula at wave 10+
