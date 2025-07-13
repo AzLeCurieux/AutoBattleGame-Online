@@ -81,3 +81,4 @@
 2025-07-05T11:15:00: feat: experiment with card animation on hover
 2025-07-06T14:30:00: fix: revert hover animation, causes layout shift
 2025-07-12T10:45:00: fix: correct card z-index in shop modal
+2025-07-13T15:20:00: chore: clean up console.log statements
