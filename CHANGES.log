@@ -83,3 +83,4 @@
 2025-07-12T10:45:00: fix: correct card z-index in shop modal
 2025-07-13T15:20:00: chore: clean up console.log statements
 2025-08-19T09:00:00: chore: resume development after summer break
+2025-08-23T10:30:00: feat: redesign navbar with collapsible mobile menu
