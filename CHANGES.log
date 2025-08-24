@@ -85,3 +85,4 @@
 2025-08-19T09:00:00: chore: resume development after summer break
 2025-08-23T10:30:00: feat: redesign navbar with collapsible mobile menu
 2025-08-23T15:55:00: feat: add active state indicator to nav links
+2025-08-24T12:10:00: fix: resolve mobile nav overlap with game canvas
