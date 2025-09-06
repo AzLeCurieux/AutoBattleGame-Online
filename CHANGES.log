@@ -87,3 +87,4 @@
 2025-08-23T15:55:00: feat: add active state indicator to nav links
 2025-08-24T12:10:00: fix: resolve mobile nav overlap with game canvas
 2025-09-05T19:25:00: refactor: split CardEffectHandler into sub-handlers
+2025-09-06T10:40:00: feat: add card synergy detection in deck builder
