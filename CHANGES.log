@@ -88,3 +88,4 @@
 2025-08-24T12:10:00: fix: resolve mobile nav overlap with game canvas
 2025-09-05T19:25:00: refactor: split CardEffectHandler into sub-handlers
 2025-09-06T10:40:00: feat: add card synergy detection in deck builder
+2025-09-06T15:15:00: feat: highlight compatible cards during selection
