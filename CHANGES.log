@@ -95,3 +95,4 @@
 2025-09-13T14:45:00: feat: spectators see battle in read-only view
 2025-09-14T12:30:00: fix: prevent spectators from triggering game events
 2025-09-19T17:55:00: fix: correct spectator count display
+2025-09-20T10:10:00: feat: add in-game chat for spectators
