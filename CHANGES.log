@@ -97,3 +97,4 @@
 2025-09-19T17:55:00: fix: correct spectator count display
 2025-09-20T10:10:00: feat: add in-game chat for spectators
 2025-09-20T15:35:00: feat: filter profanity in spectator chat
+2025-09-21T13:00:00: fix: resolve chat overflow on mobile
