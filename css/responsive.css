@@ -1,0 +1,586 @@
+/* ===== RESPONSIVE DESIGN MODERNE ===== */
+
+/* Variables CSS pour les breakpoints */
+:root {
+    --mobile-small: 320px;
+    --mobile: 480px;
+    --tablet: 768px;
+    --desktop: 1024px;
+    --desktop-large: 1440px;
+}
+
+/* ===== TABLETTES (768px - 1024px) ===== */
+@media (max-width: 1024px) {
+    #game-ui {
+        padding: 15px;
+    }
+    
+    #battle-area {
+        max-width: 500px;
+        gap: 30px;
+    }
+    
+    .fighter {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .fighter.boss {
+        width: 85px;
+        height: 85px;
+    }
+    
+    .health-bar {
+        width: 120px;
+        height: 20px;
+    }
+    
+    .health-text {
+        font-size: 13px;
+    }
+    
+    .btn {
+        padding: 12px 20px;
+        font-size: 15px;
+    }
+    
+    /* Modal d'amélioration */
+    .upgrade-content {
+        max-width: 500px;
+        padding: 30px;
+    }
+    
+    .upgrade-options {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .upgrade-option {
+        padding: 20px;
+    }
+    
+    /* Panneau online */
+    .online-panel {
+        width: 280px;
+        right: 15px;
+        top: 70px;
+    }
+}
+
+/* ===== MOBILES LARGE (481px - 768px) ===== */
+@media (max-width: 768px) {
+    body {
+        overflow-x: hidden;
+    }
+    
+    #game-container {
+        min-height: 100vh;
+    }
+    
+    #game-ui {
+        padding: 10px;
+        gap: 15px;
+    }
+    
+    /* Header elements */
+    #level-display {
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+    
+    #level-text {
+        font-size: 20px;
+    }
+    
+    #gold-display {
+        top: 10px;
+        left: 10px;
+        right: auto;
+    }
+    
+    #gold-text {
+        font-size: 14px;
+    }
+    
+    /* Zone de combat */
+    #battle-area {
+        flex-direction: column;
+        gap: 20px;
+        max-width: 100%;
+        margin: 20px 0;
+        padding: 0 10px;
+    }
+    
+    #player-area, #enemy-area {
+        position: static;
+        transform: none;
+        left: auto;
+        top: auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .fighter {
+        width: 45px;
+        height: 45px;
+    }
+    
+    .fighter.boss {
+        width: 75px;
+        height: 75px;
+    }
+    
+    .health-bar {
+        width: 100px;
+        height: 18px;
+    }
+    
+    .health-text {
+        font-size: 12px;
+    }
+    
+    /* Boutons de contrôle */
+    #control-buttons {
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+        margin-top: 20px;
+    }
+    
+    .btn {
+        padding: 12px 16px;
+        font-size: 14px;
+        min-width: 80px;
+        flex: 1;
+        max-width: 120px;
+    }
+    
+    /* Modal d'amélioration */
+    .upgrade-content {
+        margin: 10px;
+        padding: 25px;
+        max-width: calc(100% - 20px);
+        border-radius: 15px;
+    }
+    
+    .upgrade-header h3 {
+        font-size: 24px;
+    }
+    
+    .upgrade-options {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .upgrade-option {
+        padding: 20px 15px;
+        border-radius: 12px;
+    }
+    
+    .upgrade-option .upgrade-icon {
+        font-size: 20px;
+    }
+    
+    .upgrade-option .upgrade-title {
+        font-size: 16px;
+    }
+    
+    .upgrade-option .upgrade-description {
+        font-size: 13px;
+    }
+    
+    .upgrade-option .upgrade-value {
+        font-size: 14px;
+    }
+    
+    /* Panneau online - repositionné en bas */
+    .online-panel {
+        position: relative;
+        width: 100%;
+        right: 0;
+        top: 0;
+        margin-top: 20px;
+        max-height: 300px;
+    }
+    
+    .user-info {
+        position: relative;
+        top: 0;
+        right: 0;
+        margin-bottom: 10px;
+    }
+    
+    /* Camp modal */
+    .modal-content {
+        margin: 15px;
+        padding: 20px;
+        max-width: calc(100% - 30px);
+    }
+    
+    .camp-stats .stats-display {
+        font-size: 14px;
+        padding: 15px;
+    }
+    
+    /* Dégâts flottants */
+    .damage-text {
+        font-size: 18px;
+    }
+    
+    .damage-text.crit {
+        font-size: 24px;
+    }
+}
+
+/* ===== MOBILES STANDARD (321px - 480px) ===== */
+@media (max-width: 480px) {
+    #game-ui {
+        padding: 8px;
+        gap: 12px;
+    }
+    
+    #level-text {
+        font-size: 18px;
+    }
+    
+    #gold-text {
+        font-size: 13px;
+    }
+    
+    .fighter {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .fighter.boss {
+        width: 65px;
+        height: 65px;
+    }
+    
+    .health-bar {
+        width: 90px;
+        height: 16px;
+    }
+    
+    .health-text {
+        font-size: 11px;
+    }
+    
+    .btn {
+        padding: 10px 12px;
+        font-size: 13px;
+        min-width: 70px;
+    }
+    
+    /* Modal d'amélioration */
+    .upgrade-content {
+        margin: 8px;
+        padding: 20px;
+        border-radius: 12px;
+    }
+    
+    .upgrade-header h3 {
+        font-size: 22px;
+    }
+    
+    .upgrade-option {
+        padding: 15px 12px;
+        border-radius: 10px;
+    }
+    
+    .upgrade-option .upgrade-icon {
+        font-size: 18px;
+    }
+    
+    .upgrade-option .upgrade-title {
+        font-size: 15px;
+    }
+    
+    .upgrade-option .upgrade-description {
+        font-size: 12px;
+    }
+    
+    .upgrade-option .upgrade-value {
+        font-size: 13px;
+    }
+    
+    /* Camp modal */
+    .modal-content {
+        margin: 10px;
+        padding: 15px;
+    }
+    
+    .camp-header h3 {
+        font-size: 20px;
+    }
+    
+    .damage-text {
+        font-size: 16px;
+    }
+    
+    .damage-text.crit {
+        font-size: 20px;
+    }
+}
+
+/* ===== PETITS MOBILES (jusqu'à 320px) ===== */
+@media (max-width: 320px) {
+    #game-ui {
+        padding: 5px;
+    }
+    
+    #level-text {
+        font-size: 16px;
+    }
+    
+    #gold-text {
+        font-size: 12px;
+    }
+    
+    .fighter {
+        width: 35px;
+        height: 35px;
+    }
+    
+    .fighter.boss {
+        width: 55px;
+        height: 55px;
+    }
+    
+    .health-bar {
+        width: 80px;
+        height: 14px;
+    }
+    
+    .health-text {
+        font-size: 10px;
+    }
+    
+    .btn {
+        padding: 8px 10px;
+        font-size: 12px;
+        min-width: 60px;
+    }
+    
+    /* Modal d'amélioration */
+    .upgrade-content {
+        margin: 5px;
+        padding: 15px;
+    }
+    
+    .upgrade-header h3 {
+        font-size: 20px;
+    }
+    
+    .upgrade-option {
+        padding: 12px 10px;
+    }
+    
+    .upgrade-option .upgrade-icon {
+        font-size: 16px;
+    }
+    
+    .upgrade-option .upgrade-title {
+        font-size: 14px;
+    }
+    
+    .upgrade-option .upgrade-description {
+        font-size: 11px;
+    }
+    
+    .upgrade-option .upgrade-value {
+        font-size: 12px;
+    }
+    
+    .damage-text {
+        font-size: 14px;
+    }
+    
+    .damage-text.crit {
+        font-size: 18px;
+    }
+}
+
+/* ===== ORIENTATION PAYSAGE SUR MOBILE ===== */
+@media (max-width: 768px) and (orientation: landscape) {
+    #game-ui {
+        flex-direction: row;
+        padding: 8px;
+        gap: 10px;
+    }
+    
+    #battle-area {
+        flex: 1;
+        flex-direction: row;
+        margin: 0 10px;
+        gap: 20px;
+    }
+    
+    #player-area, #enemy-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    #control-buttons {
+        flex-direction: column;
+        gap: 6px;
+        margin: 0;
+        min-width: 80px;
+    }
+    
+    .btn {
+        padding: 8px 12px;
+        font-size: 12px;
+        min-width: 60px;
+    }
+    
+    #level-display {
+        position: absolute;
+        top: 5px;
+        left: 5px;
+        transform: none;
+    }
+    
+    #gold-display {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        left: auto;
+    }
+    
+    /* Modal d'amélioration en paysage */
+    .upgrade-content {
+        max-width: 90vw;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    
+    .upgrade-options {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 10px;
+    }
+    
+    .upgrade-option {
+        padding: 15px 10px;
+    }
+    
+    /* Panneau online caché en paysage */
+    .online-panel {
+        display: none;
+    }
+}
+
+/* ===== DESKTOP LARGE (1440px+) ===== */
+@media (min-width: 1440px) {
+    .upgrade-content {
+        max-width: 700px;
+        padding: 50px;
+    }
+    
+    .upgrade-options {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 25px;
+    }
+    
+    .upgrade-option {
+        padding: 30px 25px;
+    }
+    
+    .upgrade-option .upgrade-icon {
+        font-size: 28px;
+    }
+    
+    .upgrade-option .upgrade-title {
+        font-size: 20px;
+    }
+    
+    .upgrade-option .upgrade-description {
+        font-size: 16px;
+    }
+    
+    .upgrade-option .upgrade-value {
+        font-size: 18px;
+    }
+}
+
+/* ===== ACCESSIBILITÉ ===== */
+
+/* Réduction de mouvement */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    
+    .upgrade-content::before {
+        animation: none;
+    }
+}
+
+/* Contraste élevé */
+@media (prefers-contrast: high) {
+    .fighter {
+        border-width: 3px;
+        border-color: white;
+    }
+    
+    .health-bar {
+        border-width: 3px;
+        border-color: white;
+    }
+    
+    .btn {
+        border: 2px solid white;
+    }
+    
+    .upgrade-option {
+        border-width: 3px;
+        border-color: white;
+    }
+    
+    .upgrade-content {
+        border-width: 3px;
+        border-color: white;
+    }
+}
+
+/* Mode sombre (déjà optimisé) */
+@media (prefers-color-scheme: dark) {
+    /* Les styles sont déjà optimisés pour le mode sombre */
+}
+
+/* ===== UTILITAIRES RESPONSIVE ===== */
+
+/* Masquer sur mobile */
+@media (max-width: 768px) {
+    .desktop-only {
+        display: none !important;
+    }
+}
+
+/* Masquer sur desktop */
+@media (min-width: 769px) {
+    .mobile-only {
+        display: none !important;
+    }
+}
+
+/* Texte responsive */
+@media (max-width: 480px) {
+    .responsive-text {
+        font-size: 0.9em;
+    }
+}
+
+@media (max-width: 320px) {
+    .responsive-text {
+        font-size: 0.8em;
+    }
+}

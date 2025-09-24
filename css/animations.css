@@ -1,0 +1,311 @@
+/* Animations de combat */
+@keyframes attackMove {
+    0% { 
+        transform: translateX(0) translateY(0) scale(1); 
+    }
+    50% { 
+        transform: translateX(var(--attack-delta-x)) 
+                   translateY(var(--attack-delta-y)) 
+                   scale(1.1); 
+    }
+    100% { 
+        transform: translateX(0) translateY(0) scale(1); 
+    }
+}
+
+@keyframes enemyAttackMove {
+    0% { 
+        transform: translateX(0) translateY(0) scale(1); 
+    }
+    50% { 
+        transform: translateX(var(--enemy-attack-delta-x)) 
+                   translateY(var(--enemy-attack-delta-y)) 
+                   scale(1.1); 
+    }
+    100% { 
+        transform: translateX(0) translateY(0) scale(1); 
+    }
+}
+
+@keyframes damageFloat {
+    0% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: translateY(-20px) scale(1.2);
+        opacity: 0.8;
+    }
+    100% {
+        transform: translateY(-40px) scale(0.8);
+        opacity: 0;
+    }
+}
+
+@keyframes critDamageFloat {
+    0% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+    25% {
+        transform: translateY(-10px) scale(1.5);
+        opacity: 1;
+    }
+    50% {
+        transform: translateY(-30px) scale(1.3);
+        opacity: 0.9;
+    }
+    75% {
+        transform: translateY(-50px) scale(1.1);
+        opacity: 0.6;
+    }
+    100% {
+        transform: translateY(-70px) scale(0.9);
+        opacity: 0;
+    }
+}
+
+@keyframes healthBarShake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-2px); }
+    75% { transform: translateX(2px); }
+}
+
+@keyframes fighterHit {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+@keyframes bossGlow {
+    0%, 100% {
+        box-shadow: 0 0 10px #ff8800;
+    }
+    50% {
+        box-shadow: 0 0 20px #ff8800, 0 0 30px #ff8800;
+    }
+}
+
+/* Classes d'animation */
+.attacking {
+    animation: attackMove 0.4s ease-in-out;
+    z-index: 15;
+}
+
+.enemy-attacking {
+    animation: enemyAttackMove 0.4s ease-in-out;
+    z-index: 15;
+}
+
+.damage-floating {
+    animation: damageFloat 1.5s ease-out forwards;
+}
+
+.damage-floating.crit {
+    animation: critDamageFloat 2s ease-out forwards;
+}
+
+.health-bar-shake {
+    animation: healthBarShake 0.3s ease-in-out;
+}
+
+.fighter-hit {
+    animation: fighterHit 0.2s ease-in-out;
+}
+
+.boss-glow {
+    animation: bossGlow 2s ease-in-out infinite;
+}
+
+/* Animations de l'interface */
+@keyframes modalSlideIn {
+    from {
+        transform: translateY(-100px) scale(0.8);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes buttonPulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+@keyframes upgradeGlow {
+    0%, 100% {
+        border-color: #1e90ff;
+        box-shadow: 0 0 10px rgba(30, 144, 255, 0.3);
+    }
+    50% {
+        border-color: #4169e1;
+        box-shadow: 0 0 20px rgba(65, 105, 225, 0.5);
+    }
+}
+
+.modal-slide-in {
+    animation: modalSlideIn 0.5s ease-out;
+}
+
+.button-pulse {
+    animation: buttonPulse 0.3s ease-in-out;
+}
+
+.upgrade-glow {
+    animation: upgradeGlow 1s ease-in-out infinite;
+}
+
+/* Animations de transition */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeOutDown {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.4s ease-out;
+}
+
+.fade-out-down {
+    animation: fadeOutDown 0.4s ease-out;
+}
+
+/* Animations de victoire/défaite */
+@keyframes victoryBounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+    }
+    40% {
+        transform: translateY(-10px);
+    }
+    60% {
+        transform: translateY(-5px);
+    }
+}
+
+@keyframes defeatShake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+.victory-bounce {
+    animation: victoryBounce 1s ease-in-out;
+}
+
+.defeat-shake {
+    animation: defeatShake 0.5s ease-in-out;
+}
+
+/* Animations de niveau */
+@keyframes levelUp {
+    0% {
+        transform: scale(1);
+        color: #1e90ff;
+    }
+    50% {
+        transform: scale(1.2);
+        color: #ffd700;
+    }
+    100% {
+        transform: scale(1);
+        color: #1e90ff;
+    }
+}
+
+.level-up {
+    animation: levelUp 0.8s ease-in-out;
+}
+
+/* Animations de l'or */
+@keyframes goldGain {
+    0% {
+        transform: scale(1);
+        color: #ffd700;
+    }
+    50% {
+        transform: scale(1.1);
+        color: #ffff00;
+    }
+    100% {
+        transform: scale(1);
+        color: #ffd700;
+    }
+}
+
+.gold-gain {
+    animation: goldGain 0.5s ease-in-out;
+}
+
+/* Animations de soin */
+@keyframes healEffect {
+    0% {
+        transform: scale(1);
+        filter: brightness(1);
+    }
+    50% {
+        transform: scale(1.05);
+        filter: brightness(1.3);
+    }
+    100% {
+        transform: scale(1);
+        filter: brightness(1);
+    }
+}
+
+.heal-effect {
+    animation: healEffect 0.6s ease-in-out;
+}
+
+/* Animations de chargement */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-spin {
+    animation: spin 1s linear infinite;
+}
+
+/* Animations de particules */
+@keyframes particleFloat {
+    0% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(-100px) rotate(360deg);
+        opacity: 0;
+    }
+}
+
+.particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background-color: #ffd700;
+    border-radius: 50%;
+    animation: particleFloat 2s ease-out forwards;
+}

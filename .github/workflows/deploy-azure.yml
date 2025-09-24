@@ -1,0 +1,64 @@
+name: Deploy to Azure Container Instances
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  AZURE_CONTAINER_REGISTRY: ${{ secrets.AZURE_REGISTRY }}
+  CONTAINER_NAME: autobattlegame
+  RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+  LOCATION: ${{ secrets.AZURE_LOCATION }}
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    # - name: Run tests
+    #   run: npm test
+
+    - name: Login to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Login to Azure Container Registry
+      uses: azure/docker-login@v1
+      with:
+        login-server: ${{ env.AZURE_CONTAINER_REGISTRY }}
+        username: ${{ secrets.AZURE_REGISTRY_USERNAME }}
+        password: ${{ secrets.AZURE_REGISTRY_PASSWORD }}
+
+    - name: Build and push Docker image
+      run: |
+        docker build -t ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.CONTAINER_NAME }}:${{ github.sha }} .
+        docker push ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.CONTAINER_NAME }}:${{ github.sha }}
+
+    - name: Deploy to Azure Container Instances
+      uses: azure/container-instances-deploy@v1
+      with:
+        resource-group: ${{ env.RESOURCE_GROUP }}
+        dns-name-label: ${{ env.CONTAINER_NAME }}
+        image: ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.CONTAINER_NAME }}:${{ github.sha }}
+        name: ${{ env.CONTAINER_NAME }}
+        location: ${{ env.LOCATION }}
+        ports: 3000
+        environment-variables: |
+          NODE_ENV=production
+          PORT=3000
+

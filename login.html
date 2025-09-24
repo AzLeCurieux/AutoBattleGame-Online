@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoBattleGame - Connexion</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+        }
+
+        .login-container {
+            background: linear-gradient(135deg, #353b51, #2c3e50);
+            border: 2px solid #1e90ff;
+            border-radius: 15px;
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .login-header h1 {
+            color: #1e90ff;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .login-header p {
+            color: #ccc;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #1e90ff;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #555;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        .form-group input:focus {
+            border-color: #1e90ff;
+            outline: none;
+            box-shadow: 0 0 10px rgba(30, 144, 255, 0.3);
+        }
+
+        .form-group input::placeholder {
+            color: #888;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #1e90ff, #4169e1);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(45deg, #4169e1, #1e90ff);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(45deg, #666, #888);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: linear-gradient(45deg, #888, #666);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .form-switch {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .form-switch a {
+            color: #1e90ff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .form-switch a:hover {
+            text-decoration: underline;
+        }
+
+        .error-message {
+            background: rgba(255, 68, 68, 0.2);
+            border: 1px solid #ff4444;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 15px;
+            color: #ff4444;
+            text-align: center;
+            display: none;
+        }
+
+        .success-message {
+            background: rgba(68, 255, 68, 0.2);
+            border: 1px solid #44ff44;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 15px;
+            color: #44ff44;
+            text-align: center;
+            display: none;
+        }
+
+        .loading {
+            display: none;
+            color: #1e90ff;
+            margin-top: 15px;
+        }
+
+        .avatar-selection {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .avatar-selection h3 {
+            color: #1e90ff;
+            margin-bottom: 15px;
+        }
+
+        .avatar-options {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .avatar-option {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            border: 3px solid #555;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .avatar-option:hover {
+            border-color: #1e90ff;
+            transform: scale(1.1);
+        }
+
+        .avatar-option.selected {
+            border-color: #1e90ff;
+            background: rgba(30, 144, 255, 0.3);
+            transform: scale(1.2);
+        }
+
+        .back-to-login {
+            display: none;
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .back-to-login a {
+            color: #1e90ff;
+            text-decoration: none;
+        }
+
+        .back-to-login a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <h1>🎮 AutoBattleGame</h1>
+            <p>Connectez-vous pour jouer en ligne</p>
+        </div>
+
+        <!-- Formulaire de connexion -->
+        <div id="login-form" class="login-form">
+            <div class="form-group">
+                <label for="username">Nom d'utilisateur:</label>
+                <input type="text" id="username" placeholder="Votre pseudo" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Mot de passe:</label>
+                <input type="password" id="password" placeholder="Votre mot de passe" required>
+            </div>
+            <div class="form-actions">
+                <button id="login-btn" class="btn btn-primary">Se connecter</button>
+                <button id="register-btn" class="btn btn-secondary">S'inscrire</button>
+            </div>
+            <div class="form-switch">
+                <p>Pas de compte ? <a href="#" id="switch-to-register">Créer un compte</a></p>
+            </div>
+        </div>
+
+        <!-- Formulaire d'inscription -->
+        <div id="register-form" class="register-form" style="display: none;">
+            <div class="form-group">
+                <label for="reg-username">Nom d'utilisateur:</label>
+                <input type="text" id="reg-username" placeholder="Choisissez un pseudo" required>
+            </div>
+            <div class="form-group">
+                <label for="reg-email">Email (optionnel):</label>
+                <input type="email" id="reg-email" placeholder="votre@email.com">
+            </div>
+            <div class="form-group">
+                <label for="reg-password">Mot de passe:</label>
+                <input type="password" id="reg-password" placeholder="Mot de passe (min 6 caractères)" required>
+            </div>
+            <div class="form-actions">
+                <button id="register-submit-btn" class="btn btn-primary">Créer le compte</button>
+                <button id="back-to-login-btn" class="btn btn-secondary">Retour</button>
+            </div>
+        </div>
+
+        <!-- Sélection d'avatar -->
+        <div id="avatar-selection" class="avatar-selection">
+            <h3>Choisissez votre avatar:</h3>
+            <div class="avatar-options">
+                <div class="avatar-option" data-avatar="default">🔵</div>
+                <div class="avatar-option" data-avatar="red">🔴</div>
+                <div class="avatar-option" data-avatar="green">🟢</div>
+                <div class="avatar-option" data-avatar="yellow">🟡</div>
+                <div class="avatar-option" data-avatar="purple">🟣</div>
+                <div class="avatar-option" data-avatar="orange">🟠</div>
+            </div>
+            <button id="select-avatar-btn" class="btn btn-primary" disabled>Continuer vers le jeu</button>
+            <div class="back-to-login">
+                <a href="#" id="back-to-login-from-avatar">← Retour à la connexion</a>
+            </div>
+        </div>
+
+        <!-- Messages -->
+        <div id="error-message" class="error-message"></div>
+        <div id="success-message" class="success-message"></div>
+        <div id="loading" class="loading">Chargement...</div>
+    </div>
+
+    <script src="/js/login.js"></script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+# Dépendances
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Fichiers de configuration locale
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+logs
+*.log
+
+# Fichiers temporaires
+.tmp
+.temp
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Base de données de développement
+database/game.db
+
+# Backup
+backup/
+
+# Scripts de développement
+reset-leaderboard.js
+force-update-leaderboard.js
+cleanup-java.bat
+
+# JavaFX (supprimé)
+JavaFX_Maven/
+
+# Docker
+.dockerignore
+
+# Azure
+.azure/

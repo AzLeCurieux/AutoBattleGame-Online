@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoBattleGame - Version Web</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/animations.css">
+    <link rel="stylesheet" href="/css/responsive.css">
+</head>
+<body>
+    <div id="game-container">
+        <!-- Interface principale du jeu -->
+        <div id="game-ui">
+            <!-- Informations utilisateur -->
+            <div id="user-info" class="user-info">
+                <!-- Sera rempli par OnlineManager -->
+            </div>
+            
+            <!-- Affichage du niveau -->
+            <div id="level-display">
+                <span id="level-text">Level 01</span>
+            </div>
+            
+            <!-- Zone de combat -->
+            <div id="battle-area">
+                <div id="player-area">
+                    <div id="player" class="fighter"></div>
+                    <div id="player-health-bar" class="health-bar">
+                        <div id="player-health-fill" class="health-fill"></div>
+                        <div id="player-health-text" class="health-text">1000 / 1000</div>
+                    </div>
+                </div>
+                
+                <div id="enemy-area">
+                    <div id="enemy" class="fighter enemy"></div>
+                    <div id="enemy-health-bar" class="health-bar">
+                        <div id="enemy-health-fill" class="health-fill"></div>
+                        <div id="enemy-health-text" class="health-text">400 / 400</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Affichage de l'or -->
+            <div id="gold-display">
+                <span id="gold-text">Gold: 0</span>
+            </div>
+            
+            <!-- Boutons de contrôle -->
+            <div id="control-buttons">
+                <button id="fight-btn" class="btn btn-primary">Fight</button>
+                <button id="stop-btn" class="btn btn-secondary">Stop</button>
+                <button id="camp-btn" class="btn btn-camp">Camp</button>
+                <button id="restart-btn" class="btn btn-danger">Restart</button>
+            </div>
+            
+            <!-- Panneau online -->
+            <div id="online-panel" class="online-panel">
+                <div id="leaderboard" class="leaderboard-section">
+                    <!-- Sera rempli par OnlineManager -->
+                </div>
+                <div id="online-players" class="online-players-section">
+                    <!-- Sera rempli par OnlineManager -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Interface du camp -->
+        <div id="camp-modal" class="modal">
+            <div class="modal-content">
+                <div class="camp-header">
+                    <h3>Camp</h3>
+                </div>
+                       <div class="camp-stats">
+                           <div class="stats-grid">
+                               <div class="stat-item">
+                                   <div class="stat-icon">⚔️</div>
+                                   <div class="stat-info">
+                                       <div class="stat-label">Dégâts</div>
+                                       <div id="stat-damage" class="stat-value">200</div>
+                                   </div>
+                               </div>
+                               <div class="stat-item">
+                                   <div class="stat-icon">❤️</div>
+                                   <div class="stat-info">
+                                       <div class="stat-label">Vie</div>
+                                       <div id="stat-health" class="stat-value">1000 / 1000</div>
+                                   </div>
+                               </div>
+                               <div class="stat-item">
+                                   <div class="stat-icon">💥</div>
+                                   <div class="stat-info">
+                                       <div class="stat-label">Crit Chance</div>
+                                       <div id="stat-crit-chance" class="stat-value">1%</div>
+                                   </div>
+                               </div>
+                               <div class="stat-item">
+                                   <div class="stat-icon">⚡</div>
+                                   <div class="stat-info">
+                                       <div class="stat-label">Crit Dégâts</div>
+                                       <div id="stat-crit-damage" class="stat-value">50%</div>
+                                   </div>
+                               </div>
+                               <div class="stat-item">
+                                   <div class="stat-icon">💰</div>
+                                   <div class="stat-info">
+                                       <div class="stat-label">Or</div>
+                                       <div id="stat-gold" class="stat-value">0</div>
+                                   </div>
+                               </div>
+                               <div class="stat-item">
+                                   <div class="stat-icon">🏆</div>
+                                   <div class="stat-info">
+                                       <div class="stat-label">Niveau</div>
+                                       <div id="stat-level" class="stat-value">1</div>
+                                   </div>
+                               </div>
+                           </div>
+                       </div>
+                       <div class="camp-actions">
+                           <button id="heal-btn" class="btn btn-heal">
+                               Heal<br>
+                               <span class="cost">5 GOLD</span>
+                           </button>
+                           <button id="passive-info-btn" class="btn btn-passive">
+                               Passifs<br>
+                               <span class="info">💫</span>
+                           </button>
+                       </div>
+            </div>
+        </div>
+        
+        <!-- Modal d'améliorations -->
+        <div id="upgrade-modal" class="modal">
+            <div class="modal-content upgrade-content">
+                <div class="upgrade-header">
+                    <h3>Choisissez une Amélioration</h3>
+                    <p>Sélectionnez l'amélioration qui vous aidera le plus dans votre aventure</p>
+                </div>
+                <div id="upgrade-options" class="upgrade-options">
+                    <!-- Les options d'amélioration seront générées dynamiquement -->
+                </div>
+            </div>
+        </div>
+        
+               <!-- Zone pour les dégâts flottants -->
+               <div id="damage-overlay"></div>
+               
+               <!-- Modal d'information sur les passifs -->
+               <div id="passive-info-modal" class="modal">
+                   <div class="modal-content passive-info-content">
+                       <div class="passive-info-header">
+                           <h3>💫 Améliorations Passives</h3>
+                           <p>Vos améliorations de boss actives</p>
+                       </div>
+                       <div id="passive-list" class="passive-list">
+                           <!-- Les passifs seront générés dynamiquement -->
+                       </div>
+                       <div class="passive-info-footer">
+                           <button id="close-passive-info" class="btn btn-secondary">Fermer</button>
+                       </div>
+                   </div>
+               </div>
+           </div>
+    
+    <!-- Socket.io -->
+    <script src="/socket.io/socket.io.js"></script>
+    
+    <!-- Scripts -->
+    <script src="/js/utils/AudioManager.js"></script>
+    <script src="/js/utils/AnimationUtils.js"></script>
+    <script src="/js/utils/Random.js"></script>
+    <script src="/js/game/Damage.js"></script>
+    <script src="/js/game/Fighter.js"></script>
+    <script src="/js/game/Player.js"></script>
+    <script src="/js/game/Enemy.js"></script>
+    <script src="/js/battle/Level.js"></script>
+    <script src="/js/battle/BossUpgrade.js"></script>
+    <script src="/js/battle/BossUpgrades.js"></script>
+    <script src="/js/battle/AttackAnimation.js"></script>
+    <script src="/js/battle/Upgrades.js"></script>
+    <script src="/js/game/CreateEnemies.js"></script>
+    <script src="/js/ui/UIController.js"></script>
+    <script src="/js/online/OnlineManager.js"></script>
+    <script src="/js/Game.js"></script>
+    <script src="/js/main.js"></script>
+</body>
+</html>
