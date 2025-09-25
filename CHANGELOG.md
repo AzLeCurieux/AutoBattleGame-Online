@@ -1,33 +1,47 @@
 # Changelog - AutoBattleGame Online
 
+## [1.2.0] - 2024-01-XX
+
+### Nettoyage du Projet
+- **Suppression** de tous les fichiers de documentation Azure redondants
+- **Suppression** des scripts PowerShell inutiles
+- **Suppression** des fichiers Docker et de déploiement obsolètes
+- **Simplification** de la structure du projet
+- **Mise à jour** du README avec une documentation claire
+
+### Modifié
+- **README.md** : Documentation simplifiée et claire
+- **.gitignore** : Nettoyage et optimisation
+- **Structure** : Projet plus propre et organisé
+
+### Notes
+- Le projet est maintenant plus propre et facile à maintenir
+- Toutes les fonctionnalités du jeu sont préservées
+- Déploiement optimisé sur Azure App Service
+- Documentation claire et concise
+
 ## [1.1.0] - 2024-01-XX
 
 ### Supprimé
-- **Partie JavaFX** : Suppression complète du code Java et des fichiers Maven
-- **Dossier JavaFX_Maven** : Tous les fichiers Java, ressources et configurations Maven
-- **Références Java** : Mise à jour de tous les fichiers de documentation
+- **Partie JavaFX** : Suppression complète du code Java
+- **Dossier JavaFX_Maven** : Tous les fichiers Java supprimés
+- **Références Java** : Mise à jour de la documentation
 
 ### Modifié
-- **README.md** : Suppression des références à JavaFX, description mise à jour
-- **package.json** : Description mise à jour pour refléter la version web uniquement
-- **.gitignore** : Ajout du dossier JavaFX_Maven à ignorer
-- **.dockerignore** : Suppression des références JavaFX
-
-### Ajouté
-- **cleanup-java.bat** : Script pour supprimer le dossier JavaFX_Maven
-- **CHANGELOG.md** : Ce fichier de suivi des changements
+- **README.md** : Description mise à jour
+- **package.json** : Version web uniquement
+- **.gitignore** : Optimisé
 
 ### Notes
-- Le projet est maintenant 100% web (Node.js + HTML/CSS/JavaScript)
-- Toutes les fonctionnalités du jeu original sont préservées
-- Prêt pour le déploiement sur Azure Container Instances
-- Compatible avec Docker et GitHub Actions
+- Projet 100% web (Node.js + HTML/CSS/JavaScript)
+- Toutes les fonctionnalités préservées
+- Prêt pour Azure App Service
 
 ## [1.0.0] - 2024-01-XX
 
 ### Ajouté
 - Version web complète du jeu AutoBattleGame
-- Système de combat automatique au tour par tour
+- Système de combat automatique
 - Système de progression avec niveaux et boss
 - Améliorations normales et de boss
 - Système d'économie basé sur l'or
@@ -35,6 +49,6 @@
 - Système d'authentification
 - Leaderboard en temps réel
 - Notifications de nouveaux records
-- Déploiement Docker et Azure
+- Déploiement Azure App Service
 - Workflow GitHub Actions
 

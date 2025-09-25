@@ -38,13 +38,50 @@ backup/
 # Scripts de développement
 reset-leaderboard.js
 force-update-leaderboard.js
-cleanup-java.bat
 
-# JavaFX (supprimé)
-JavaFX_Maven/
+# Base de données de développement
+database/game.db
 
-# Docker
-.dockerignore
+# Logs
+*.log
+npm-debug.log*
 
-# Azure
-.azure/
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# nyc test coverage
+.nyc_output
+
+# Dependency directories
+node_modules/
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
