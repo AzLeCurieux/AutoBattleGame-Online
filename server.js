@@ -23,7 +23,7 @@ const io = socketIo(server, {
   }
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || process.env.WEBSITES_PORT || 3000;
 
 // Set development mode by default for easier debugging
 const isDevelopment = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
@@ -259,7 +259,7 @@ async function startServer() {
     await initializeDatabase();
     console.log('Database initialized successfully');
     
-    server.listen(PORT, '0.0.0.0', () => {
+    server.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
       if (isDevelopment) {
         console.log(`🎮 Game available at http://localhost:${PORT}`);

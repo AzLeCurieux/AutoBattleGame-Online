@@ -1,6 +1,6 @@
 # Configuration pour Azure Container Instances
 apiVersion: 2021-09-01
-location: westeurope
+location: canadacentral
 name: autobattlegame
 properties:
   containers:

@@ -10,7 +10,7 @@ env:
   AZURE_CONTAINER_REGISTRY: ${{ secrets.AZURE_REGISTRY }}
   CONTAINER_NAME: autobattlegame
   RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
-  LOCATION: ${{ secrets.AZURE_LOCATION }}
+  LOCATION: "Canada Central"
 
 jobs:
   build-and-deploy:
