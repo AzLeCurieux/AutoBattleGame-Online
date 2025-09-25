@@ -7,7 +7,7 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "build": "echo 'No build step required'",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "echo \"No tests specified\"",
     "docker:build": "docker build -t autobattlegame-online .",
     "docker:run": "docker run -p 3000:3000 autobattlegame-online"
   },
