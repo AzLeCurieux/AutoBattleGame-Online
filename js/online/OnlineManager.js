@@ -314,6 +314,8 @@ class OnlineManager {
         const input = document.getElementById('profile-avatar-url');
         if (input) input.value = (typeof this.user.avatar === 'string' && /^(https?:)\/\//i.test(this.user.avatar)) ? this.user.avatar : '';
         if (modal) modal.style.display = 'flex';
+        // Focus the input so paste (Ctrl+V) works immediately
+        if (input) setTimeout(() => { try { input.focus(); if (typeof input.select === 'function') input.select(); } catch (_) {} }, 0);
       });
     }
 
@@ -336,8 +338,8 @@ class OnlineManager {
     const closeBtn = document.getElementById('profile-close');
     const cancelBtn = document.getElementById('profile-cancel');
     const saveBtn = document.getElementById('profile-save');
-    const saveUsernameBtn = document.getElementById('profile-save-username');
-    const usernameInput = document.getElementById('profile-new-username');
+    const saveUsernameBtn = null;
+    const usernameInput = null;
 
     const closeModal = () => { modal.style.display = 'none'; };
     if (closeBtn) {
@@ -346,6 +348,13 @@ class OnlineManager {
     if (cancelBtn) {
       cancelBtn.onclick = closeModal;
     }
+    // Also close on overlay click or ESC
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (modal.style.display === 'flex' && e.key === 'Escape') closeModal();
+    });
     // Save avatar URL
     if (saveBtn) {
       saveBtn.onclick = async () => {
@@ -383,13 +392,11 @@ class OnlineManager {
       };
     }
 
+    // Light handling: focus + select for quick paste
+    if (input) setTimeout(() => { try { input.focus(); input.select(); } catch (_) {} }, 0);
+
     // Save username
-    if (saveUsernameBtn && usernameInput) {
-      // Feature disabled UX
-      saveUsernameBtn.onclick = () => {
-        alert('Le changement de pseudo est désactivé.');
-      };
-    }
+    // Username change removed
   }
 
   applyAvatarToPlayerSquare() {

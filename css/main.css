@@ -34,8 +34,16 @@ body {
     font-family: 'Arial', sans-serif;
     background: linear-gradient(135deg, #1a1a2e, #16213e);
     color: white;
-    overflow: hidden;
-    height: 100vh;
+    overflow-y: auto; /* Allow scroll */
+    height: auto;     /* Let page grow */
+    -ms-overflow-style: none; /* IE/Edge hides scrollbar */
+    scrollbar-width: none;    /* Firefox hides scrollbar */
+}
+
+/* Hide scrollbar but keep scrollable (WebKit) */
+body::-webkit-scrollbar {
+    width: 0;
+    height: 0;
 }
 
 /* Fullscreen background video */
@@ -176,6 +184,7 @@ body {
 .modal-body { display:flex; flex-direction: column; gap: 10px; }
 .modal-label { font-size: 12px; opacity: 0.85; }
 .modal-input { padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.25); color: #fff; }
+.modal-input textarea, textarea.modal-input { font-family: inherit; resize: vertical; min-height: 38px; }
 .modal-hint { font-size: 12px; opacity: 0.7; }
 .modal-footer { display:flex; gap: 10px; justify-content: flex-end; margin-top: 12px; }
 
@@ -280,31 +289,83 @@ body {
     transform: translate(-50%, -50%);
     width: 600px;
     height: 400px;
-    background: linear-gradient(145deg, #2a2a3e, #1e1e32);
-    border: 3px solid #4a4a6e;
+    /* Liquid animated gradient using palette */
+    background: radial-gradient(120% 120% at 30% 20%, rgba(0,168,202,0.18), rgba(0,0,0,0) 55%),
+                radial-gradient(120% 120% at 70% 80%, rgba(0,157,255,0.16), rgba(0,0,0,0) 55%),
+                linear-gradient(135deg, #1e1e32, #2a2a3e);
+    background-size: 180% 180%, 180% 180%, 100% 100%;
+    background-position: 0% 50%, 100% 50%, center;
+    animation: liquidFlow 12s ease-in-out infinite;
+    filter: saturate(1.05);
+    border: 3px solid rgba(194, 206, 255, 0.25);
     border-radius: 20px;
-    box-shadow: 
-        0 0 30px rgba(74, 74, 110, 0.5),
-        inset 0 0 20px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    box-shadow:
+        0 0 28px rgba(0, 157, 255, 0.22),
+        inset 0 0 22px rgba(0, 0, 0, 0.35);
     z-index: 1;
+    will-change: background-position, filter;
+}
+
+/* Center-lock before fight: show only player at center */
+#battle-area.prefight #player-area {
+    left: 50% !important;
+    right: auto !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    z-index: 12;
+}
+#battle-area.prefight #enemy-area {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Standby visual emphasis for our player */
+#battle-area.prefight #player {
+    transform: scale(1.2);
+    filter: brightness(1.2) saturate(1.1);
+    box-shadow: 0 0 18px rgba(255,255,255,0.25), 0 0 28px rgba(0, 157, 255, 0.25);
+    border-color: rgba(255,255,255,0.9);
 }
 
 .combat-zone::before {
     content: '';
     position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);
+    inset: -2px;
+    background: linear-gradient(45deg, rgba(0,168,202,0.45), rgba(194,206,255,0.45), rgba(0,157,255,0.45));
     border-radius: 22px;
     z-index: -1;
     animation: combat-glow 3s ease-in-out infinite alternate;
+    filter: blur(2px);
+}
+
+/* Shimmering liquid highlight */
+.combat-zone::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(60% 60% at 30% 30%, rgba(255,255,255,0.05), rgba(255,255,255,0) 60%),
+                radial-gradient(60% 60% at 70% 70%, rgba(255,255,255,0.05), rgba(255,255,255,0) 60%);
+    mix-blend-mode: screen;
+    pointer-events: none;
+    animation: liquidSweep 10s linear infinite;
 }
 
 @keyframes combat-glow {
     0% { opacity: 0.3; }
     100% { opacity: 0.7; }
+}
+
+@keyframes liquidFlow {
+    0%   { background-position: 0% 50%, 100% 50%, center; }
+    50%  { background-position: 100% 50%, 0% 50%, center; }
+    100% { background-position: 0% 50%, 100% 50%, center; }
+}
+
+@keyframes liquidSweep {
+    0%   { transform: translateX(-10%) translateY(-6%); opacity: 0.6; }
+    50%  { transform: translateX(10%)  translateY(6%);  opacity: 0.9; }
+    100% { transform: translateX(-10%) translateY(-6%); opacity: 0.6; }
 }
 
 #enemy-area {
@@ -371,6 +432,8 @@ body {
     width: 140px;
     height: 18px;
 }
+/* Raise enemy health bar for bigger boss */
+#enemy-area .fighter.boss + .health-bar { top: -72px; }
 
 /* Remplissage des barres de vie */
 .health-fill {
@@ -427,9 +490,72 @@ body {
 }
 
 .fighter.boss {
-    width: 100px;
-    height: 100px;
+    width: 120px;
+    height: 120px;
     background-color: #ff8800;
+}
+/* Ensure boss overrides any default enemy sizing */
+#enemy.fighter.boss { width: 120px !important; height: 120px !important; }
+
+/* Boss glow if present */
+.fighter.boss-glow { box-shadow: 0 0 20px rgba(255,136,0,0.45), 0 0 40px rgba(255,136,0,0.25); border-color: rgba(255,255,255,0.9); }
+
+/* Stronger standby emphasis */
+#battle-area.prefight #player {
+  transform: scale(1.35);
+  filter: brightness(1.35) saturate(1.15);
+  box-shadow: 0 0 22px rgba(255,255,255,0.35), 0 0 36px rgba(0,157,255,0.35);
+  border-color: #fff;
+  animation: standbyPulse 1.6s ease-in-out infinite;
+  will-change: transform, filter, box-shadow;
+}
+
+#battle-area.prefight #player:hover {
+  transform: scale(1.48) rotate(1deg);
+  filter: brightness(1.45) saturate(1.22);
+  box-shadow: 0 0 26px rgba(255,255,255,0.45), 0 0 44px rgba(0,157,255,0.45);
+}
+
+/* Animated aura layers */
+#battle-area.prefight #player::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: 10px;
+  background: radial-gradient(60% 60% at 50% 50%, rgba(0,157,255,0.30), rgba(0,157,255,0) 70%);
+  filter: blur(6px);
+  opacity: 0.7;
+  pointer-events: none;
+  animation: auraPulse 2.2s ease-in-out infinite;
+}
+
+#battle-area.prefight #player::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 8px;
+  background: linear-gradient(45deg, rgba(255,255,255,0.25), rgba(0,157,255,0.25), rgba(255,255,255,0.25));
+  mix-blend-mode: screen;
+  opacity: 0.35;
+  pointer-events: none;
+  animation: glowSweep 3s linear infinite;
+}
+
+@keyframes standbyPulse {
+  0%   { transform: scale(1.30); filter: brightness(1.28) saturate(1.1); }
+  50%  { transform: scale(1.40); filter: brightness(1.42) saturate(1.18); }
+  100% { transform: scale(1.30); filter: brightness(1.28) saturate(1.1); }
+}
+
+@keyframes auraPulse {
+  0%,100% { opacity: 0.55; filter: blur(6px); }
+  50%     { opacity: 0.9;  filter: blur(9px); }
+}
+
+@keyframes glowSweep {
+  0%   { transform: rotate(0deg); opacity: 0.25; }
+  50%  { opacity: 0.45; }
+  100% { transform: rotate(360deg); opacity: 0.25; }
 }
 
 /* Barres de vie */

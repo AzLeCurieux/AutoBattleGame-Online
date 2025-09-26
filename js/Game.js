@@ -72,6 +72,10 @@ class Game {
         
         // Toujours utiliser la logique côté client pour les animations
         if (!this.attackAnimation) return;
+
+        // Remove pre-fight center lock
+        const battle = document.getElementById('battle-area');
+        if (battle) battle.classList.remove('prefight');
         
         if (!this.attackAnimation.isPlayerFighting() && !this.attackAnimation.isEnemyIsAlive()) {
             this.createEnemies.createSquareEnemy(true);
@@ -127,6 +131,9 @@ class Game {
         // Mettre à jour l'affichage immédiatement
         this.player.updateHealth();
         this.updateUI();
+        // Remettre la vue en pré-combat (carré joueur centré, ennemi masqué)
+        const battle = document.getElementById('battle-area');
+        if (battle) battle.classList.add('prefight');
         // Redémarrer
         this.startGame();
     }

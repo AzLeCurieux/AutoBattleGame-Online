@@ -37,18 +37,12 @@
                     </div>
                     <div class="modal-body">
                         <label for="profile-avatar-url" class="modal-label">URL de la photo de profil</label>
-                        <input id="profile-avatar-url" type="url" placeholder="https://exemple.com/avatar.png" class="modal-input" />
+                        <input id="profile-avatar-url" type="url" placeholder="https://exemple.com/avatar.png" class="modal-input" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" inputmode="url" />
                         <div class="modal-footer" style="justify-content:flex-start; gap:8px; margin:6px 0 12px 0; padding:0;">
                           <button id="profile-save" class="btn btn-compact btn-outline">Changer la photo</button>
                         </div>
                         <div class="modal-hint">Formats sûrs: https/http. Pour un téléchargement, utilisez un hébergeur fiable (CDN/Cloud).</div>
-                        <div class="divider" style="height:12px"></div>
-                        <label for="profile-new-username" class="modal-label">Changer de pseudo (1x / semaine)</label>
-                        <input id="profile-new-username" type="text" placeholder="Nouveau pseudo" class="modal-input" />
-                        <div class="modal-footer" style="justify-content:flex-start; gap:8px; margin:6px 0 12px 0; padding:0;">
-                          <button id="profile-save-username" class="btn btn-compact btn-outline">Changer le pseudo</button>
-                        </div>
-                        <div class="modal-hint">3-20 caractères, lettres/chiffres/_.</div>
+                        
                     </div>
                     <div class="modal-footer">
                         <button id="profile-cancel" class="btn btn-secondary">Annuler</button>
@@ -90,7 +84,7 @@
             
             
             <!-- Zone de combat -->
-            <div id="battle-area">
+            <div id="battle-area" class="prefight">
                 <!-- Gains de passifs (au-dessus des pastilles) -->
                 <div id="passives-gains" class="passives-gains"></div>
                 <!-- Statistiques au-dessus de l'arène -->
