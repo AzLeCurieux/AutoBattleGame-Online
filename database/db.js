@@ -1,5 +1,6 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const fs = require('fs');
 const bcrypt = require('bcryptjs');
 
 class Database {
@@ -9,13 +10,27 @@ class Database {
 
   async initialize() {
     return new Promise((resolve, reject) => {
-      const dbPath = path.join(__dirname, 'game.db');
-      this.db = new sqlite3.Database(dbPath, (err) => {
+      // Prefer a writable, persistent path in Azure App Service (/home is writable)
+      const defaultDir = process.env.SQLITE_DB_DIR
+        || (process.env.HOME ? path.join(process.env.HOME, 'data') : '/home/data');
+      const dbPath = process.env.SQLITE_DB_PATH || path.join(defaultDir, 'game.db');
+
+      // Ensure directory exists
+      try {
+        fs.mkdirSync(path.dirname(dbPath), { recursive: true });
+      } catch (mkErr) {
+        console.error('Failed to ensure DB directory exists:', mkErr);
+      }
+
+      this.db = new sqlite3.Database(dbPath, sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE, (err) => {
         if (err) {
-          console.error('Error opening database:', err);
+          console.error('Error opening database:', err, '\nPath:', dbPath);
           reject(err);
         } else {
-          console.log('Connected to SQLite database');
+          console.log('Connected to SQLite database at', dbPath);
+          // Improve reliability under load
+          this.db.run('PRAGMA journal_mode = WAL');
+          this.db.run('PRAGMA busy_timeout = 3000');
           this.createTables().then(resolve).catch(reject);
         }
       });
