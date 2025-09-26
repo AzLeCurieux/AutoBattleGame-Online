@@ -40,13 +40,20 @@ const validateChangeUsername = [
     .withMessage('Username can only contain letters, numbers, and underscores')
 ];
 
-// Update avatar validation
+// Update avatar validation: allow preset keywords or http(s) URL
+const AVATAR_PRESETS = ['default', 'red', 'green', 'yellow', 'purple', 'orange'];
 const validateAvatarUpdate = [
   body('avatar')
     .trim()
-    .isURL({ protocols: ['http', 'https'], require_protocol: true })
-    .withMessage('Invalid URL')
-    .custom((val) => { try { const u = new URL(val); return u.hostname && u.hostname.length <= 253; } catch (_) { return false; } })
+    .custom((val) => {
+      if (!val) return false;
+      if (AVATAR_PRESETS.includes(val)) return true;
+      try {
+        const u = new URL(val);
+        return (u.protocol === 'http:' || u.protocol === 'https:') && (u.hostname && u.hostname.length <= 253);
+      } catch (_) { return false; }
+    })
+    .withMessage('Invalid avatar. Use a preset (default/red/green/yellow/purple/orange) or a valid http(s) URL')
 ];
 
 // Register new user
@@ -268,6 +275,29 @@ router.put('/avatar', validateAvatarUpdate, async (req, res) => {
       success: false,
       message: 'Internal server error'
     });
+  }
+});
+
+// Also support POST for avatar update (same validation & auth)
+router.post('/avatar', validateAvatarUpdate, async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (!token) {
+      return res.status(401).json({ success: false, message: 'No token provided' });
+    }
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const { avatar } = req.body;
+
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, message: 'Validation failed', errors: errors.array() });
+    }
+
+    await db.run('UPDATE users SET avatar = ? WHERE id = ?', [avatar, decoded.userId]);
+    return res.json({ success: true, message: 'Avatar updated successfully' });
+  } catch (error) {
+    console.error('Avatar update error:', error);
+    return res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
