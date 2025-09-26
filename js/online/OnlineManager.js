@@ -288,9 +288,10 @@ class OnlineManager {
     if (userInfo) {
       const isUrl = typeof this.user.avatar === 'string' && /^(https?:)\/\//i.test(this.user.avatar);
       const avatarHtml = isUrl ? `<img class=\"avatar-img\" src=\"${this.user.avatar}\" alt=\"avatar\" />` : this.getAvatarEmoji(this.user.avatar);
+      const nameToShow = this.user.displayName || this.user.username;
       userInfo.innerHTML = `
           <span class=\"user-avatar\">${avatarHtml}</span>
-          <button class=\"user-name\" id=\"profile-view-open\" title=\"Ouvrir le profil\">${this.user.username}</button>
+          <button class=\"user-name\" id=\"profile-view-open\" title=\"Ouvrir le profil\">${nameToShow}</button>
           <div class=\"util-actions\">
             <button id=\"profile-btn\" class=\"btn btn-outline btn-compact\">Profil</button>
             <button id=\"logout-btn\" class=\"btn btn-small\" title=\"Déconnexion\">⎋</button>
@@ -335,6 +336,8 @@ class OnlineManager {
     const closeBtn = document.getElementById('profile-close');
     const cancelBtn = document.getElementById('profile-cancel');
     const saveBtn = document.getElementById('profile-save');
+    const saveUsernameBtn = document.getElementById('profile-save-username');
+    const usernameInput = document.getElementById('profile-new-username');
 
     const closeModal = () => { modal.style.display = 'none'; };
     if (closeBtn) {
@@ -377,6 +380,14 @@ class OnlineManager {
           console.error('Avatar update failed', e);
           alert('Impossible de mettre à jour la photo de profil.');
         }
+      };
+    }
+
+    // Save username
+    if (saveUsernameBtn && usernameInput) {
+      // Feature disabled UX
+      saveUsernameBtn.onclick = () => {
+        alert('Le changement de pseudo est désactivé.');
       };
     }
   }

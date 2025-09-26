@@ -10,6 +10,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-producti
 // Validation middleware
 const validateRegistration = [
   body('username')
+    .trim()
     .isLength({ min: 3, max: 20 })
     .withMessage('Username must be between 3 and 20 characters')
     .matches(/^[a-zA-Z0-9_]+$/)
@@ -21,11 +22,31 @@ const validateRegistration = [
 
 const validateLogin = [
   body('username')
+    .trim()
     .notEmpty()
     .withMessage('Username is required'),
   body('password')
     .notEmpty()
     .withMessage('Password is required')
+];
+
+// Change username - allowed once per 7 days (account identifier)
+const validateChangeUsername = [
+  body('newUsername')
+    .trim()
+    .isLength({ min: 3, max: 20 })
+    .withMessage('Username must be between 3 and 20 characters')
+    .matches(/^[a-zA-Z0-9_]+$/)
+    .withMessage('Username can only contain letters, numbers, and underscores')
+];
+
+// Update avatar validation
+const validateAvatarUpdate = [
+  body('avatar')
+    .trim()
+    .isURL({ protocols: ['http', 'https'], require_protocol: true })
+    .withMessage('Invalid URL')
+    .custom((val) => { try { const u = new URL(val); return u.hostname && u.hostname.length <= 253; } catch (_) { return false; } })
 ];
 
 // Register new user
@@ -149,6 +170,7 @@ router.post('/login', validateLogin, async (req, res) => {
       data: {
         userId: user.id,
         username: user.username,
+        displayName: user.display_name || null,
         avatar: user.avatar,
         token
       }
@@ -196,6 +218,7 @@ router.get('/profile', async (req, res) => {
       data: {
         id: user.id,
         username: user.username,
+        displayName: user.display_name || null,
         avatar: user.avatar,
         bestScore: stats.best_score || 0,
         bestLevel: stats.best_level || 0,
@@ -214,7 +237,7 @@ router.get('/profile', async (req, res) => {
 });
 
 // Update user avatar
-router.put('/avatar', async (req, res) => {
+router.put('/avatar', validateAvatarUpdate, async (req, res) => {
   try {
     const token = req.headers.authorization?.replace('Bearer ', '');
     if (!token) {
@@ -227,11 +250,9 @@ router.put('/avatar', async (req, res) => {
     const decoded = jwt.verify(token, JWT_SECRET);
     const { avatar } = req.body;
 
-    if (!avatar) {
-      return res.status(400).json({
-        success: false,
-        message: 'Avatar is required'
-      });
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, message: 'Validation failed', errors: errors.array() });
     }
 
     await db.run('UPDATE users SET avatar = ? WHERE id = ?', [avatar, decoded.userId]);
@@ -276,6 +297,26 @@ router.post('/logout', async (req, res) => {
       message: 'Internal server error'
     });
   }
+});
+
+// Change username endpoint
+// Set display name (nickname) - allowed once per 7 days, separate from username
+const validateDisplayName = [
+  body('displayName')
+    .trim()
+    .isLength({ min: 3, max: 24 })
+    .withMessage('Display name must be between 3 and 24 characters')
+    .matches(/^[\p{L}0-9_\-\s]+$/u)
+    .withMessage('Display name can contain letters, numbers, spaces, _ and - only')
+];
+
+router.put('/username', async (req, res) => {
+  return res.status(410).json({ success: false, message: 'Username change feature is disabled' });
+});
+
+// New endpoint: change display name (nickname visible in UI/leaderboard only)
+router.put('/display-name', async (req, res) => {
+  return res.status(410).json({ success: false, message: 'Display name feature is disabled' });
 });
 
 module.exports = router;

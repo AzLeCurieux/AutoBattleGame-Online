@@ -8,6 +8,23 @@ class Database {
     this.db = null;
   }
 
+  async ensureUserColumn(columnName, type) {
+    try {
+      const row = await this.get(`PRAGMA table_info(users)`);
+      // sqlite3 driver returns one row at a time for get; use all then check list
+    } catch (_) {}
+    try {
+      const cols = await this.all(`PRAGMA table_info(users)`);
+      const exists = cols.some(c => c.name === columnName);
+      if (!exists) {
+        await this.run(`ALTER TABLE users ADD COLUMN ${columnName} ${type}`);
+      }
+    } catch (e) {
+      // swallow if cannot alter in some environments
+      console.warn('ensureUserColumn warn:', e?.message || e);
+    }
+  }
+
   async initialize() {
     return new Promise((resolve, reject) => {
       // Prefer a writable, persistent path in Azure App Service (/home is writable)
@@ -46,6 +63,9 @@ class Database {
         email TEXT UNIQUE,
         password_hash TEXT NOT NULL,
         avatar TEXT DEFAULT 'default',
+        display_name TEXT,
+        last_display_name_change DATETIME,
+        last_username_change DATETIME,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         last_login DATETIME,
         is_online BOOLEAN DEFAULT 0
@@ -129,6 +149,10 @@ class Database {
     for (const table of tables) {
       await this.run(table);
     }
+    // Ensure new columns exist when table already created previously
+    await this.ensureUserColumn('last_username_change', 'DATETIME');
+    await this.ensureUserColumn('display_name', 'TEXT');
+    await this.ensureUserColumn('last_display_name_change', 'DATETIME');
     
     // Create indexes for better performance
     await this.run('CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)');
@@ -276,7 +300,7 @@ class Database {
           INSERT OR REPLACE INTO leaderboard (user_id, username, avatar, best_level, best_score, total_gold, games_played, last_activity, rank_position)
           SELECT 
             u.id,
-            u.username,
+            COALESCE(u.display_name, u.username) as username,
             u.avatar,
             COALESCE(MAX(s.level), 0) as best_level,
             COALESCE(MAX(s.level), 0) as best_score,
@@ -287,7 +311,7 @@ class Database {
           FROM users u
           LEFT JOIN game_sessions gs ON u.id = gs.user_id
           LEFT JOIN scores s ON gs.session_id = s.session_id
-          GROUP BY u.id, u.username, u.avatar
+          GROUP BY u.id, username, u.avatar
           ORDER BY MAX(s.level) DESC, MAX(s.timestamp) DESC
         `);
         console.log(`✅ Leaderboard mis à jour: ${result.changes} entrées`);
@@ -300,7 +324,7 @@ class Database {
             INSERT INTO leaderboard (user_id, username, avatar, best_level, best_score, total_gold, games_played, last_activity, rank_position)
             SELECT 
               u.id,
-              u.username,
+              COALESCE(u.display_name, u.username) as username,
               u.avatar,
               COALESCE(MAX(s.level), 0) as best_level,
               COALESCE(MAX(s.level), 0) as best_score,
@@ -311,7 +335,7 @@ class Database {
             FROM users u
             LEFT JOIN game_sessions gs ON u.id = gs.user_id
             LEFT JOIN scores s ON gs.session_id = s.session_id
-            GROUP BY u.id, u.username, u.avatar
+            GROUP BY u.id, username, u.avatar
             ORDER BY MAX(s.level) DESC, MAX(s.timestamp) DESC
           `);
           console.log(`✅ Leaderboard mis à jour (retry): ${result.changes} entrées`);

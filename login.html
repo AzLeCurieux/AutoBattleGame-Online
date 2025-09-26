@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AutoBattleGame - Connexion</title>
+    <title>JeuDéKaré - Connexion</title>
     <link rel="stylesheet" href="/css/main.css">
     <style>
         body {
@@ -16,29 +16,13 @@
             font-family: 'Arial', sans-serif;
         }
 
-        .login-container {
-            background: linear-gradient(135deg, #353b51, #2c3e50);
-            border: 2px solid #1e90ff;
-            border-radius: 15px;
-            padding: 40px;
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-        }
+        .login-container { background: rgba(16,20,36,0.72); border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; padding: 28px; width: 100%; max-width: 420px; text-align: center; box-shadow: 0 12px 30px rgba(0,0,0,0.35); backdrop-filter: blur(8px); }
 
-        .login-header h1 {
-            color: #1e90ff;
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-        }
+        .login-header h1 { color: #e5ecff; font-size: 28px; margin-bottom: 6px; font-weight: 900; letter-spacing: 0.4px; }
 
-        .login-header p {
-            color: #ccc;
-            margin-bottom: 30px;
-            font-size: 1.1em;
-        }
+        .login-header p { display:none; }
+        .login-illustration { margin-bottom: 20px; }
+        .login-illustration img { width: 100%; border-radius: 12px; border: 1px solid rgba(255,255,255,0.12); }
 
         .form-group {
             margin-bottom: 20px;
@@ -53,16 +37,7 @@
             font-size: 14px;
         }
 
-        .form-group input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #555;
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
-            font-size: 16px;
-            box-sizing: border-box;
-        }
+        .form-group input { width: 100%; padding: 12px; border: 1px solid rgba(255,255,255,0.14); border-radius: 10px; background: rgba(255,255,255,0.06); color: #fff; font-size: 15px; box-sizing: border-box; }
 
         .form-group input:focus {
             border-color: #1e90ff;
@@ -93,10 +68,7 @@
             letter-spacing: 1px;
         }
 
-        .btn-primary {
-            background: linear-gradient(45deg, #1e90ff, #4169e1);
-            color: white;
-        }
+        .btn-primary { background: linear-gradient(45deg, #6c8bff, #4b6cff); color: white; border: 1px solid rgba(255,255,255,0.12); }
 
         .btn-primary:hover {
             background: linear-gradient(45deg, #4169e1, #1e90ff);
@@ -104,10 +76,7 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
 
-        .btn-secondary {
-            background: linear-gradient(45deg, #666, #888);
-            color: white;
-        }
+        .btn-secondary { background: rgba(255,255,255,0.06); color: #e5ecff; border: 1px solid rgba(255,255,255,0.12); }
 
         .btn-secondary:hover {
             background: linear-gradient(45deg, #888, #666);
@@ -225,8 +194,10 @@
 <body>
     <div class="login-container">
         <div class="login-header">
-            <h1>🎮 AutoBattleGame</h1>
-            <p>Connectez-vous pour jouer en ligne</p>
+            <h1>JeuDéKaré</h1>
+            <div class="login-illustration">
+                <img src="/img/mig.png" alt="illustration" />
+            </div>
         </div>
 
         <!-- Formulaire de connexion -->
