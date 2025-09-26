@@ -14,10 +14,6 @@ const validateRegistration = [
     .withMessage('Username must be between 3 and 20 characters')
     .matches(/^[a-zA-Z0-9_]+$/)
     .withMessage('Username can only contain letters, numbers, and underscores'),
-  body('email')
-    .isEmail()
-    .normalizeEmail()
-    .withMessage('Please provide a valid email'),
   body('password')
     .isLength({ min: 6 })
     .withMessage('Password must be at least 6 characters long')
@@ -44,7 +40,7 @@ router.post('/register', validateRegistration, async (req, res) => {
       });
     }
 
-    const { username, email, password } = req.body;
+    const { username, email, password, avatar } = req.body;
 
     // Check if user already exists
     const existingUser = await db.getUserByUsername(username);
@@ -55,7 +51,7 @@ router.post('/register', validateRegistration, async (req, res) => {
       });
     }
 
-    // Check if email already exists
+    // Check if email already exists (optional)
     if (email) {
       const existingEmail = await db.get('SELECT id FROM users WHERE email = ?', [email]);
       if (existingEmail) {
@@ -67,7 +63,16 @@ router.post('/register', validateRegistration, async (req, res) => {
     }
 
     // Create new user
-    const userId = await db.createUser(username, email, password);
+    const userId = await db.createUser(username, email || null, password);
+    // Optional avatar URL on registration (sanitized)
+    if (avatar && typeof avatar === 'string') {
+      try {
+        const url = new URL(avatar);
+        if (['http:', 'https:'].includes(url.protocol) && url.hostname.length <= 253) {
+          await db.run('UPDATE users SET avatar = ? WHERE id = ?', [avatar, userId]);
+        }
+      } catch (_) { /* ignore invalid URL */ }
+    }
     
     // Generate JWT token
     const token = jwt.sign(

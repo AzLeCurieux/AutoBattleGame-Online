@@ -19,6 +19,9 @@ class BossUpgrades {
         healUpgrade.triggerEveryTurn = () => {
             this.player.heal(Math.floor(this.player.getMaxHealth() * 0.1));
             console.log("Healed 10% of max health");
+            if (window.game && window.game.addPassiveGainMessage) {
+                window.game.addPassiveGainMessage(`Passif: Soin +10%`);
+            }
         };
         healUpgrade.triggerWhenPicked = () => {
             this.closeBossUpgradeModal();
@@ -29,6 +32,9 @@ class BossUpgrades {
         damageUpgrade.triggerEveryTurn = () => {
             this.player.upgradeDamage(10);
             console.log("Damage Upgrade + 10");
+            if (window.game && window.game.addPassiveGainMessage) {
+                window.game.addPassiveGainMessage(`Passif: Dégâts +10`);
+            }
         };
         damageUpgrade.triggerWhenPicked = () => {
             this.closeBossUpgradeModal();
@@ -40,6 +46,9 @@ class BossUpgrades {
             this.player.upgradeMaxHealth(25);
             this.player.updateHealth();
             console.log("Health Upgrade + 25");
+            if (window.game && window.game.addPassiveGainMessage) {
+                window.game.addPassiveGainMessage(`Passif: PV +25`);
+            }
         };
         healthUpgrade.triggerWhenPicked = () => {
             this.closeBossUpgradeModal();
@@ -88,6 +97,9 @@ class BossUpgrades {
             this.player.addBossUpgrade(bossUpgrade);
             AnimationUtils.animateUpgradeOption(upgradeOption);
             this.closeBossUpgradeModal();
+            if (window.game && window.game.attackAnimation && window.game.attackAnimation.resetPositionsCentered) {
+                window.game.attackAnimation.resetPositionsCentered();
+            }
         });
         
         this.bossUpgradeButtons.push(upgradeOption);

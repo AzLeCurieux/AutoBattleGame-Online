@@ -3,8 +3,7 @@ let game;
 let onlineManager;
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("AutoBattleGame - Version Web");
-    console.log("Initialisation du jeu...");
+    // AutoBattleGame - Version Web
     
     // Initialize online manager first
     onlineManager = new OnlineManager();
@@ -23,7 +22,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (game.loadGame()) {
         console.log("Sauvegarde chargée avec succès");
     } else {
-        console.log("Nouvelle partie démarrée");
     }
     
     // Démarrer la sauvegarde automatique
@@ -58,14 +56,31 @@ document.addEventListener('DOMContentLoaded', () => {
         game.saveGame();
     });
     
-    console.log("Jeu initialisé avec succès!");
-    console.log("Contrôles:");
-    console.log("- Espace/Entrée: Combattre");
-    console.log("- Échap: Arrêter le combat");
-    console.log("- C: Ouvrir le camp");
-    console.log("- R: Redémarrer");
-    console.log("- Ctrl+M: Basculer le son");
-    console.log("- Ctrl+S: Sauvegarder");
+    // Jeu initialisé avec succès
+    const bgVideo = document.getElementById('bg-video');
+    if (bgVideo) {
+        // Lecture en boucle avec ralentissement progressif sur la durée
+        bgVideo.loop = true;
+        const baseRate = 1.0;
+        const minRate = 0.6; // vitesse minimale atteinte en fin de vidéo
+        const range = baseRate - minRate;
+
+        const updateRate = () => {
+            if (!bgVideo.duration || isNaN(bgVideo.duration)) return;
+            const t = Math.max(0, Math.min(1, bgVideo.currentTime / bgVideo.duration));
+            // Smoothstep (0->1) pour une courbe douce
+            const eased = t * t * (3 - 2 * t);
+            const target = baseRate - range * eased;
+            bgVideo.playbackRate = Math.max(0.5, target);
+        };
+
+        bgVideo.addEventListener('timeupdate', updateRate);
+        bgVideo.addEventListener('loadedmetadata', () => {
+            bgVideo.playbackRate = baseRate;
+            updateRate();
+            bgVideo.play().catch(() => {});
+        });
+    }
 });
 
 // Gestion des erreurs globales

@@ -17,7 +17,6 @@ class CreateEnemies {
         if (level.levelIsABossBattlePreFight()) {
             // Créer un boss
             newEnemy = new Enemy(maxHealth * 2, Math.floor(damage * 1.25), true);
-            console.log("Boss enemy created!");
         } else {
             // Créer un ennemi normal
             newEnemy = new Enemy(maxHealth, damage, false);
@@ -45,24 +44,39 @@ class CreateEnemies {
     }
 
     positionEnemyRandomly(enemy) {
-        // Positionner l'ennemi dans la zone enemy-area (comme au début)
-        // L'ennemi sera positionné par le CSS de #enemy-area
-        enemy.element.style.position = 'relative';
-        enemy.element.style.left = 'auto';
-        enemy.element.style.top = 'auto';
-        enemy.element.style.zIndex = '10';
-        
-        // La barre de vie sera positionnée par le CSS normal
-        const healthBar = enemy.element.parentElement.querySelector('.health-bar');
-        
-        if (healthBar) {
-            healthBar.style.position = 'relative';
-            healthBar.style.left = 'auto';
-            healthBar.style.top = 'auto';
-            healthBar.style.zIndex = '11';
-        }
-        
-        console.log('Enemy positioned in enemy-area (default CSS positioning)');
+        // Positionner l'ennemi par left/top dans la moitié droite de l'arène
+        const battleArea = document.getElementById('battle-area');
+        const enemyContainer = document.getElementById('enemy-area');
+        if (!battleArea || !enemyContainer) return;
+
+        const battleRect = battleArea.getBoundingClientRect();
+        const arenaW = battleRect.width;
+        const arenaH = battleRect.height;
+        const squareSize = 50;
+
+        // Moitié droite, marges pour rester visibles
+        const minX = Math.floor(arenaW / 2);
+        const maxX = arenaW - squareSize;
+        const minY = 0;
+        const maxY = arenaH - squareSize;
+
+        const randX = Math.floor(minX + Math.random() * Math.max(1, maxX - minX));
+        const randY = Math.floor(minY + Math.random() * Math.max(1, maxY - minY));
+
+        enemyContainer.style.position = 'absolute';
+        enemyContainer.style.transition = 'left 0.3s linear, top 0.3s linear';
+        enemyContainer.style.transform = '';
+        enemyContainer.style.right = '';
+        enemyContainer.style.left = randX + 'px';
+        enemyContainer.style.top = randY + 'px';
+
+        // Sauver position initiale relative à l'arène
+        enemy.initialPosition = { x: randX, y: randY };
+
+        // S'assurer que l'élément ennemi hérite bien (les barres suivent car dans le conteneur)
+        enemy.element.style.left = '0px';
+        enemy.element.style.top = '0px';
+        enemy.element.style.transform = '';
     }
 
     damageGrowth(startDamage) {

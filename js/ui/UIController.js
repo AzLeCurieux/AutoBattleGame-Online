@@ -53,6 +53,7 @@ class UIController {
             this.showPassiveInfo();
         });
 
+
         // Bouton Fermer pour les passifs
         const closePassiveInfoBtn = document.getElementById('close-passive-info');
         closePassiveInfoBtn.addEventListener('click', () => {

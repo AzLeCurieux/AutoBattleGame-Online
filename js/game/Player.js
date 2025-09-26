@@ -6,6 +6,8 @@ class Player extends Fighter {
         this.criticalHitChance = 1;
         this.criticalHitDamagePercent = 50;
         this.bossUpgrades = [];
+        this.passiveUpgrades = [];
+        this.bossPassives = [];
         this.element = document.getElementById('player');
         this.healthBar = document.getElementById('player-health-fill');
         this.healthText = document.getElementById('player-health-text');
@@ -93,11 +95,9 @@ class Player extends Fighter {
     addBossUpgrade(bossUpgrade) {
         bossUpgrade.triggerWhenPicked();
         this.bossUpgrades.push(bossUpgrade);
-        console.log("Boss upgrade added:", bossUpgrade);
     }
 
     triggerAtStartOfFight() {
-        console.log(`Boss upgrades active: ${this.bossUpgrades.length}`);
     }
 
     triggerAfterKillingEnemy() {
@@ -108,10 +108,8 @@ class Player extends Fighter {
         campBtn.disabled = false;
         
         // Déclencher les améliorations de boss (comme dans le code Java)
-        console.log(`Triggering boss upgrades after killing enemy. Total upgrades: ${this.bossUpgrades.length}`);
         for (const bossUpgrade of this.bossUpgrades) {
             if (bossUpgrade.isEveryTurnTrigger()) {
-                console.log("Triggering boss upgrade:", bossUpgrade);
                 bossUpgrade.triggerEveryTurn();
             }
         }

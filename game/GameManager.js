@@ -44,6 +44,15 @@ class GameManager {
     return Array.from(this.activeUsers.values());
   }
 
+  // Get current leaderboard
+  async getLeaderboard() {
+    if (this.leaderboard.length === 0 || Date.now() - this.lastLeaderboardUpdate > 30000) {
+      // Update if empty or older than 30 seconds
+      await this.updateLeaderboard(null);
+    }
+    return this.leaderboard;
+  }
+
   // Handle game action with anti-cheat
   async handleGameAction(userId, actionData) {
     try {
@@ -92,51 +101,59 @@ class GameManager {
         throw new Error('User not found');
       }
 
-      // Validate score
-      const validation = await this.validateScore(userId, scoreData);
-      
-      if (!validation.isValid) {
-        await db.logSuspiciousActivity(userId, scoreData.sessionId, 'score_submission', {
-          data: scoreData,
-          reason: validation.reason,
-          timestamp: new Date().toISOString()
-        });
-
-        throw new Error(`Invalid score: ${validation.reason}`);
-      }
-
-      // Check if this is a new record
+      // Check if this is a new record first
       const userStats = await db.getUserBestScore(userId);
       const isNewRecord = !userStats.best_level || scoreData.level > userStats.best_level;
 
-      // Always submit score to database (score = level for leaderboard)
-      console.log(`Submitting score to database: user=${userId}, level=${scoreData.level}, gold=${scoreData.gold || 0}`);
-      await db.submitScore(
-        userId,
-        scoreData.sessionId,
-        scoreData.level,
-        scoreData.level, // Use level as score
-        scoreData.gold || 0
-      );
+      // Only submit if it's a new record or if it's a real game session (not realtime)
+      if (isNewRecord || !scoreData.sessionId.startsWith('realtime_')) {
+        // Validate score only for real game sessions
+        if (!scoreData.sessionId.startsWith('realtime_')) {
+          const validation = await this.validateScore(userId, scoreData);
+          
+          if (!validation.isValid) {
+            await db.logSuspiciousActivity(userId, scoreData.sessionId, 'score_submission', {
+              data: scoreData,
+              reason: validation.reason,
+              timestamp: new Date().toISOString()
+            });
 
-      // Update session
-      await db.updateGameSession(scoreData.sessionId, {
-        level_reached: Math.max(0, scoreData.level),
-        gold_earned: scoreData.gold || 0
-      });
+            throw new Error(`Invalid score: ${validation.reason}`);
+          }
+        }
+
+        // Submit score to database (score = level for leaderboard)
+        console.log(`Submitting score to database: user=${userId}, level=${scoreData.level}, gold=${scoreData.gold || 0}`);
+        await db.submitScore(
+          userId,
+          scoreData.sessionId,
+          scoreData.level,
+          scoreData.level, // Use level as score
+          scoreData.gold || 0
+        );
+
+        // Update session only for real game sessions
+        if (!scoreData.sessionId.startsWith('realtime_')) {
+          await db.updateGameSession(scoreData.sessionId, {
+            level_reached: Math.max(0, scoreData.level),
+            gold_earned: scoreData.gold || 0
+          });
+        }
+      }
 
       // Update user's current game state
       this.updateUserGameState(userId, scoreData.level, scoreData.gold || 0);
 
-      // Leaderboard will be updated by the server after this method returns
-      console.log(`Score submitted for user ${userId} with level ${scoreData.level}`);
-
+      console.log(`Score processed for user ${userId} with level ${scoreData.level}`);
+      
+      // Return result - leaderboard will be updated by server
       return {
         success: true,
         message: 'Score submitted successfully',
         isNewRecord: isNewRecord,
         previousRecord: userStats.best_level || 0,
-        newRecord: scoreData.level
+        newRecord: scoreData.level,
+        shouldUpdateLeaderboard: isNewRecord
       };
 
     } catch (error) {
@@ -151,8 +168,8 @@ class GameManager {
       console.log('Starting leaderboard update...');
       
       // Update leaderboard in database
-      await db.updateLeaderboard();
-      console.log('Database leaderboard updated');
+      const changes = await db.updateLeaderboard();
+      console.log('Database leaderboard updated with', changes, 'changes');
       
       // Get updated leaderboard
       this.leaderboard = await db.getLeaderboard(50);
@@ -176,8 +193,11 @@ class GameManager {
         console.log('Leaderboard broadcast completed');
       }
 
+      return changes || 0;
+
     } catch (error) {
       console.error('Leaderboard update error:', error);
+      return 0;
     }
   }
 
@@ -274,18 +294,34 @@ class GameManager {
     return { isValid: true };
   }
 
-  // Validate score submission
+  // Validate score submission - SIMPLE ANTI-CHEAT (prevent obvious cheating only)
   async validateScore(userId, scoreData) {
     const { level, score, gold } = scoreData;
 
     // Get user's previous best
     const userStats = await db.getUserBestScore(userId);
     
-    // Check for impossible score jumps (allow normal progression)
-    if (userStats.best_score && score > userStats.best_score + 10) {
+    // Only check for obvious cheating - allow reasonable progression
+    if (userStats.best_level && level > userStats.best_level + 10) {
       return {
         isValid: false,
-        reason: 'Score increase too large'
+        reason: `Suspicious level jump from ${userStats.best_level} to ${level}`
+      };
+    }
+
+    // Check for negative values
+    if (level < 0 || score < 0 || gold < 0) {
+      return {
+        isValid: false,
+        reason: 'Negative values not allowed'
+      };
+    }
+
+    // Check for impossibly high values (only very high values)
+    if (level > 10000 || score > 10000 || gold > 1000000) {
+      return {
+        isValid: false,
+        reason: 'Values too high to be legitimate'
       };
     }
 

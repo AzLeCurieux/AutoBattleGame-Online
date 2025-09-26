@@ -149,7 +149,6 @@ class LoginManager {
 
   async handleRegister() {
     const username = document.getElementById('reg-username').value.trim();
-    const email = document.getElementById('reg-email').value.trim();
     const password = document.getElementById('reg-password').value;
 
     if (!username || !password) {
@@ -163,6 +162,8 @@ class LoginManager {
     }
 
     this.showLoading(true);
+    const submitBtn = document.getElementById('register-submit-btn');
+    if (submitBtn) submitBtn.disabled = true;
 
     try {
       const response = await fetch('/api/auth/register', {
@@ -170,22 +171,43 @@ class LoginManager {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ username, email, password })
+        body: JSON.stringify({ username, password })
       });
 
-      const data = await response.json();
+      // Graceful handling of non-JSON and rate limit
+      if (!response.ok) {
+        let message = `Erreur serveur (${response.status})`;
+        try {
+          const text = await response.text();
+          if (text) message = text;
+        } catch (_) {}
+        if (response.status === 429) {
+          message = 'Trop de tentatives. Réessayez dans 1 minute.';
+        }
+        this.showError(message);
+        return;
+      }
+
+      let data;
+      try {
+        data = await response.json();
+      } catch (e) {
+        this.showError('Réponse invalide du serveur');
+        return;
+      }
 
       if (data.success) {
         localStorage.setItem('auth_token', data.data.token);
         this.showAvatarSelection();
       } else {
-        this.showError(data.message);
+        this.showError(data.message || 'Inscription échouée');
       }
     } catch (error) {
       console.error('Register error:', error);
-      this.showError('Erreur d\'inscription');
+      this.showError("Erreur d'inscription");
     } finally {
       this.showLoading(false);
+      if (submitBtn) setTimeout(() => (submitBtn.disabled = false), 1500);
     }
   }
 

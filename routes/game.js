@@ -34,8 +34,24 @@ router.post('/start', authenticateToken, async (req, res) => {
     const userId = req.user.userId;
     const sessionId = uuidv4();
 
+    console.log(`Creating game session for user ${userId} with session ${sessionId}`);
+
+    // Check if session already exists
+    const existingSession = await db.get('SELECT * FROM game_sessions WHERE session_id = ?', [sessionId]);
+    if (existingSession) {
+      console.log(`Session ${sessionId} already exists, using existing session`);
+      return res.json({
+        success: true,
+        data: {
+          sessionId,
+          message: 'Game session already exists'
+        }
+      });
+    }
+
     // Create new game session
     await db.createGameSession(userId, sessionId);
+    console.log(`Game session created successfully: ${sessionId}`);
 
     res.json({
       success: true,
@@ -49,7 +65,8 @@ router.post('/start', authenticateToken, async (req, res) => {
     console.error('Start game error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to start game session'
+      message: 'Failed to start game session',
+      error: error.message
     });
   }
 });

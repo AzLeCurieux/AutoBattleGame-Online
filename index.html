@@ -9,21 +9,92 @@
     <link rel="stylesheet" href="/css/responsive.css">
 </head>
 <body>
+    <!-- Video background -->
+    <video id="bg-video" autoplay muted loop playsinline preload="auto">
+        <source src="/video/balatro.mp4" type="video/mp4">
+    </video>
+    <div id="bg-fade"></div>
     <div id="game-container">
         <!-- Interface principale du jeu -->
         <div id="game-ui">
-            <!-- Informations utilisateur -->
-            <div id="user-info" class="user-info">
-                <!-- Sera rempli par OnlineManager -->
+            <!-- Barre supérieure moderne -->
+            <header id="topbar" class="topbar">
+                <div class="topbar-left"></div>
+                <div class="topbar-center">
+                    <div class="brand">JeuDéKaré</div>
+                </div>
+                <div class="topbar-right">
+                    <div id="user-info"><!-- Rempli par OnlineManager --></div>
+                </div>
+            </header>
+
+            <!-- Modal Profil -->
+            <div id="profile-modal" class="modal" style="display:none;">
+                <div class="modal-content" style="max-width:420px;">
+                    <div class="modal-header">
+                        <h3>Profil</h3>
+                        <button id="profile-close" class="btn btn-secondary">✕</button>
+                    </div>
+                    <div class="modal-body">
+                        <label for="profile-avatar-url" class="modal-label">URL de la photo de profil</label>
+                        <input id="profile-avatar-url" type="url" placeholder="https://exemple.com/avatar.png" class="modal-input" />
+                        <div class="modal-hint">Formats sûrs: https/http. Pour un téléchargement, utilisez un hébergeur fiable (CDN/Cloud).</div>
+                    </div>
+                    <div class="modal-footer">
+                        <button id="profile-save" class="btn btn-primary">Enregistrer</button>
+                        <button id="profile-cancel" class="btn btn-secondary">Annuler</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Carte d'info au survol -->
+            <div id="hover-card" class="hover-card" style="display:none;"></div>
+            
+            <!-- Fiche profil (lecture seule) -->
+            <div id="profile-view" class="modal" style="display:none;">
+                <div class="modal-content" style="max-width:460px;">
+                    <div class="modal-header">
+                        <h3>Profil</h3>
+                        <button id="profile-view-close" class="btn btn-secondary">✕</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="profile-view-header">
+                            <img id="profile-view-avatar" class="avatar-big" src="" alt="avatar" />
+                            <div class="meta">
+                                <div id="profile-view-username" class="title">Utilisateur</div>
+                                <div class="line">Dernière connexion: <span id="profile-view-last"></span></div>
+                            </div>
+                        </div>
+                        <div class="profile-view-stats">
+                            <div class="pv-line">Meilleur niveau: <span id="profile-view-best-level"></span></div>
+                            <div class="pv-line">Meilleur score: <span id="profile-view-best-score"></span></div>
+                            <div class="pv-line">Parties jouées: <span id="profile-view-games"></span></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button id="profile-view-close2" class="btn btn-secondary">Fermer</button>
+                    </div>
+                </div>
             </div>
             
-            <!-- Affichage du niveau -->
-            <div id="level-display">
-                <span id="level-text">Level 01</span>
-            </div>
+            
             
             <!-- Zone de combat -->
             <div id="battle-area">
+                <!-- Gains de passifs (au-dessus des pastilles) -->
+                <div id="passives-gains" class="passives-gains"></div>
+                <!-- Statistiques au-dessus de l'arène -->
+                <div class="combat-stats">
+                    <div class="stat-pill level">
+                        <span class="label">Level</span>
+                        <span id="level-text" class="value">01</span>
+                    </div>
+                    <div class="stat-pill gold">
+                        <span class="label">Gold</span>
+                        <span id="gold-text" class="value">0</span>
+                    </div>
+                </div>
+                <div class="combat-zone"></div>
                 <div id="player-area">
                     <div id="player" class="fighter"></div>
                     <div id="player-health-bar" class="health-bar">
@@ -41,10 +112,7 @@
                 </div>
             </div>
             
-            <!-- Affichage de l'or -->
-            <div id="gold-display">
-                <span id="gold-text">Gold: 0</span>
-            </div>
+            
             
             <!-- Boutons de contrôle -->
             <div id="control-buttons">
@@ -182,6 +250,8 @@
     <script src="/js/game/CreateEnemies.js"></script>
     <script src="/js/ui/UIController.js"></script>
     <script src="/js/online/OnlineManager.js"></script>
+    <script src="/js/online/ServerGameClient.js"></script>
+    <script src="/js/online/ServerValidator.js"></script>
     <script src="/js/Game.js"></script>
     <script src="/js/main.js"></script>
 </body>

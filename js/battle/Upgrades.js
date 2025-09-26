@@ -29,34 +29,52 @@ class Upgrades {
             this.player.upgradeMaxHealth(healthUpgrade);
             this.player.updateHealth();
             this.closeUpgradeModal();
+            if (window.game && window.game.attackAnimation && window.game.attackAnimation.resetPositionsCentered) {
+                window.game.attackAnimation.resetPositionsCentered();
+            }
         });
 
         const damageUpgrade = 10 + this.random.nextInt(20);
         this.createUpgrade(`Damage upgrade\n+${damageUpgrade}`, () => {
             this.player.upgradeDamage(damageUpgrade);
             this.closeUpgradeModal();
+            if (window.game && window.game.attackAnimation && window.game.attackAnimation.resetPositionsCentered) {
+                window.game.attackAnimation.resetPositionsCentered();
+            }
         });
 
         this.createUpgrade("Heal to full", () => {
             this.player.resetHealth();
             this.closeUpgradeModal();
+            if (window.game && window.game.attackAnimation && window.game.attackAnimation.resetPositionsCentered) {
+                window.game.attackAnimation.resetPositionsCentered();
+            }
         });
 
         this.createUpgrade("+3 gold", () => {
             this.player.changeGoldAmount(3);
             this.closeUpgradeModal();
+            if (window.game && window.game.attackAnimation && window.game.attackAnimation.resetPositionsCentered) {
+                window.game.attackAnimation.resetPositionsCentered();
+            }
         });
 
         const criticalHitDamageUpgrade = this.random.nextInt(15) + 5;
         this.createUpgrade(`Critical Hit Damage\n+${criticalHitDamageUpgrade}%`, () => {
             this.player.upgradeCritDamage(criticalHitDamageUpgrade);
             this.closeUpgradeModal();
+            if (window.game && window.game.attackAnimation && window.game.attackAnimation.resetPositionsCentered) {
+                window.game.attackAnimation.resetPositionsCentered();
+            }
         });
 
         const criticalHitChanceUpgrade = this.random.nextInt(5) + 2;
         this.createUpgrade(`Critical Hit Chance\n+${criticalHitChanceUpgrade}%`, () => {
             this.player.upgradeCritChance(criticalHitChanceUpgrade);
             this.closeUpgradeModal();
+            if (window.game && window.game.attackAnimation && window.game.attackAnimation.resetPositionsCentered) {
+                window.game.attackAnimation.resetPositionsCentered();
+            }
         });
 
         // Afficher 2 améliorations aléatoires

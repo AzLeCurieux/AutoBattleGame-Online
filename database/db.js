@@ -50,6 +50,25 @@ class Database {
         is_active BOOLEAN DEFAULT 1,
         FOREIGN KEY (user_id) REFERENCES users (id)
       )`,
+
+      // Game states table for persistent game state
+      `CREATE TABLE IF NOT EXISTS game_states (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER UNIQUE NOT NULL,
+        username TEXT NOT NULL,
+        avatar TEXT DEFAULT 'default',
+        session_id TEXT UNIQUE NOT NULL,
+        run_id TEXT UNIQUE NOT NULL,
+        created_at INTEGER NOT NULL,
+        last_activity INTEGER NOT NULL,
+        is_active BOOLEAN DEFAULT 1,
+        ended_at INTEGER,
+        end_reason TEXT,
+        player_data TEXT NOT NULL,
+        passive_upgrades TEXT DEFAULT '[]',
+        boss_passives TEXT DEFAULT '[]',
+        FOREIGN KEY (user_id) REFERENCES users (id)
+      )`,
       
       // Scores table
       `CREATE TABLE IF NOT EXISTS scores (
@@ -196,17 +215,23 @@ class Database {
 
   // Score methods
   async submitScore(userId, sessionId, level, score, gold) {
+    console.log(`📊 Enregistrement du score: user=${userId}, level=${level}, score=${score}, gold=${gold}`);
+    
     await this.run(
       'INSERT INTO scores (user_id, session_id, level, score, gold) VALUES (?, ?, ?, ?, ?)',
       [userId, sessionId, level, score, gold]
     );
+    
+    console.log(`✅ Score enregistré avec succès`);
   }
 
   async getUserBestScore(userId) {
-    return await this.get(
+    const result = await this.get(
       'SELECT MAX(score) as best_score, MAX(level) as best_level FROM scores WHERE user_id = ?',
       [userId]
     );
+    console.log(`📈 Meilleur score pour user ${userId}:`, result);
+    return result;
   }
 
   // Leaderboard methods
@@ -230,26 +255,55 @@ class Database {
       }
       
       // Insert updated leaderboard - Score basé sur le niveau atteint
-      const result = await this.run(`
-        INSERT INTO leaderboard (user_id, username, avatar, best_level, best_score, total_gold, games_played, last_activity, rank_position)
-        SELECT 
-          u.id,
-          u.username,
-          u.avatar,
-          COALESCE(MAX(s.level), 0) as best_level,
-          COALESCE(MAX(s.level), 0) as best_score,
-          COALESCE(SUM(s.gold), 0) as total_gold,
-          COUNT(DISTINCT gs.id) as games_played,
-          MAX(s.timestamp) as last_activity,
-          ROW_NUMBER() OVER (ORDER BY MAX(s.level) DESC, MAX(s.timestamp) DESC) as rank_position
-        FROM users u
-        LEFT JOIN game_sessions gs ON u.id = gs.user_id
-        LEFT JOIN scores s ON u.id = s.user_id
-        GROUP BY u.id, u.username, u.avatar
-        ORDER BY best_level DESC, last_activity DESC
-      `);
-      
-      console.log(`✅ Leaderboard mis à jour: ${result.changes} entrées`);
+      let result;
+      try {
+        result = await this.run(`
+          INSERT OR REPLACE INTO leaderboard (user_id, username, avatar, best_level, best_score, total_gold, games_played, last_activity, rank_position)
+          SELECT 
+            u.id,
+            u.username,
+            u.avatar,
+            COALESCE(MAX(s.level), 0) as best_level,
+            COALESCE(MAX(s.level), 0) as best_score,
+            COALESCE(SUM(s.gold), 0) as total_gold,
+            COUNT(DISTINCT gs.id) as games_played,
+            MAX(s.timestamp) as last_activity,
+            ROW_NUMBER() OVER (ORDER BY MAX(s.level) DESC, MAX(s.timestamp) DESC) as rank_position
+          FROM users u
+          LEFT JOIN game_sessions gs ON u.id = gs.user_id
+          LEFT JOIN scores s ON gs.session_id = s.session_id
+          GROUP BY u.id, u.username, u.avatar
+          ORDER BY MAX(s.level) DESC, MAX(s.timestamp) DESC
+        `);
+        console.log(`✅ Leaderboard mis à jour: ${result.changes} entrées`);
+      } catch (error) {
+        if (error.code === 'SQLITE_CONSTRAINT') {
+          console.log('⚠️ Constraint error during leaderboard update, retrying...');
+          // Retry with a different approach
+          await this.run('DELETE FROM leaderboard');
+          result = await this.run(`
+            INSERT INTO leaderboard (user_id, username, avatar, best_level, best_score, total_gold, games_played, last_activity, rank_position)
+            SELECT 
+              u.id,
+              u.username,
+              u.avatar,
+              COALESCE(MAX(s.level), 0) as best_level,
+              COALESCE(MAX(s.level), 0) as best_score,
+              COALESCE(SUM(s.gold), 0) as total_gold,
+              COUNT(DISTINCT gs.id) as games_played,
+              MAX(s.timestamp) as last_activity,
+              ROW_NUMBER() OVER (ORDER BY MAX(s.level) DESC, MAX(s.timestamp) DESC) as rank_position
+            FROM users u
+            LEFT JOIN game_sessions gs ON u.id = gs.user_id
+            LEFT JOIN scores s ON gs.session_id = s.session_id
+            GROUP BY u.id, u.username, u.avatar
+            ORDER BY MAX(s.level) DESC, MAX(s.timestamp) DESC
+          `);
+          console.log(`✅ Leaderboard mis à jour (retry): ${result.changes} entrées`);
+        } else {
+          throw error;
+        }
+      }
       
       // Vérifier le contenu du leaderboard
       const leaderboard = await this.all('SELECT * FROM leaderboard ORDER BY rank_position LIMIT 5');
@@ -257,6 +311,8 @@ class Database {
       leaderboard.forEach((player, index) => {
         console.log(`   ${index + 1}. ${player.username} - Niveau ${player.best_level}`);
       });
+      
+      return result.changes;
       
     } catch (error) {
       console.error('❌ Erreur lors de la mise à jour du leaderboard:', error);
