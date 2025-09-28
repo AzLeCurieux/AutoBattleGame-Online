@@ -101,3 +101,4 @@
 2025-09-26T19:15:00: chore: upgrade helmet.js for improved CSP headers
 2025-09-27T09:30:00: feat: add animated background to login page
 2025-09-27T14:05:00: fix: disable background animation when reduced-motion enabled
+2025-09-28T12:40:00: perf: optimize shader background frame rate
