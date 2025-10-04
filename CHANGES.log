@@ -104,3 +104,4 @@
 2025-09-28T12:40:00: perf: optimize shader background frame rate
 2025-10-03T18:50:00: refactor: migrate localStorage keys to constants file
 2025-10-04T10:05:00: feat: add session persistence across browser refresh
+2025-10-04T15:30:00: feat: auto-restore last viewed page on login
