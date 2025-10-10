@@ -106,3 +106,4 @@
 2025-10-04T10:05:00: feat: add session persistence across browser refresh
 2025-10-04T15:30:00: feat: auto-restore last viewed page on login
 2025-10-05T12:15:00: fix: clear stale session data on explicit logout
+2025-10-10T19:40:00: fix: resolve inventory not updating after shop purchase
