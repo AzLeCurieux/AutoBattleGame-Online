@@ -109,3 +109,4 @@
 2025-10-10T19:40:00: fix: resolve inventory not updating after shop purchase
 2025-10-11T09:55:00: feat: add sound effects for card reveal
 2025-10-11T14:20:00: feat: distinct sounds for each rarity tier
+2025-10-12T12:45:00: fix: mute sounds when tab is backgrounded
