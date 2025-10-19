@@ -113,3 +113,4 @@
 2025-10-17T17:00:00: perf: compress static assets with brotli
 2025-10-18T10:15:00: feat: add dark/light theme toggle
 2025-10-18T15:50:00: feat: persist theme preference in localStorage
+2025-10-19T13:25:00: fix: resolve theme flicker on initial page load
