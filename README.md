@@ -2,10 +2,6 @@
 
 Un jeu de combat automatique en ligne avec système de progression, améliorations et classement en temps réel.
 
-## 🚀 Déploiement
-
-Le jeu est déployé sur Azure App Service et accessible via :
-**https://jeux-carre.azurewebsites.net**
 
 ## 🎯 Fonctionnalités
 
