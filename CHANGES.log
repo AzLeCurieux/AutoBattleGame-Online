@@ -116,3 +116,4 @@
 2025-10-19T13:25:00: fix: resolve theme flicker on initial page load
 2025-10-24T18:40:00: chore: update dependencies, resolve 3 moderate advisories
 2025-10-25T09:00:00: feat: add player title system based on win count
+2025-10-25T14:35:00: feat: display title on leaderboard and profile
