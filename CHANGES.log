@@ -120,3 +120,4 @@
 2025-10-26T12:10:00: fix: correct title unlock threshold validation
 2025-11-07T19:25:00: refactor: rewrite SessionManager with class syntax
 2025-11-08T09:40:00: feat: add session activity heartbeat
+2025-11-08T14:05:00: fix: expire idle sessions after 30 minutes
