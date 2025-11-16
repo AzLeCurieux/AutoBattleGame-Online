@@ -125,3 +125,4 @@
 2025-11-14T18:45:00: perf: add Redis-compatible in-memory session cache
 2025-11-15T10:00:00: feat: add game room lobby with player ready system
 2025-11-15T15:25:00: feat: countdown timer before match start
+2025-11-16T13:00:00: fix: handle player leaving lobby before countdown
