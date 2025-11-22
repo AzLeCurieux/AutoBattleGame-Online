@@ -127,3 +127,4 @@
 2025-11-15T15:25:00: feat: countdown timer before match start
 2025-11-16T13:00:00: fix: handle player leaving lobby before countdown
 2025-11-21T18:15:00: fix: correct lobby state cleanup after match ends
+2025-11-22T09:30:00: feat: display opponents deck size in lobby
