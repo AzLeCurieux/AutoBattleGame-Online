@@ -130,3 +130,4 @@
 2025-11-22T09:30:00: feat: display opponents deck size in lobby
 2025-11-22T14:55:00: feat: add rematch option at end of game
 2025-11-23T12:20:00: fix: prevent rematch if opponent disconnected
+2025-11-28T17:35:00: chore: minor performance logging improvements
