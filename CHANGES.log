@@ -132,3 +132,4 @@
 2025-11-23T12:20:00: fix: prevent rematch if opponent disconnected
 2025-11-28T17:35:00: chore: minor performance logging improvements
 2025-11-29T10:50:00: feat: add matchmaking queue with ELO-like ranking
+2025-11-29T15:15:00: feat: prefer close-ELO opponents in queue
