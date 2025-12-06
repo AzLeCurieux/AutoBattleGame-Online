@@ -134,3 +134,4 @@
 2025-11-29T10:50:00: feat: add matchmaking queue with ELO-like ranking
 2025-11-29T15:15:00: feat: prefer close-ELO opponents in queue
 2025-11-30T13:40:00: fix: resolve queue timeout when no opponents available
+2025-12-05T19:55:00: refactor: simplify combat resolution loop
