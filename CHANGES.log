@@ -136,3 +136,4 @@
 2025-11-30T13:40:00: fix: resolve queue timeout when no opponents available
 2025-12-05T19:55:00: refactor: simplify combat resolution loop
 2025-12-06T10:10:00: feat: add visual effect for multi-card combos
+2025-12-06T15:45:00: fix: resolve combo animation not triggering on AI opponent
