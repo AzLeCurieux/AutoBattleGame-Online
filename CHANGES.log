@@ -141,3 +141,4 @@
 2025-12-12T18:35:00: fix: correct ELO decay formula for inactive players
 2025-12-13T09:50:00: feat: add weekly top-3 rewards via leaderboard
 2025-12-13T14:15:00: feat: send reward notification on login
+2025-12-14T12:40:00: fix: resolve reward duplication on page refresh
