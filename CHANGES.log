@@ -148,3 +148,4 @@
 2026-01-10T10:40:00: fix: patch session token validation edge case
 2026-01-11T12:05:00: chore: update .env.example with new config keys
 2026-01-17T09:20:00: fix: resolve leaderboard not refreshing after game end
+2026-01-18T11:45:00: refactor: simplify leaderboard query
