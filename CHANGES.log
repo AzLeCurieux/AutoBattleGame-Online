@@ -150,3 +150,4 @@
 2026-01-17T09:20:00: fix: resolve leaderboard not refreshing after game end
 2026-01-18T11:45:00: refactor: simplify leaderboard query
 2026-01-24T10:30:00: feat: add 'recent activity' feed to profile page
+2026-01-25T13:55:00: fix: resolve feed pagination beyond 50 entries
