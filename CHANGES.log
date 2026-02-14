@@ -159,3 +159,4 @@
 2026-02-08T12:45:00: fix: resolve breadcrumb on nested routes
 2026-02-13T18:00:00: fix: correct card shop restock not triggering server-side
 2026-02-14T10:15:00: feat: add Valentine special card skin (time-limited)
+2026-02-14T15:50:00: feat: display seasonal banner on main page
