@@ -162,3 +162,4 @@
 2026-02-14T15:50:00: feat: display seasonal banner on main page
 2026-02-15T13:25:00: fix: disable seasonal skin after event end
 2026-02-20T18:40:00: perf: reduce database writes during high-traffic battles
+2026-02-21T09:55:00: feat: add social sharing button for final score
