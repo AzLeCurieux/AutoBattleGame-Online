@@ -163,3 +163,4 @@
 2026-02-15T13:25:00: fix: disable seasonal skin after event end
 2026-02-20T18:40:00: perf: reduce database writes during high-traffic battles
 2026-02-21T09:55:00: feat: add social sharing button for final score
+2026-02-21T14:20:00: fix: sanitize share URL parameters
