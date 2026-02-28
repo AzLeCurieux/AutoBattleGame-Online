@@ -166,3 +166,4 @@
 2026-02-21T14:20:00: fix: sanitize share URL parameters
 2026-02-22T12:45:00: chore: update CSP headers for share link domain
 2026-02-27T17:00:00: fix: resolve card duplication bug in loot box system
+2026-02-28T10:15:00: feat: add guaranteed unique card mechanism after 10 boxes
