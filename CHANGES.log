@@ -168,3 +168,4 @@
 2026-02-27T17:00:00: fix: resolve card duplication bug in loot box system
 2026-02-28T10:15:00: feat: add guaranteed unique card mechanism after 10 boxes
 2026-02-28T15:40:00: feat: show pity counter in loot UI
+2026-03-01T13:05:00: fix: resolve pity counter reset on server restart
