@@ -169,3 +169,4 @@
 2026-02-28T10:15:00: feat: add guaranteed unique card mechanism after 10 boxes
 2026-02-28T15:40:00: feat: show pity counter in loot UI
 2026-03-01T13:05:00: fix: resolve pity counter reset on server restart
+2026-03-06T18:20:00: chore: reorganize project structure
