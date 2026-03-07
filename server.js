@@ -421,7 +421,7 @@ app.get('/login', (req, res) => {
     }
   }
 
-  res.sendFile(path.join(__dirname, 'login.html'));
+  res.sendFile(path.join(__dirname, 'views', 'login.html'));
 });
 
 // Serve the main game (only if authenticated)
@@ -452,7 +452,7 @@ app.get('/', (req, res) => {
     }
 
     // Session is valid, serve the game
-    res.sendFile(path.join(__dirname, 'index.html'));
+    res.sendFile(path.join(__dirname, 'views', 'index.html'));
   } catch (error) {
     logger.warn('Token verification failed', { error: error.message });
     res.redirect('/login');
@@ -463,14 +463,14 @@ app.get('/', (req, res) => {
 // Note: Auth is handled client-side by the page's inline script
 // This prevents token exposure in URL
 app.get('/gambling', (req, res) => {
-  res.sendFile(path.join(__dirname, 'gambling.html'));
+  res.sendFile(path.join(__dirname, 'views', 'gambling.html'));
 });
 
 // Serve inventory page
 // Note: Auth is handled client-side by the page's inline script
 // This prevents token exposure in URL
 app.get('/inventory', (req, res) => {
-  res.sendFile(path.join(__dirname, 'inventory.html'));
+  res.sendFile(path.join(__dirname, 'views', 'inventory.html'));
 });
 
 
@@ -478,12 +478,12 @@ app.get('/inventory', (req, res) => {
 app.get('/monitoring', (req, res) => {
   // We serve the page, but the page itself will check for token and redirect if needed
   // This allows us to handle both user login and admin login on the client side
-  res.sendFile(path.join(__dirname, 'monitoring.html'));
+  res.sendFile(path.join(__dirname, 'views', 'monitoring.html'));
 });
 
 // Serve admin login page
 app.get('/admin-login', (req, res) => {
-  res.sendFile(path.join(__dirname, 'admin-login.html'));
+  res.sendFile(path.join(__dirname, 'views', 'admin-login.html'));
 });
 
 // Initialize game manager and security systems
