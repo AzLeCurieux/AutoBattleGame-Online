@@ -171,3 +171,4 @@
 2026-03-01T13:05:00: fix: resolve pity counter reset on server restart
 2026-03-06T18:20:00: chore: reorganize project structure
 2026-03-08T11:30:00: chore: clean up repository, remove dev artifacts
+2026-03-08T16:55:00: docs: update README with current project structure
