@@ -1,0 +1,27 @@
+{
+  "name": "@autobattle/server",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --conditions=development --env-file-if-exists=../../.env src/index.ts",
+    "build": "tsc -b",
+    "start": "node --env-file-if-exists=../../.env dist/index.js",
+    "admin:promote": "tsx --conditions=development --env-file-if-exists=../../.env scripts/promote-admin.ts",
+    "seed:collector": "tsx --conditions=development --env-file-if-exists=../../.env scripts/seed-collector.ts"
+  },
+  "dependencies": {
+    "@autobattle/shared": "*",
+    "@fastify/cookie": "^11.0.2",
+    "@fastify/helmet": "^13.0.1",
+    "@fastify/rate-limit": "^10.3.0",
+    "@fastify/static": "^8.2.0",
+    "fastify": "^5.4.0",
+    "socket.io": "^4.8.1",
+    "zod": "^4.0.5"
+  },
+  "devDependencies": {
+    "socket.io-client": "^4.8.1",
+    "tsx": "^4.20.3"
+  }
+}
