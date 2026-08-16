@@ -1,0 +1,4 @@
+/* React mounts into #root; keep it transparent to layout for the v1 CSS. */
+#root {
+  display: contents;
+}
