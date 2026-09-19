@@ -1,0 +1,232 @@
+.inventory {
+  display: grid;
+  gap: 16px;
+}
+.inv-summary {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(300px, 1.4fr);
+  gap: 24px;
+  padding: 18px;
+}
+.inv-summary .panel-body {
+  display: contents;
+}
+.inv-progress,
+.inv-cases {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+.inv-progress-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.inv-progress-head strong {
+  margin-left: auto;
+  font-size: 16px;
+  color: var(--text);
+  letter-spacing: 0;
+}
+.rarity-progress {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-size: 12px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.rarity-progress div {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.case-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.case-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 12px 0 6px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  text-decoration: none;
+  font-size: 13px;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+.case-chip:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: var(--line-strong);
+}
+.case-chip img {
+  width: 40px;
+  height: 30px;
+  object-fit: contain;
+}
+.case-chip strong {
+  color: var(--accent);
+}
+
+.inv-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  position: sticky;
+  top: 80px;
+  z-index: 10;
+}
+.inv-toolbar .panel-body {
+  display: contents;
+}
+.inv-toolbar .chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  order: 2;
+  flex-basis: 100%;
+}
+.inv-toolbar .sort {
+  width: 180px;
+}
+.inv-toolbar select.input {
+  appearance: none;
+  cursor: pointer;
+}
+
+.inv-body {
+  display: grid;
+  gap: 16px;
+  align-items: start;
+}
+.inv-body.with-detail {
+  grid-template-columns: minmax(0, 1fr) 340px;
+}
+.inv-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+}
+.skeleton {
+  aspect-ratio: 0.72;
+  border-radius: 12px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.inv-detail {
+  position: sticky;
+  top: 160px;
+  overflow: hidden;
+  animation: pop-in 0.2s var(--ease) both;
+}
+.inv-detail .panel-body {
+  padding: 0;
+}
+.inv-detail .close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+  background: rgba(0, 0, 0, 0.5);
+}
+.detail-art {
+  aspect-ratio: 1;
+  background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--rarity) 30%, transparent), #0a0c13 70%);
+  border-bottom: 1px solid color-mix(in srgb, var(--rarity) 40%, transparent);
+}
+.detail-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.detail-art img.locked {
+  filter: grayscale(1) brightness(0.35);
+}
+.detail-body {
+  padding: 16px;
+  display: grid;
+  gap: 10px;
+}
+.detail-body h2 {
+  font-size: 20px;
+}
+.rarity-tag {
+  justify-self: start;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--rarity);
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--rarity) 15%, transparent);
+}
+.detail-effect {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 13px;
+}
+.detail-effect .icon {
+  color: var(--accent);
+  margin-top: 2px;
+}
+.detail-stats {
+  display: grid;
+  gap: 8px;
+}
+.detail-stats div {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}
+.detail-stats strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+@media (max-width: 900px) {
+  .inv-summary {
+    grid-template-columns: 1fr;
+  }
+  .inv-body.with-detail {
+    grid-template-columns: 1fr;
+  }
+  .inv-detail {
+    position: fixed;
+    inset: auto 12px 12px 12px;
+    top: auto;
+    max-height: 70vh;
+    overflow: auto;
+    z-index: 1500;
+  }
+  .inv-toolbar {
+    position: static;
+  }
+}
