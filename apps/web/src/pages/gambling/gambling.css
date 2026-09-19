@@ -1,0 +1,262 @@
+.gambling {
+  display: grid;
+  grid-template-columns: 290px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.case-picker {
+  position: sticky;
+  top: 84px;
+}
+.case-options {
+  display: grid;
+  gap: 6px;
+  padding: 0 10px 12px;
+}
+.case-option {
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px 8px 8px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  text-align: left;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    opacity 0.15s ease;
+}
+.case-option:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.05);
+}
+.case-option.active {
+  background: color-mix(in srgb, var(--case) 16%, transparent);
+  border-color: color-mix(in srgb, var(--case) 55%, transparent);
+}
+.case-option:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.case-option img {
+  width: 56px;
+  height: 42px;
+  object-fit: contain;
+}
+.case-name {
+  display: grid;
+  font-weight: 600;
+  font-size: 13px;
+}
+.case-name small {
+  font-weight: 500;
+  color: var(--muted);
+  font-size: 11px;
+}
+.case-option strong {
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
+.gambling-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  min-width: 0;
+}
+.reel-panel {
+  padding: 14px;
+}
+.reel-viewport {
+  position: relative;
+  height: 214px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.35);
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+.reel {
+  display: flex;
+  gap: 10px;
+  padding: 16px 0;
+  will-change: transform;
+}
+.reel-card {
+  flex: none;
+  width: 168px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--rarity) 22%, #121624), #0f121c);
+  border: 1px solid color-mix(in srgb, var(--rarity) 60%, transparent);
+  box-shadow: inset 0 -3px 0 var(--rarity);
+}
+.reel-card img {
+  width: 100%;
+  height: 148px;
+  object-fit: cover;
+}
+.reel-name {
+  padding: 6px 8px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.reel-marker {
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  left: 50%;
+  width: 3px;
+  margin-left: -1.5px;
+  border-radius: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 16px var(--accent);
+}
+
+.case-hero {
+  display: grid;
+  grid-template-columns: minmax(200px, 300px) minmax(0, 1fr);
+  gap: 24px;
+  padding: 20px;
+}
+.case-hero .panel-body {
+  display: contents;
+}
+.hero-art {
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  min-height: 220px;
+  background: radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--case) 35%, transparent), transparent 70%);
+}
+.hero-art img {
+  max-height: 220px;
+  object-fit: contain;
+  filter: drop-shadow(0 16px 30px rgba(0, 0, 0, 0.6));
+}
+.hero-info {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+.hero-info h1 {
+  font-size: 26px;
+  letter-spacing: -0.02em;
+}
+.odds {
+  display: grid;
+  gap: 7px;
+}
+.odd-row {
+  display: grid;
+  grid-template-columns: 10px 130px 1fr 64px;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+.odd-row .bar {
+  height: 6px;
+}
+.odd-pct {
+  text-align: right;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.open-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  margin-top: 6px;
+}
+.open-row .btn-lg {
+  margin-left: auto;
+}
+
+.reveal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+}
+.reveal-grid.single {
+  grid-template-columns: minmax(0, 260px);
+  justify-content: center;
+}
+.reveal-item {
+  animation: reveal 0.45s var(--ease) both;
+  animation-delay: calc(var(--i) * 90ms);
+}
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.92) rotateY(40deg);
+  }
+}
+
+.fab {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 1200;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: var(--panel-strong);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow);
+  transition: transform 0.15s var(--ease);
+}
+.fab:hover {
+  transform: translateY(-2px);
+}
+.color-popover {
+  position: fixed;
+  right: 20px;
+  bottom: 80px;
+  z-index: 1200;
+  width: 300px;
+  animation: pop-in 0.18s var(--ease) both;
+}
+.color-body {
+  display: grid;
+  gap: 10px;
+}
+.color-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--muted);
+}
+.color-row input {
+  width: 56px;
+  height: 30px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+}
+.color-body .chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+@media (max-width: 900px) {
+  .gambling {
+    grid-template-columns: 1fr;
+  }
+  .case-picker {
+    position: static;
+  }
+  .case-hero {
+    grid-template-columns: 1fr;
+  }
+  .odd-row {
+    grid-template-columns: 10px 110px 1fr 56px;
+  }
+}
