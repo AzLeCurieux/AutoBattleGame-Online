@@ -140,6 +140,23 @@ Le mode se choisit avec **Recommencer** ; une nouvelle partie garde le mode pré
     première carte du deck) ;
   - chaque victoire rend 8 % des PV max ;
 
+### Paliers de difficulté
+
+Gagner une partie Deck au palier N débloque le palier N+1 (choix dans « Nouvelle
+partie »). Chaque palier garde les contraintes des précédents :
+
+1. Règles de base.
+2. Ennemis +20 % de PV.
+3. Chaque élite applique un effet de boss, annoncé sur la piste d'acte.
+4. Plus d'intérêts à la boutique.
+5. Plus de repos avant le boss.
+6. Les boss frappent 25 % plus fort.
+7. Plus de Sursis.
+8. Ennemis encore +20 % de PV et +15 % de dégâts.
+
+Le palier débloqué est stocké par joueur (`users.palier_unlocked`), celui de chaque
+partie dans l'historique, et le classement affiche le plus haut palier gagné.
+
 ### Régler l'équilibrage
 
 ```bash
@@ -166,6 +183,15 @@ npm run balance:history
 ```
 
 Analyse les vraies parties terminées sur ce serveur (morts par acte, boss fatals).
+
+## Cartes en combat
+
+Le deck reste affiché sous l'arène, chaque carte avec ses effets en clair. Quand
+une carte se déclenche (bonus de dégâts, vol de vie, double frappe, renvoi,
+esquive, soin ou or à la victoire…), elle saute et affiche ce qu'elle vient de
+faire. Le moteur indique la carte source de chaque déclenchement (`procs` sur les
+événements de combat), et l'historique résume les déclenchements de chaque
+combat. Une carte coupée par Le Muet est grisée.
 
 ## Boutique (mode Deck)
 
