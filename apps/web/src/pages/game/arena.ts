@@ -34,9 +34,15 @@ interface Turn {
 }
 
 const SECONDARY = new Set<CombatEvent['type']>(['execute', 'lifesteal', 'reflect', 'revive', 'boss', 'clutch']);
-const LUNGE_MS = 420;
-const TURN_MS = 680;
-const IMPACT_AT = 0.45;
+/** Attacker rushes until its square touches the target's. */
+const DASH_MS = 210;
+/** Both fighters stay in contact for a beat after the hit. */
+const HOLD_MS = 110;
+/** Then both bounce off to new random spots. */
+const SCATTER_MS = 380;
+const PAUSE_MS = 90;
+const EASE_OUT = 'cubic-bezier(0.22, 1, 0.36, 1)';
+const EASE_DASH = 'cubic-bezier(0.55, 0, 0.85, 0.45)';
 
 function groupTurns(events: CombatEvent[]): Turn[] {
   const turns: Turn[] = [];
@@ -60,6 +66,8 @@ export class Arena {
   private playerMax = 1;
   private enemyMax = 1;
   private running = false;
+  /** Movement animation of each fighter (on the `translate` property, separate from state animations on `transform`). */
+  private moves = new Map<HTMLElement, Animation>();
   speed = 1;
 
   constructor(private readonly el: ArenaElements) {}
@@ -116,7 +124,67 @@ export class Arena {
     node.animate(frames, { duration, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', fill: 'forwards' });
   }
 
+  // ------------------------------------------------------------- movement
+
+  /** Moves a whole fighter (square, name, health bar) to an offset from its home spot. */
+  private moveTo(node: HTMLElement, x: number, y: number, ms: number, easing = EASE_OUT) {
+    const from = getComputedStyle(node).translate;
+    this.moves.get(node)?.cancel();
+    this.moves.delete(node);
+    const to = `${Math.round(x)}px ${Math.round(y)}px`;
+    node.style.translate = to;
+    if (ms <= 0) return;
+    this.moves.set(node, node.animate([{ translate: from === 'none' ? '0px 0px' : from }, { translate: to }], { duration: ms, easing }));
+  }
+
+  private offsetOf(node: HTMLElement) {
+    const [x = '0', y = '0'] = (node.style.translate || '0px 0px').split(' ');
+    return { x: parseFloat(x) || 0, y: parseFloat(y) || 0 };
+  }
+
+  /** Random spot inside the arena, player on the left half and enemy on the right half. */
+  private randomSpot(node: HTMLElement, left: boolean) {
+    const arena = this.el.arena;
+    const w = arena.clientWidth;
+    const h = arena.clientHeight;
+    const pad = 10;
+    const top = arena.querySelector('.arena-status') ? 44 : pad; // room for the boss / pause banner
+    const cx = w * (left ? 0.1 + Math.random() * 0.33 : 0.57 + Math.random() * 0.33);
+    const maxLeft = Math.max(pad, w - pad - node.offsetWidth);
+    const nx = Math.min(maxLeft, Math.max(pad, cx - node.offsetWidth / 2));
+    const maxTop = Math.max(top, h - pad - node.offsetHeight);
+    const ny = top + Math.random() * (maxTop - top);
+    return { x: nx - node.offsetLeft, y: ny - node.offsetTop };
+  }
+
+  private scatter(ms: number) {
+    const p = this.randomSpot(this.el.player, true);
+    const e = this.randomSpot(this.el.enemy, false);
+    this.moveTo(this.el.player, p.x, p.y, ms);
+    this.moveTo(this.el.enemy, e.x, e.y, ms);
+  }
+
+  /** Offset that brings the attacker's square edge to edge with the target's, coming from where it stands. */
+  private contactOffset(attacker: HTMLElement, target: HTMLElement) {
+    const a = attacker.querySelector<HTMLElement>('.token')!.getBoundingClientRect();
+    const t = target.querySelector<HTMLElement>('.token')!.getBoundingClientRect();
+    const dx = t.left + t.width / 2 - (a.left + a.width / 2);
+    const dy = t.top + t.height / 2 - (a.top + a.height / 2);
+    const far = Math.max(Math.abs(dx), Math.abs(dy));
+    const touch = (a.width + t.width) / 2;
+    const k = far > touch ? (far - touch) / far : 0;
+    const o = this.offsetOf(attacker);
+    return { x: o.x + dx * k, y: o.y + dy * k };
+  }
+
+  /** Both fighters back to their home spot. */
+  home(ms = 0) {
+    this.moveTo(this.el.player, 0, 0, ms);
+    this.moveTo(this.el.enemy, 0, 0, ms);
+  }
+
   enemyEnter() {
+    this.moveTo(this.el.enemy, 0, 0, 0);
     this.setState(
       this.el.enemy,
       [
@@ -129,6 +197,8 @@ export class Arena {
 
   /** "Next enemy" placeholder. Fades in when it follows a death animation. */
   enemyIdle(fade = false) {
+    this.moveTo(this.el.enemy, 0, 0, 0);
+    this.moveTo(this.el.player, 0, 0, fade ? 500 : 0);
     this.setState(this.el.enemy, [{ opacity: fade ? 0 : 0.35, transform: 'none' }, { opacity: 0.35, transform: 'none' }], fade ? 300 : 1);
   }
 
@@ -150,6 +220,7 @@ export class Arena {
   }
 
   playerReset() {
+    this.moveTo(this.el.player, 0, 0, 0);
     this.setState(this.el.player, [{ opacity: 1, filter: 'grayscale(0)', transform: 'none' }], 1);
   }
 
@@ -163,7 +234,8 @@ export class Arena {
     this.setPlayerHealth(fight.startHp, playerMax);
     this.setEnemyHealth(fight.enemy.maxHp, fight.enemy.maxHp);
     this.running = true;
-    this.later(() => this.step(), 380 / this.speed);
+    this.scatter(320 / this.speed);
+    this.later(() => this.step(), 420 / this.speed);
   }
 
   pause() {
@@ -205,31 +277,26 @@ export class Arena {
     const byPlayer = turn.primary.type === 'hit' ? turn.primary.by === 'player' : false;
     const attacker = byPlayer ? this.el.player : this.el.enemy;
     const target = byPlayer ? this.el.enemy : this.el.player;
-    const lunge = LUNGE_MS / this.speed;
+    const dash = DASH_MS / this.speed;
 
-    const a = attacker.getBoundingClientRect();
-    const t = target.getBoundingClientRect();
-    const gap = t.left + t.width / 2 - (a.left + a.width / 2);
-    const dx = gap - Math.sign(gap) * a.width * 1.05;
-    attacker.querySelector<HTMLElement>('.token')!.animate(
-      [
-        { transform: 'translateX(0)' },
-        { transform: `translateX(${dx}px) scale(1.06)`, offset: IMPACT_AT },
-        { transform: 'translateX(0)' },
-      ],
-      { duration: lunge, easing: 'cubic-bezier(0.3, 0, 0.2, 1)' },
-    );
+    attacker.style.zIndex = '2';
+    target.style.zIndex = '1';
+    const contact = this.contactOffset(attacker, target);
+    this.moveTo(attacker, contact.x, contact.y, dash, EASE_DASH);
 
     this.later(() => {
       this.index++;
       for (const e of [turn.primary, ...turn.extras]) this.apply(e);
       const last = [turn.primary, ...turn.extras].at(-1)!;
       if (last.enemyHp <= 0 || last.playerHp <= 0 || this.index >= this.turns.length) {
-        this.later(() => this.finish(), lunge * (1 - IMPACT_AT));
+        this.later(() => this.finish(), (HOLD_MS + 120) / this.speed);
         return;
       }
-      this.later(() => this.step(), TURN_MS / this.speed - lunge * IMPACT_AT);
-    }, lunge * IMPACT_AT);
+      this.later(() => {
+        this.scatter(SCATTER_MS / this.speed);
+        this.later(() => this.step(), (SCATTER_MS + PAUSE_MS) / this.speed);
+      }, HOLD_MS / this.speed);
+    }, dash);
   }
 
   /** Makes each triggered card jump and shows what it did, right on the card. */
@@ -292,7 +359,7 @@ export class Arena {
         else if (e.effect === 'thief') this.float(player, `-${e.amount} or`, 'reflect');
         break;
       case 'revive':
-        this.playerReset();
+        this.setState(player, [{ opacity: 1, filter: 'grayscale(0)', transform: 'none' }], 1);
         player.querySelector<HTMLElement>('.token')!.animate(
           [{ transform: 'scale(0.8)', filter: 'brightness(2.5)' }, { transform: 'scale(1)', filter: 'brightness(1)' }],
           { duration: 700, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
