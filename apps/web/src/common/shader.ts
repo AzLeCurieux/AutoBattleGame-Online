@@ -17,24 +17,48 @@ export const DEFAULT_PALETTE: Palette = [
   { r: 0.05, g: 0.05, b: 0.05 }, // noir
 ];
 
+/** Shape of the swirl. Lerped like the colours, so a theme change morphs smoothly. */
+export interface ShaderFx {
+  /** Time multiplier while the background animates. */
+  speed: number;
+  /** How much the swirl twists with distance from the centre. */
+  spin: number;
+  /** Separation between the three colours. */
+  contrast: number;
+  /** Size of the pixel grid (1 = smooth). */
+  pixel: number;
+  /** 0 = greyscale, 1 = normal. */
+  saturation: number;
+  /** Brightness amplitude of the beat (0 = none). */
+  pulse: number;
+  /** Beat shape: steady wave, double heartbeat, lightning flashes, or a beat that keeps speeding up. */
+  beat: 'wave' | 'heart' | 'flash' | 'rage';
+  /** Beats per second. */
+  rate: number;
+}
+
+export const DEFAULT_FX: ShaderFx = { speed: 1, spin: 0.3, contrast: 3, pixel: 1, saturation: 1, pulse: 0, beat: 'wave', rate: 0.5 };
+
 const VERTEX = `attribute vec2 V;void main(){gl_Position=vec4(V,0,1);}`;
 
 const FRAGMENT = `
 precision mediump float;
 #define SPIN_EASE 0.8
 #define spin_time 5.
-#define spin_amount 0.3
-#define contrast 3.
 
 uniform vec2 iResolution;
 uniform float iTime;
 uniform vec3 colour_1;
 uniform vec3 colour_2;
 uniform vec3 colour_3;
+uniform float spin_amount;
+uniform float contrast;
+uniform float pixel_size;
+uniform float saturation;
+uniform float beat;
 
 void main( )
 {
-  float pixel_size = 1.0;
   vec2 uv = (floor(gl_FragCoord.xy*(1./pixel_size))*pixel_size - 0.5*iResolution.xy)/length(iResolution.xy) - vec2(0.12, 0.);
 
   float uv_len = length(uv);
@@ -61,7 +85,10 @@ void main( )
   float c2p = max(0.,1. - contrast_mod*abs(paint_res));
   float c3p = 1. - min(1., c1p + c2p);
 
-  gl_FragColor = (0.3/contrast)*vec4(colour_1, 1.0) + (1. - 0.3/contrast)*(vec4(colour_1, 1.0)*c1p + vec4(colour_2, 1.0)*c2p + vec4(colour_3*c3p, c3p));
+  vec4 col = (0.3/contrast)*vec4(colour_1, 1.0) + (1. - 0.3/contrast)*(vec4(colour_1, 1.0)*c1p + vec4(colour_2, 1.0)*c2p + vec4(colour_3*c3p, c3p));
+  float luma = dot(col.rgb, vec3(0.299, 0.587, 0.114));
+  col.rgb = mix(vec3(luma), col.rgb, saturation) * (1. + beat);
+  gl_FragColor = col;
 }
 `;
 
@@ -76,12 +103,27 @@ export class ShaderBackground {
   private current: Palette = [...DEFAULT_PALETTE];
   private target: Palette = [...DEFAULT_PALETTE];
   private time = 0;
+  private fx: ShaderFx = { ...DEFAULT_FX };
+  private targetFx: ShaderFx = { ...DEFAULT_FX };
+  private beatClock = 0;
 
   /** @param alwaysAnimate gambling page: true. Game page: time only advances during fights. */
   constructor(private animating: boolean) {}
 
   setColors(c1: Rgb, c2: Rgb, c3: Rgb) {
     this.target = [c1, c2, c3];
+  }
+
+  /** Changes the shape of the swirl (speed, twist, grain, beat…). */
+  setFx(fx: Partial<ShaderFx>) {
+    this.targetFx = { ...DEFAULT_FX, ...fx };
+    this.beatClock = 0;
+  }
+
+  /** Back to the default colours and shape. */
+  reset() {
+    this.setColors(...DEFAULT_PALETTE);
+    this.setFx(DEFAULT_FX);
   }
 
   get targetColors(): Palette {
@@ -122,6 +164,12 @@ export class ShaderBackground {
     const uRes = u('iResolution');
     const uTime = u('iTime');
     const uColours = [u('colour_1'), u('colour_2'), u('colour_3')];
+    const uSpin = u('spin_amount');
+    const uContrast = u('contrast');
+    const uPixel = u('pixel_size');
+    const uSat = u('saturation');
+    const uBeat = u('beat');
+    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 
     let cssW = 0;
     let cssH = 0;
@@ -134,15 +182,57 @@ export class ShaderBackground {
         canvas.height = Math.floor(cssH * ratio);
         gl.viewport(0, 0, canvas.width, canvas.height);
       }
-      if (this.animating) this.time += 1 / 120;
+      this.fx = lerpFx(this.fx, this.targetFx);
+      if (this.animating) {
+        this.time += (1 / 120) * this.fx.speed;
+        this.beatClock += (1 / 60) * this.fx.rate;
+      } else {
+        // Idle: the beat keeps going, slower, so an announced boss still feels alive.
+        this.beatClock += (1 / 60) * this.fx.rate * 0.6;
+      }
       this.current = [lerp(this.current[0], this.target[0]), lerp(this.current[1], this.target[1]), lerp(this.current[2], this.target[2])];
       gl.uniform2f(uRes, canvas.width, canvas.height);
       gl.uniform1f(uTime, this.time);
       this.current.forEach((c, i) => gl.uniform3f(uColours[i]!, c.r, c.g, c.b));
+      gl.uniform1f(uSpin, this.fx.spin);
+      gl.uniform1f(uContrast, this.fx.contrast);
+      gl.uniform1f(uPixel, Math.max(1, Math.round(this.fx.pixel * (window.devicePixelRatio || 1))));
+      gl.uniform1f(uSat, this.fx.saturation);
+      gl.uniform1f(uBeat, reduceMotion ? 0 : this.fx.pulse * beatWave(this.fx.beat, this.beatClock, this.animating));
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
       requestAnimationFrame(frame);
     };
     requestAnimationFrame(frame);
+  }
+}
+
+const FX_KEYS = ['speed', 'spin', 'contrast', 'pixel', 'saturation', 'pulse', 'rate'] as const;
+function lerpFx(a: ShaderFx, b: ShaderFx): ShaderFx {
+  const out: ShaderFx = { ...a, beat: b.beat };
+  for (const k of FX_KEYS) out[k] = a[k] + (b[k] - a[k]) * TRANSITION_SPEED;
+  return out;
+}
+
+/** Brightness offset of the beat at a given phase (in beats), roughly -1..1. */
+function beatWave(shape: ShaderFx['beat'], t: number, fighting: boolean): number {
+  const f = t - Math.floor(t);
+  switch (shape) {
+    case 'heart': {
+      // Two quick thumps, then a pause.
+      const thump = (x: number) => Math.exp(-((x / 0.05) ** 2));
+      return thump(f - 0.08) + 0.6 * thump(f - 0.3);
+    }
+    case 'flash': {
+      // Short lightning strike once per beat, with a dimmer afterglow.
+      return f < 0.04 ? 1 : f < 0.1 ? 0.35 : f > 0.12 && f < 0.14 ? 0.6 : -0.1;
+    }
+    case 'rage': {
+      // Faster and harder the longer the fight lasts.
+      const ramp = fighting ? Math.min(1, t / 40) : 0;
+      return Math.sin(t * Math.PI * 2 * (1 + ramp * 1.5)) * (0.5 + ramp * 0.5);
+    }
+    default:
+      return Math.sin(t * Math.PI * 2);
   }
 }
 

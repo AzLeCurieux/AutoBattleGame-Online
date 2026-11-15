@@ -9,6 +9,7 @@ import {
   runMode,
   silencedIndex,
   stageKind,
+  type BossId,
   type EnemyInfo,
   type GameMode,
   type InventoryCase,
@@ -42,7 +43,8 @@ import { avatarUrl } from '../../common/avatar';
 import { caseMeta, cardMeta } from '../../common/catalog';
 import { Navbar } from '../../common/Navbar';
 import { logout } from '../../common/session';
-import { DEFAULT_PALETTE, levelPalette, type ShaderBackground } from '../../common/shader';
+import { DEFAULT_FX, levelPalette, type ShaderBackground } from '../../common/shader';
+import { BOSS_THEME } from './bossTheme';
 import { useSocketEvent } from '../../common/socket';
 import { Tabs, useToast } from '../../ui/components';
 import { ActTrack, BOSS_ICON, VictoryModal } from './acts';
@@ -127,14 +129,20 @@ export function GamePage({ initialUser, shader }: { initialUser: PublicUser; sha
     arenaRef.current?.setPlayerHealth(state.hp, computeStats(state).maxHp);
   }, []);
 
-  /** Background + arena border follow the level (getLevelBackgroundColors of v1). */
+  /**
+   * Background + arena border follow the level (getLevelBackgroundColors of v1),
+   * or the boss's own theme (colours and swirl) when one is involved.
+   */
   const tintForLevel = useCallback(
-    (level: number) => {
-      const palette = levelPalette(level);
+    (level: number, bossId: BossId | null = null) => {
+      const theme = bossId ? BOSS_THEME[bossId] : null;
+      const palette = theme?.palette ?? levelPalette(level);
       shader.setColors(...palette);
+      shader.setFx(theme?.fx ?? DEFAULT_FX);
       const arena = el.arena.current;
       if (arena) {
-        const [r, g, b] = [palette[1].r, palette[1].g, palette[1].b].map((v) => Math.round(v * 255));
+        const edge = theme ? palette[0] : palette[1];
+        const [r, g, b] = [edge.r, edge.g, edge.b].map((v) => Math.round(v * 255));
         arena.style.setProperty('--arena-border', `rgba(${r}, ${g}, ${b}, 0.45)`);
         arena.style.setProperty('--arena-glow', `rgba(${r}, ${g}, ${b}, 0.18)`);
       }
@@ -260,7 +268,7 @@ export function GamePage({ initialUser, shader }: { initialUser: PublicUser; sha
       arenaRef.current?.playerDie();
       setFighting(false);
       setRun(res.state);
-      shader.setColors(...DEFAULT_PALETTE);
+      shader.reset();
       shader.disableAnimation();
       log('death', `Défaite au niveau ${res.state.level + 1}`);
       setTimeout(() => setModal('defeat'), 700);
@@ -304,7 +312,7 @@ export function GamePage({ initialUser, shader }: { initialUser: PublicUser; sha
       log('card', `Déclenchements · ${parts.join(' · ')}`);
     };
     arena.enemyEnter();
-    tintForLevel(stage);
+    tintForLevel(stage, res.fight.enemy.bossId ?? null);
     shader.enableAnimation();
     setFighting(true);
     arena.play(res.fight, computeStats(state, res.fight.enemy.stage).maxHp, {
@@ -350,7 +358,7 @@ export function GamePage({ initialUser, shader }: { initialUser: PublicUser; sha
       setRun(res.state);
       setShownLevel(0);
       paintPlayer(res.state);
-      shader.setColors(...DEFAULT_PALETTE);
+      shader.reset();
       shader.disableAnimation();
       setModal(null);
       log('start', `Nouvelle partie · mode ${MODE_INFO[mode].label}${mode === 'deck' ? ` · palier ${res.state.palier ?? 1}` : ''}`);
@@ -544,6 +552,15 @@ export function GamePage({ initialUser, shader }: { initialUser: PublicUser; sha
   const bossInfo =
     mode !== 'deck' ? null : bossBadge && run?.nextBoss ? BOSSES[inFight && enemy?.bossId ? enemy.bossId : run.nextBoss] : eliteFx ? BOSSES[eliteFx] : null;
   const palier = run?.palier ?? 1;
+  // Waiting in front of a boss (or an elite with a boss effect): its theme already fills the screen.
+  const previewBoss = !inFight && run && run.phase !== 'dead' && bossInfo ? bossInfo.id : null;
+  const previewRef = useRef<BossId | null>(null);
+  useEffect(() => {
+    if (previewBoss) tintForLevel(shownStage, previewBoss);
+    else if (previewRef.current && !inFight) tintForLevel(shownStage);
+    previewRef.current = previewBoss;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only react to the previewed boss changing
+  }, [previewBoss]);
   const BossIcon = bossInfo ? BOSS_ICON[bossInfo.id] : Crown;
   const dead = run?.phase === 'dead';
   const pending = run?.phase === 'upgrade' || run?.phase === 'shop' || run?.phase === 'pack';
