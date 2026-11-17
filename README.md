@@ -7,6 +7,8 @@ temps réel.
 > Réécriture complète en TypeScript de la v1 (Express + JS vanilla). Le
 > pourquoi est détaillé dans [REVIEW.md](REVIEW.md).
 
+![Combat contre un boss en mode Deck](docs/screenshot.png)
+
 ## Stack
 
 | Couche | Choix |
@@ -38,6 +40,10 @@ npm run dev
 
 - Web : http://localhost:5173 (Vite, proxy `/api` et `/socket.io` vers :3000)
 - API : http://localhost:3000
+
+Les images du jeu (cartes, caisses) ne sont pas versionnées : récupérer le
+dossier `img/` de la v1 (commit `1fd9584` de ce dépôt) et le copier dans
+`apps/web/public/img/` (`cartes/`, `case/Caisse_icons/`, `case/Caisse_trimmed/`).
 
 Compte de test avec les 50 cartes débloquées et 10 caisses de chaque type
 (identifiants par défaut dans `apps/server/scripts/seed-collector.ts`, refusé si
