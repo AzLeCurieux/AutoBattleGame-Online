@@ -2,12 +2,16 @@ import { getCard } from '../cards.js';
 import { CASE_TYPES, caseTypeForLevel } from '../cases.js';
 import { bossPool } from '../bosses.js';
 import type { RunAction } from '../protocol.js';
+import { ITEMS, MAX_ITEMS } from '../items.js';
 import { RULES, isLootLevel, maxCasesForLevel } from '../rules.js';
 import { simulateFight } from './combat.js';
+import { forcedNode, isFightNode, nodeOffers, rollRoute, stepOf } from './route.js';
 import { Rng } from './rng.js';
 import { bossRerollPrice, forgePrice, healCost, nextBossAct, normalizeRun, openPack, openShop, rerollCards } from './shop.js';
 import { computeStats, deckEffects, deckLimit, ofKind, passivePower, srcOf, sumEffect } from './stats.js';
+import { BOSS_PASSIVES } from './types.js';
 import type {
+  ItemId,
   BossPassive,
   Proc,
   CaseDrop,
@@ -72,10 +76,41 @@ export function createRun(seed: number, now: number, mode: GameMode = 'deck', pa
     nextBoss,
     won: false,
     bossRerollAct: 0,
+    route: null,
+    node: mode === 'deck' ? 'fight' : null,
+    path: [],
+    items: [],
+    buffs: {},
     stats: { kills: 0, bossKills: 0, damageDealt: 0, goldEarned: 0 },
     startedAt: now,
     rng: rng.state,
   };
+}
+
+/**
+ * Deck mode: sets up the next step of the route — forced (first fight, boss)
+ * or a choice among 2-3 options. Called whenever the run is back to 'ready'.
+ */
+function prepareStep(state: RunState, rng: Rng) {
+  if (runMode(state) !== 'deck') return;
+  if (stepOf(state.level) === 1) state.path = [];
+  const forced = forcedNode(state.level);
+  state.node = forced;
+  state.route = forced ? null : rollRoute(state, rng);
+}
+
+/** A non-fight step is over: it counts as one step of the act. */
+function finishStep(state: RunState) {
+  state.path = [...(state.path ?? []), state.node ?? 'fight'];
+  state.node = null;
+  state.level++;
+}
+
+function giveItem(state: RunState, item: ItemId): boolean {
+  const items = state.items ?? [];
+  if (items.length >= MAX_ITEMS) return false;
+  state.items = [...items, item];
+  return true;
 }
 
 export function toPublic(state: RunState): PublicRunState {
@@ -115,29 +150,90 @@ export function applyAction(input: RunState, action: RunAction, ctx: ActionConte
   switch (action.type) {
     case 'fight': {
       requirePhase(state, 'ready');
+      if (runMode(state) === 'deck' && !isFightNode(state.node)) fail('CHOOSE_NODE', 'Choisis d’abord ta prochaine étape');
       const combat = simulateFight(state, rng);
+      state.buffs = {};
       state.stats.damageDealt += combat.damageDealt;
       if (combat.outcome === 'defeat') {
         state.phase = 'dead';
         return done({ fight: { ...combat, reward: null } });
       }
       const reward = grantKillReward(state, rng, combat.enemy);
+      if (runMode(state) === 'deck') {
+        state.path = [...(state.path ?? []), state.node ?? 'fight'];
+        state.node = null;
+      }
       state.offer = combat.enemy.isBoss ? rollBossOffer(rng) : rollUpgradeOffer(rng);
       state.phase = 'upgrade';
       return done({ fight: { ...combat, reward } });
     }
 
+    case 'chooseNode': {
+      requirePhase(state, 'ready');
+      const route = state.route ?? fail('NO_ROUTE', 'Aucun choix d’étape en attente');
+      const node = route[action.index] ?? fail('BAD_INDEX', 'Étape inconnue');
+      state.route = null;
+      state.node = node.kind;
+      switch (node.kind) {
+        case 'camp':
+        case 'treasure':
+        case 'event':
+          state.offer = nodeOffers(state, node.kind, rng, node.item);
+          state.phase = 'upgrade';
+          break;
+        case 'shop':
+          state.shop = openShop(rng, state, ctx.ownedCardIds);
+          state.phase = 'shop';
+          break;
+        case 'skip': {
+          // Skipping the elite: no fight, no level-up pick, but an item and a little gold.
+          if (!node.item || !giveItem(state, node.item)) state.gold += 4;
+          state.gold += 3;
+          earnGold(state, 3);
+          finishStep(state);
+          prepareStep(state, rng);
+          break;
+        }
+        default:
+          break; // fights: the player now presses "Combattre"
+      }
+      return done();
+    }
+
     case 'chooseUpgrade': {
       requirePhase(state, 'upgrade');
       const offer = state.offer?.[action.index] ?? fail('BAD_INDEX', 'Amélioration inconnue');
-      applyUpgrade(state, offer);
+      applyUpgrade(state, offer, rng);
       state.offer = null;
+      // Camp, treasure and event steps end here; fights already counted the step.
+      if (state.node && !isFightNode(state.node)) finishStep(state);
       if (runMode(state) === 'deck' && state.level % RULES.shopEvery === 0) {
         state.shop = openShop(rng, state, ctx.ownedCardIds);
         state.phase = 'shop';
       } else {
         state.phase = 'ready';
+        prepareStep(state, rng);
       }
+      return done();
+    }
+
+    case 'useItem': {
+      requirePhase(state, 'ready', 'shop');
+      const items = state.items ?? [];
+      const item = items[action.index] ?? fail('BAD_INDEX', 'Objet inconnu');
+      useItem(state, item, rng);
+      state.items = items.filter((_, i) => i !== action.index);
+      return done();
+    }
+
+    case 'shopBuyItem': {
+      requirePhase(state, 'shop');
+      const offer = state.shop!.item ?? fail('BAD_INDEX', 'Aucun objet en vente');
+      if (offer.sold) fail('SOLD', 'Déjà acheté');
+      if (state.gold < offer.price) fail('NO_GOLD', 'Or insuffisant');
+      if (!giveItem(state, offer.item)) fail('FULL', `${MAX_ITEMS} objets maximum : utilises-en un d’abord`);
+      state.gold -= offer.price;
+      offer.sold = true;
       return done();
     }
 
@@ -260,6 +356,8 @@ export function applyAction(input: RunState, action: RunAction, ctx: ActionConte
       requirePhase(state, 'shop');
       state.shop = null;
       state.phase = 'ready';
+      if (state.node === 'shop') finishStep(state);
+      prepareStep(state, rng);
       return done();
     }
   }
@@ -274,8 +372,20 @@ export function sellValue(entry: DeckCard): number {
   return Math.max(1, Math.floor(entry.price * RULES.sellBackRate));
 }
 
+/** Fusion: the same card bought again gains a star (up to MAX_STARS) instead of a slot. */
+export const MAX_STARS = 3;
+
 function addToDeck(state: RunState, entry: DeckCard) {
-  if (state.deck.some((c) => c.cardId === entry.cardId)) fail('DUPLICATE', 'Cette carte est déjà dans le deck');
+  const owned = state.deck.findIndex((c) => c.cardId === entry.cardId);
+  if (owned >= 0) {
+    const card = state.deck[owned]!;
+    if ((card.stars ?? 1) >= MAX_STARS) fail('MAX_STARS', `Cette carte est déjà au maximum (${MAX_STARS} étoiles)`);
+    const deck = state.deck.map((c, i) =>
+      i === owned ? { ...c, stars: (c.stars ?? 1) + 1, price: c.price + entry.price, modifier: c.modifier ?? entry.modifier } : c,
+    );
+    changeDeck(state, deck);
+    return;
+  }
   const next = [...state.deck, entry];
   if (next.length > deckLimit(next, state.perks)) fail('DECK_FULL', 'Deck complet : vends une carte d’abord');
   changeDeck(state, next);
@@ -306,7 +416,8 @@ function grantKillReward(state: RunState, rng: Rng, enemy: EnemyInfo): KillRewar
   const bonus = !deck
     ? isBoss ? RULES.bossGoldBonus : 0
     : actBonus + (isBoss ? RULES.acts.bossGold + enemy.act : enemy.kind === 'elite' ? RULES.acts.eliteGold : 0);
-  const gold = RULES.goldPerKill + sumEffect(fx, 'goldPerKill') + bonus;
+  const greed = passivePower(state.bossPassives, runMode(state)).goldPerKill;
+  const gold = (RULES.goldPerKill + sumEffect(fx, 'goldPerKill') + bonus + greed) * (state.buffs?.gold ?? 1);
   const procs: Proc[] = ofKind(fx, 'goldPerKill').map((e) => ({ card: srcOf(e), kind: e.kind, amount: e.value }));
   state.gold += gold;
   earnGold(state, gold);
@@ -385,12 +496,56 @@ function rollUpgradeOffer(rng: Rng): UpgradeOffer[] {
   return rng.sample(pool, 2);
 }
 
+/** Three passives out of six: always at least one pact (bonus with a drawback). */
 function rollBossOffer(rng: Rng): UpgradeOffer[] {
-  const passives: BossPassive[] = ['regen', 'rage', 'vitality'];
-  return rng.sample(passives, 2).map((passive) => ({ kind: 'bossPassive', passive }));
+  const pacts: BossPassive[] = ['fury', 'bulwark', 'greed'];
+  const pact = rng.pick(pacts);
+  const rest = rng.sample(BOSS_PASSIVES.filter((p) => p !== pact), 2);
+  return rng.sample([pact, ...rest], 3).map((passive) => ({ kind: 'bossPassive', passive }));
 }
 
-function applyUpgrade(state: RunState, offer: UpgradeOffer) {
+const EDITIONS = ['foil', 'holographic', 'polychrome'] as const;
+
+/** Gives an edition to a random deck card that has none. Returns false if none qualifies. */
+function addEdition(state: RunState, rng: Rng): boolean {
+  const plain = state.deck.map((d, i) => ({ d, i })).filter(({ d }) => !d.modifier);
+  if (plain.length === 0) return false;
+  const { i } = rng.pick(plain);
+  const modifier = rng.pick(EDITIONS);
+  changeDeck(state, state.deck.map((c, k) => (k === i ? { ...c, modifier } : c)));
+  return true;
+}
+
+function useItem(state: RunState, item: ItemId, rng: Rng) {
+  const buffs = { ...(state.buffs ?? {}) };
+  switch (item) {
+    case 'potion': {
+      const { maxHp } = computeStats(state);
+      if (state.hp >= maxHp) fail('FULL_HP', 'Points de vie déjà au maximum');
+      state.hp = Math.min(maxHp, state.hp + Math.floor(maxHp * 0.5));
+      break;
+    }
+    case 'whetstone':
+      buffs.damage = (buffs.damage ?? 0) + 50;
+      break;
+    case 'shield':
+      buffs.shield = Math.min(80, (buffs.shield ?? 0) + 40);
+      break;
+    case 'luckyCoin':
+      buffs.gold = (buffs.gold ?? 1) * 2;
+      break;
+    case 'prism':
+      if (!addEdition(state, rng)) fail('NO_TARGET', 'Toutes les cartes du deck ont déjà une édition');
+      break;
+    case 'compass':
+      if (state.phase !== 'ready' || !state.route) fail('NO_ROUTE', 'Utilisable quand tu choisis ta prochaine étape');
+      state.route = rollRoute(state, rng);
+      break;
+  }
+  state.buffs = buffs;
+}
+
+function applyUpgrade(state: RunState, offer: UpgradeOffer, rng?: Rng) {
   switch (offer.kind) {
     case 'maxHp':
       state.base.maxHp += offer.value;
@@ -414,6 +569,36 @@ function applyUpgrade(state: RunState, offer: UpgradeOffer) {
       break;
     case 'bossPassive':
       state.bossPassives.push(offer.passive);
+      break;
+    case 'heal': {
+      const { maxHp } = computeStats(state);
+      state.hp = Math.min(maxHp, state.hp + Math.floor((maxHp * offer.percent) / 100));
+      break;
+    }
+    case 'item':
+      if (!giveItem(state, offer.item)) {
+        // Bag full: the item is sold on the spot.
+        state.gold += Math.ceil(ITEMS[offer.item].price / 2);
+      }
+      break;
+    case 'gamble':
+      state.hp = Math.max(1, state.hp - Math.floor((state.hp * offer.hpPercent) / 100));
+      state.gold += offer.gold;
+      earnGold(state, offer.gold);
+      break;
+    case 'sacrifice': {
+      const before = computeStats(state).maxHp;
+      state.base.maxHp = Math.floor(state.base.maxHp * (1 - offer.hpPercent / 100));
+      state.forge++;
+      const after = computeStats(state).maxHp;
+      state.hp = Math.max(1, Math.min(after, Math.round((state.hp / before) * after)));
+      break;
+    }
+    case 'edition':
+      if (state.gold < offer.price) fail('NO_GOLD', 'Or insuffisant');
+      if (rng && addEdition(state, rng)) state.gold -= offer.price;
+      break;
+    case 'leave':
       break;
   }
 }

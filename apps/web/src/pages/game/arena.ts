@@ -164,17 +164,24 @@ export class Arena {
     this.moveTo(this.el.enemy, e.x, e.y, ms);
   }
 
-  /** Offset that brings the attacker's square edge to edge with the target's, coming from where it stands. */
+  /**
+   * Offset that brings the attacker's square edge to edge with the target's
+   * side, at the same height: coming from above or below would cover the
+   * target's name or health bar.
+   */
   private contactOffset(attacker: HTMLElement, target: HTMLElement) {
     const a = attacker.querySelector<HTMLElement>('.token')!.getBoundingClientRect();
     const t = target.querySelector<HTMLElement>('.token')!.getBoundingClientRect();
     const dx = t.left + t.width / 2 - (a.left + a.width / 2);
     const dy = t.top + t.height / 2 - (a.top + a.height / 2);
-    const far = Math.max(Math.abs(dx), Math.abs(dy));
+    const side = attacker === this.el.player ? 1 : -1;
     const touch = (a.width + t.width) / 2;
-    const k = far > touch ? (far - touch) / far : 0;
     const o = this.offsetOf(attacker);
-    return { x: o.x + dx * k, y: o.y + dy * k };
+    // Stays inside the arena even if the target stands near an edge.
+    const arena = this.el.arena;
+    const minX = 6 - attacker.offsetLeft;
+    const maxX = arena.clientWidth - 6 - attacker.offsetWidth - attacker.offsetLeft;
+    return { x: Math.min(maxX, Math.max(minX, o.x + dx - side * touch)), y: o.y + dy };
   }
 
   /** Both fighters back to their home spot. */

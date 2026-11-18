@@ -1,5 +1,7 @@
 import { bossPool } from '../bosses.js';
 import { CARDS, type Card } from '../cards.js';
+import { ITEMS } from '../items.js';
+import { forcedNode } from './route.js';
 import { MODIFIERS, MODIFIER_BY_ID } from '../modifiers.js';
 import { RARITIES, RARITY_INFO, type Rarity } from '../rarity.js';
 import { RULES, palierRules } from '../rules.js';
@@ -18,7 +20,7 @@ import type {
   ShopState,
   UpgradeOffer,
 } from './types.js';
-import { PERK_IDS } from './types.js';
+import { ITEM_IDS, PERK_IDS } from './types.js';
 
 /**
  * Deck-mode shop: card slots (rerollable), booster packs, and one permanent
@@ -45,7 +47,8 @@ const SHOP_WEIGHTS = [26.316, 22.632, 21.105, 14.684, 7.895, 5.411, 1.958];
 /** "Flair" doubles the weight of every rarity above Mil-spec. */
 const FLAIR_WEIGHTS = SHOP_WEIGHTS.map((w, i) => (i >= 3 ? w * 2.2 : w));
 
-export const forgePrice = (state: Pick<RunState, 'forge'>) => 8 + 4 * (state.forge ?? 0);
+/** Steeper than before: the Forge was the main snowball of winning runs. */
+export const forgePrice = (state: Pick<RunState, 'forge'>) => 10 + 5 * (state.forge ?? 0);
 
 /** Act whose boss is announced (the shop after a boss already shows the next act's). */
 export const nextBossAct = (state: Pick<RunState, 'level'>) => Math.floor(state.level / RULES.acts.length) + 1;
@@ -109,10 +112,13 @@ function rollModifier(rng: Rng, guaranteed = false): ModifierId | null {
   return null;
 }
 
-/** Cards that can show up: the player's collection, minus what is already in the deck. */
+/**
+ * Cards that can show up: the player's collection. Cards already in the deck
+ * can come back (buying one fuses it), except those already at max stars.
+ */
 function cardPool(state: RunState, ownedCardIds: readonly string[], exclude: readonly string[]): Card[] {
   const owned = new Set(ownedCardIds);
-  const banned = new Set([...state.deck.map((d) => d.cardId), ...exclude]);
+  const banned = new Set([...state.deck.filter((d) => (d.stars ?? 1) >= 3).map((d) => d.cardId), ...exclude]);
   let pool = CARDS.filter((c) => owned.has(c.id) && !banned.has(c.id));
   // New players have (almost) no collection: top the pool up with common cards.
   if (pool.length < 6) pool = [...pool, ...CARDS.filter((c) => c.rarity === 'consumer' && !owned.has(c.id) && !banned.has(c.id))];
@@ -166,10 +172,12 @@ export function openShop(rng: Rng, state: RunState, ownedCardIds: readonly strin
   const interest = bossShop ? Math.min(interestCap(state), Math.floor(state.gold / RULES.interestStep)) : 0;
   state.gold += interest;
   state.stats.goldEarned = (state.stats.goldEarned ?? 0) + interest;
+  const item = rng.pick(ITEM_IDS);
   return {
     cards: rollShopCards(rng, state, ownedCardIds),
     packs: rollPacks(rng, state),
     perk: rollPerk(rng, state),
+    item: { item, price: discounted(state, ITEMS[item].price), sold: false },
     rerollCost: hasPerk(state, 'freeReroll') ? 0 : RULES.rerollBaseCost,
     interest,
   };
@@ -218,6 +226,12 @@ export function normalizeRun<T extends RunState | Omit<RunState, 'rng'>>(state: 
   s.forge ??= 0;
   s.palier ??= 1;
   s.bossRerollAct ??= 0;
+  s.items ??= [];
+  s.buffs ??= {};
+  s.path ??= [];
+  s.route ??= null;
+  // Runs saved before the route existed: the pending step is a plain fight.
+  if (s.node === undefined) s.node = (s.mode ?? 'deck') === 'deck' && s.phase === 'ready' ? (forcedNode(s.level) ?? 'fight') : null;
   s.won ??= (s.mode ?? 'deck') === 'deck' && s.level >= RULES.acts.winAct * RULES.acts.length;
   if (s.nextBoss === undefined) {
     const act = Math.floor(s.level / RULES.acts.length) + 1;

@@ -74,7 +74,7 @@ export const RULES = {
  * `npm run balance:calibrate` so that an average player clears each act at the
  * target rate. Mutable on purpose: the calibrator tunes it in-process.
  */
-export const ACT_SCALE: number[] = [0.912, 1.27, 1.88, 2.89, 4.72, 7.07, 9.92, 14.7];
+export const ACT_SCALE: number[] = [0.928, 1.33, 2.08, 3.36, 5.96, 9.49, 15, 24.1];
 
 export function actOf(stage: number): number {
   return Math.max(1, Math.ceil(stage / RULES.acts.length));

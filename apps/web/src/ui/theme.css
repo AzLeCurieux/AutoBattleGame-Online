@@ -749,6 +749,9 @@ a.btn {
   border-left: 3px solid var(--rarity);
   line-height: 1.35;
 }
+.card-hover li.fam {
+  color: #93c5fd;
+}
 .card-hover li.mod {
   border-left-color: var(--accent);
   color: var(--accent);
@@ -799,4 +802,157 @@ a.btn {
 }
 .music-ctl.off input[type='range'] {
   opacity: 0.3;
+}
+
+/* ------------------------------------------------------ card finishes */
+/*
+ * Shared by every card (tiles, deck slots, jokers):
+ * - rarity: the frame glows more the rarer the card, Covert and Gold pulse;
+ * - edition: Foil (silver sheen), Holographic (rainbow bands), Polychrome
+ *   (shifting colours), Negative (inverted art);
+ * - hover: a slight 3D tilt and a highlight that follows the pointer
+ *   (--mx/--my/--rx/--ry are written by the listener in ui/components.tsx).
+ */
+
+.card-tile .art,
+.deck-slot,
+.joker {
+  position: relative;
+  isolation: isolate;
+}
+.card-tile .art,
+.joker {
+  overflow: hidden;
+}
+.card-sheen {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  border-radius: inherit;
+  opacity: 0;
+  background: radial-gradient(circle at var(--mx, 50%) var(--my, 30%), rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0.08) 30%, transparent 55%);
+  mix-blend-mode: soft-light;
+  transition: opacity 0.25s ease;
+}
+[data-glare]:hover .card-sheen {
+  opacity: 1;
+}
+.card-tile[data-glare],
+.deck-slot[data-glare],
+.joker[data-glare] {
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+.card-tile[data-glare]:hover {
+  transform: perspective(800px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(-3px);
+}
+.deck-slot[data-glare]:hover {
+  transform: perspective(600px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(-2px);
+}
+.joker[data-glare]:hover {
+  transform: perspective(300px) rotateX(calc(var(--rx, 0deg) * 1.4)) rotateY(calc(var(--ry, 0deg) * 1.4)) scale(1.08);
+  transition: transform 0.12s ease;
+}
+
+/* Rarity frames */
+.r-restricted,
+.r-classified {
+  box-shadow: 0 0 10px color-mix(in srgb, var(--rarity, var(--slot-color)) 28%, transparent);
+}
+.r-covert,
+.r-melee {
+  animation: rarity-pulse 2.8s ease-in-out infinite;
+}
+.r-melee .art::after,
+.deck-slot.r-melee::after,
+.joker.r-melee::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 38%, rgba(255, 236, 170, 0.55) 50%, transparent 62%) 0 0 / 280% 100%;
+  animation: gold-sweep 3.6s ease-in-out infinite;
+}
+@keyframes rarity-pulse {
+  50% {
+    box-shadow: 0 0 18px color-mix(in srgb, var(--rarity, var(--slot-color)) 55%, transparent);
+  }
+}
+@keyframes gold-sweep {
+  0%,
+  55% {
+    background-position: 160% 0;
+  }
+  100% {
+    background-position: -120% 0;
+  }
+}
+
+/* Foil: silver sheen that slides with the pointer. */
+.ed-foil .card-sheen {
+  opacity: 0.65;
+  background:
+    linear-gradient(115deg, transparent calc(var(--mx, 30%) - 25%), rgba(225, 235, 255, 0.55) var(--mx, 30%), transparent calc(var(--mx, 30%) + 22%)),
+    radial-gradient(circle at var(--mx, 50%) var(--my, 30%), rgba(255, 255, 255, 0.3), transparent 50%);
+  mix-blend-mode: overlay;
+}
+/* Holographic: rainbow bands, tilt to make them move. */
+.ed-holographic .card-sheen {
+  opacity: 0.5;
+  background:
+    repeating-linear-gradient(
+      115deg,
+      rgba(255, 106, 213, 0.75) 0%,
+      rgba(142, 240, 255, 0.75) 6%,
+      rgba(196, 155, 255, 0.75) 12%,
+      rgba(255, 227, 106, 0.75) 18%,
+      rgba(255, 106, 213, 0.75) 24%
+    )
+    var(--mx, 50%) var(--my, 50%) / 220% 220%,
+    radial-gradient(circle at var(--mx, 50%) var(--my, 30%), rgba(255, 255, 255, 0.4), transparent 45%);
+  mix-blend-mode: color-dodge;
+  animation: holo-drift 7s linear infinite;
+}
+[data-glare].ed-holographic:hover .card-sheen,
+.ed-foil[data-glare]:hover .card-sheen {
+  opacity: 0.75;
+}
+/* Polychrome: the whole art slowly shifts hue. */
+.ed-polychrome img {
+  animation: poly-hue 6s linear infinite;
+}
+.ed-polychrome .card-sheen {
+  opacity: 0.4;
+  background: conic-gradient(from 0deg at var(--mx, 50%) var(--my, 50%), #ff6ad5, #ffe36a, #6affc1, #6ad5ff, #c49bff, #ff6ad5);
+  mix-blend-mode: soft-light;
+}
+/* Negative: inverted art, dark violet glow. */
+.ed-negative img {
+  filter: invert(1) hue-rotate(180deg) saturate(1.2);
+}
+.ed-negative {
+  box-shadow:
+    0 0 0 1px rgba(170, 120, 255, 0.5),
+    0 0 16px rgba(120, 60, 220, 0.45);
+}
+@keyframes holo-drift {
+  to {
+    background-position:
+      calc(var(--mx, 50%) + 220%) var(--my, 50%),
+      0 0;
+  }
+}
+@keyframes poly-hue {
+  to {
+    filter: hue-rotate(360deg) saturate(1.3);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card-tile[data-glare]:hover,
+  .deck-slot[data-glare]:hover,
+  .joker[data-glare]:hover {
+    transform: none;
+  }
 }

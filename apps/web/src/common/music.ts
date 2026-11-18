@@ -51,8 +51,24 @@ class MusicPlayer {
     return this.wanted;
   }
 
+  /** Death screen: the piece slows down and drops in pitch. */
+  private slow = false;
+
   private get level() {
-    return this.enabled && !this.muted ? this.volume : 0;
+    return this.enabled && !this.muted ? this.volume * (this.slow ? 0.6 : 1) : 0;
+  }
+
+  private rate(el: HTMLAudioElement) {
+    el.preservesPitch = false;
+    el.playbackRate = this.slow ? 0.78 : 1;
+  }
+
+  setSlow(slow: boolean) {
+    if (slow === this.slow) return;
+    this.slow = slow;
+    for (const el of this.els.values()) this.rate(el);
+    const el = this.els.get(this.current);
+    if (el && this.started && !el.paused) this.fade(el, this.level);
   }
 
   subscribe(fn: () => void) {
@@ -71,6 +87,7 @@ class MusicPlayer {
       el.loop = true;
       el.preload = 'auto';
       el.volume = 0;
+      this.rate(el);
       this.els.set(track, el);
     }
     return el;
@@ -103,7 +120,7 @@ class MusicPlayer {
     const resume = readResume();
     if (resume !== null) el.currentTime = resume;
     el.play().then(
-      () => this.fade(el, this.level),
+      () => this.settle(el),
       () => {
         this.started = false;
       },
@@ -120,10 +137,19 @@ class MusicPlayer {
     to.currentTime = from.currentTime;
     to.volume = 0;
     this.current = track;
-    void to.play().then(() => this.fade(to, this.level), () => {});
+    void to.play().then(() => this.settle(to), () => {});
     this.fade(from, 0, () => {
       if (from !== this.el(this.current)) from.pause();
     });
+  }
+
+  /**
+   * Called when play() resolves, possibly after the track changed again:
+   * only the current track may fade in; any other one fades out and stops.
+   */
+  private settle(el: HTMLAudioElement) {
+    if (el === this.els.get(this.current) && this.level > 0) this.fade(el, this.level);
+    else this.fade(el, 0, () => el.pause());
   }
 
   private apply() {
@@ -138,7 +164,8 @@ class MusicPlayer {
         this.current = this.wanted;
       }
       const now = this.el(this.current);
-      void now.play().then(() => this.fade(now, this.level), () => {});
+      for (const [t, other] of this.els) if (t !== this.current && !other.paused) this.fade(other, 0, () => other.pause());
+      void now.play().then(() => this.settle(now), () => {});
     }
     this.emit();
   }

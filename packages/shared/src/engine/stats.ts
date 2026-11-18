@@ -1,8 +1,9 @@
 import { getCard } from '../cards.js';
 import type { CardEffect } from '../effects.js';
+import { deckFamilies } from '../families.js';
 import { MODIFIER_BY_ID } from '../modifiers.js';
 import type { BossId } from '../bosses.js';
-import { RULES, actOf, actScale, palierRules, stageKind } from '../rules.js';
+import { RULES, actOf, actScale, palierRules, stageKind, type EnemyKind } from '../rules.js';
 import type { BossPassive, DeckCard, EnemyInfo, GameMode, PerkId, RunState } from './types.js';
 
 /**
@@ -15,20 +16,41 @@ export function deckEffects(deck: readonly DeckCard[], silenced = -1): CardEffec
   for (const [i, entry] of deck.entries()) {
     if (i === silenced) continue;
     const card = getCard(entry.cardId);
-    if (card) for (const e of card.effects) effects.push(Object.assign({}, e, { src: i }));
+    if (card) for (const e of card.effects) effects.push(Object.assign(starred(e, entry.stars ?? 1), { src: i }));
     const mod = entry.modifier ? MODIFIER_BY_ID.get(entry.modifier) : undefined;
     if (mod?.effect) effects.push(Object.assign({}, mod.effect, { src: i }));
   }
+  // Team bonuses (several cards of the same friend). FAMILY_SRC: not a deck slot.
+  const ids = deck.filter((_, i) => i !== silenced).map((d) => d.cardId);
+  for (const f of deckFamilies(ids)) if (f.effect) effects.push(Object.assign({}, f.effect, { src: FAMILY_SRC }));
   return effects;
+}
+
+/** `src` of the effects granted by a team bonus. */
+export const FAMILY_SRC = -2;
+
+/** Each fusion star adds 50 % to the card's positive values (and caps). Drawbacks are not amplified. */
+export const STAR_BONUS = 0.5;
+function starred(e: CardEffect, stars: number): CardEffect {
+  if (stars <= 1) return { ...e };
+  const k = 1 + STAR_BONUS * (stars - 1);
+  const out = { ...e } as CardEffect & { value?: number; max?: number; threshold?: number; healthPercent?: number };
+  if (typeof out.value === 'number' && out.value > 0) out.value = Math.round(out.value * k * 100) / 100;
+  if (typeof out.max === 'number') out.max = Math.round(out.max * k);
+  if (typeof out.threshold === 'number') out.threshold = Math.min(60, Math.round(out.threshold * (1 + (k - 1) / 2)));
+  if (typeof out.healthPercent === 'number') out.healthPercent = Math.min(100, Math.round(out.healthPercent * k));
+  return out;
 }
 
 /** Deck slot an effect from `deckEffects` comes from (-1 if unknown). */
 export const srcOf = (e: CardEffect): number => (e as CardEffect & { src?: number }).src ?? -1;
 
 export function deckLimit(deck: readonly DeckCard[], perks: readonly PerkId[] = []): number {
-  let limit = RULES.baseDeckSize + (perks.includes('satchel') ? 1 : 0);
-  for (const entry of deck) limit += entry.modifier ? (MODIFIER_BY_ID.get(entry.modifier)?.extraDeckSlots ?? 0) : 0;
-  return limit;
+  const limit = RULES.baseDeckSize + (perks.includes('satchel') ? 1 : 0);
+  // Only one Negative extends the deck: stacking them made decks too wide.
+  let extra = 0;
+  for (const entry of deck) extra = Math.max(extra, entry.modifier ? (MODIFIER_BY_ID.get(entry.modifier)?.extraDeckSlots ?? 0) : 0);
+  return limit + extra;
 }
 
 const sum = (effects: CardEffect[], kind: CardEffect['kind']) =>
@@ -63,15 +85,20 @@ export function passivePower(passives: readonly BossPassive[], mode: GameMode = 
       healPercent: Math.min(30, 10 * count('regen')),
       damagePercent: 0,
       hpPercent: 0,
+      goldPerKill: 0,
     };
   }
   const { passivePercent, regenPercent, regenCap } = RULES.acts;
+  const root = (p: BossPassive) => Math.sqrt(count(p));
+  // Pacts: a stronger bonus paid with a drawback (see PASSIVE_RULES).
+  const P = PASSIVE_RULES;
   return {
     damage: 0,
     maxHp: 0,
     healPercent: Math.min(regenCap, regenPercent * count('regen')),
-    damagePercent: Math.round(passivePercent * Math.sqrt(count('rage'))),
-    hpPercent: Math.round(passivePercent * Math.sqrt(count('vitality'))),
+    damagePercent: Math.round(passivePercent * root('rage') + P.fury.bonus * root('fury') - P.bulwark.malus * root('bulwark') - P.greed.malus * root('greed')),
+    hpPercent: Math.round(passivePercent * root('vitality') + P.bulwark.bonus * root('bulwark') - P.fury.malus * root('fury')),
+    goldPerKill: P.greed.bonus * count('greed'),
   };
 }
 
@@ -136,9 +163,19 @@ export function silencedIndex(deck: readonly DeckCard[]): number {
   return deck.length > 0 ? 0 : -1;
 }
 
-export function createEnemy(level: number, mode: GameMode = 'classic', bossId: BossId | null = null, palier = 1): EnemyInfo {
+/**
+ * Pacts (deck mode): % bonus and % drawback per copy (√ stacking like the
+ * others). Greed's bonus is gold per kill, its drawback is damage.
+ */
+export const PASSIVE_RULES = {
+  fury: { bonus: 30, malus: 15 },
+  bulwark: { bonus: 30, malus: 12 },
+  greed: { bonus: 2, malus: 10 },
+} as const;
+
+export function createEnemy(level: number, mode: GameMode = 'classic', bossId: BossId | null = null, palier = 1, kindOverride?: EnemyKind): EnemyInfo {
   const stage = level + 1;
-  const kind = stageKind(stage, mode);
+  const kind = kindOverride ?? stageKind(stage, mode);
   const act = actOf(stage);
 
   if (mode === 'classic') {

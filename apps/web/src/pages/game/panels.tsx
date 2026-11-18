@@ -2,8 +2,11 @@ import {
   computeStats,
   deckLimit,
   healCost,
+  ITEMS,
+  PASSIVE_RULES,
   passivePower,
   runMode,
+  type NodeKind,
   type BossPassive,
   PALIERS,
   RULES,
@@ -19,6 +22,15 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import {
   ArrowUpCircle,
+  Anvil,
+  Dices,
+  DoorOpen,
+  Gem,
+  HandCoins,
+  HelpCircle,
+  ShieldPlus,
+  Swords as SwordsIcon,
+  Wand2,
   BarChart3,
   Coins,
   Crown,
@@ -45,7 +57,8 @@ import {
   Wind,
   Zap,
 } from 'lucide-react';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { avatarUrl } from '../../common/avatar';
 import { CARD_COLORS, CASE_ORDER, caseMeta, cardMeta, MODIFIER_META } from '../../common/catalog';
 import { useCardHover } from '../../ui/CardHover';
@@ -117,14 +130,36 @@ export function upgradeInfo(offer: UpgradeOffer, mode: GameMode = 'deck'): { tit
     case 'critChance':
       return { title: 'Chance critique', value: `+${offer.value} %`, text: 'Plus de coups critiques.', icon: Target, color: '#a78bfa' };
     case 'bossPassive':
-      return { ...PASSIVE_INFO[offer.passive], text: passiveText(offer.passive, mode), color: '#fbbf24' };
+      return { ...PASSIVE_INFO[offer.passive], text: passiveText(offer.passive, mode), color: PASSIVE_INFO[offer.passive].pact ? '#f472b6' : '#fbbf24' };
+    case 'heal':
+      return { title: 'Se reposer', value: `+${offer.percent} %`, text: 'Rend une part de tes PV max.', icon: HeartPulse, color: '#4ade80' };
+    case 'item':
+      return { title: ITEMS[offer.item].name, text: ITEMS[offer.item].text, icon: Gem, color: '#c084fc' };
+    case 'gamble':
+      return { title: 'Pari', value: `+${offer.gold} or`, text: `Tu perds ${offer.hpPercent} % de tes PV actuels.`, icon: Dices, color: '#f5b244' };
+    case 'sacrifice':
+      return { title: 'Autel de la Forge', value: '+1 Forge', text: `+8 % de dégâts pour la partie, mais -${offer.hpPercent} % de PV max de base, définitivement.`, icon: Anvil, color: '#f87171' };
+    case 'edition':
+      return { title: 'Atelier', value: `${offer.price} or`, text: 'Une carte du deck sans édition en reçoit une au hasard.', icon: Wand2, color: '#38bdf8' };
+    case 'leave':
+      return { title: 'Passer son chemin', text: 'Ne rien faire.', icon: DoorOpen, color: '#94a3b8' };
   }
 }
 
-export const PASSIVE_INFO: Record<BossPassive, { title: string; icon: LucideIcon; gain: string }> = {
+/** Title of the choice window, depending on the step being played. */
+const STEP_TITLE: Partial<Record<NodeKind, { title: string; subtitle: string; icon: LucideIcon }>> = {
+  camp: { title: 'Camp', subtitle: 'Repos ou entraînement : un seul choix.', icon: Tent },
+  treasure: { title: 'Trésor', subtitle: 'Prends l’or ou l’objet.', icon: Gem },
+  event: { title: 'Événement', subtitle: 'Une rencontre sur la route. Choisis bien.', icon: HelpCircle },
+};
+
+export const PASSIVE_INFO: Record<BossPassive, { title: string; icon: LucideIcon; gain: string; pact?: boolean }> = {
   regen: { title: 'Régénération', icon: HeartPulse, gain: 'Passif : régénération' },
   rage: { title: 'Rage', icon: Flame, gain: 'Passif : rage' },
   vitality: { title: 'Vitalité', icon: Shield, gain: 'Passif : vitalité' },
+  fury: { title: 'Pacte de furie', icon: SwordsIcon, gain: 'Pacte : furie', pact: true },
+  bulwark: { title: 'Pacte du rempart', icon: ShieldPlus, gain: 'Pacte : rempart', pact: true },
+  greed: { title: 'Pacte d’avarice', icon: HandCoins, gain: 'Pacte : avarice', pact: true },
 };
 
 /** Deck mode: permanent percentages. Classic: the original per-victory gains. */
@@ -134,6 +169,9 @@ export function passiveText(p: BossPassive, mode: GameMode = 'deck'): string {
       regen: 'Soigne 10 % des PV max après chaque victoire (30 % max).',
       rage: '+8 dégâts de base après chaque victoire. Cumulable, rendement décroissant.',
       vitality: '+18 PV max après chaque victoire. Cumulable, rendement décroissant.',
+      fury: 'Pacte (mode Deck).',
+      bulwark: 'Pacte (mode Deck).',
+      greed: 'Pacte (mode Deck).',
     }[p];
   }
   const { passivePercent: pc, regenPercent, regenCap } = RULES.acts;
@@ -141,6 +179,9 @@ export function passiveText(p: BossPassive, mode: GameMode = 'deck'): string {
     regen: `Soigne ${regenPercent} % des PV max après chaque victoire (${regenCap} % max).`,
     rage: `+${pc} % de dégâts, tout de suite et pour toute la partie. Cumulable, rendement décroissant.`,
     vitality: `+${pc} % de PV max, tout de suite et pour toute la partie. Cumulable, rendement décroissant.`,
+    fury: `+${PASSIVE_RULES.fury.bonus} % de dégâts, mais -${PASSIVE_RULES.fury.malus} % de PV max.`,
+    bulwark: `+${PASSIVE_RULES.bulwark.bonus} % de PV max, mais -${PASSIVE_RULES.bulwark.malus} % de dégâts.`,
+    greed: `+${PASSIVE_RULES.greed.bonus} or par victoire, mais -${PASSIVE_RULES.greed.malus} % de dégâts.`,
   }[p];
 }
 
@@ -196,6 +237,9 @@ export function PassivesPanel({ run }: { run: PublicRunState | null }) {
     rage: mode === 'classic' ? `+${power.damage} dégâts par victoire` : `+${power.damagePercent} % de dégâts`,
     vitality: mode === 'classic' ? `+${power.maxHp} PV max par victoire` : `+${power.hpPercent} % de PV max`,
     regen: `+${power.healPercent} % PV par victoire`,
+    fury: `${power.damagePercent >= 0 ? '+' : ''}${power.damagePercent} % dégâts · ${power.hpPercent >= 0 ? '+' : ''}${power.hpPercent} % PV`,
+    bulwark: `${power.hpPercent >= 0 ? '+' : ''}${power.hpPercent} % PV · ${power.damagePercent >= 0 ? '+' : ''}${power.damagePercent} % dégâts`,
+    greed: `+${power.goldPerKill} or par victoire`,
   };
   return (
     <Panel title="Passifs de boss" icon={Crown}>
@@ -384,28 +428,34 @@ export function UpgradeModal({
   open,
   offer,
   mode = 'deck',
+  node = null,
+  gold = 0,
   busy,
   onChoose,
 }: {
   open: boolean;
   offer: UpgradeOffer[] | null;
   mode?: GameMode;
+  /** Step being played (camp, treasure, event): sets the title. */
+  node?: NodeKind | null;
+  gold?: number;
   busy: boolean;
   onChoose: (index: number) => void;
 }) {
   const boss = offer?.[0]?.kind === 'bossPassive';
+  const step = node ? STEP_TITLE[node] : undefined;
   return (
     <Modal
       open={open}
-      icon={boss ? Crown : ArrowUpCircle}
-      title={boss ? 'Boss vaincu : choisis un passif' : 'Choisis une amélioration'}
-      subtitle={boss ? 'Les passifs de boss restent actifs jusqu’à la fin de la partie.' : undefined}
+      icon={boss ? Crown : (step?.icon ?? ArrowUpCircle)}
+      title={boss ? 'Boss vaincu : choisis un passif' : (step?.title ?? 'Choisis une amélioration')}
+      subtitle={boss ? 'Les passifs restent actifs toute la partie. Les pactes sont plus forts, avec un défaut.' : step?.subtitle}
     >
       <div className="choice-grid">
         {(offer ?? []).map((o, i) => {
           const info = upgradeInfo(o, mode);
           return (
-            <button key={i} className="choice" disabled={busy} style={cssVars({ '--choice-color': info.color })} onClick={() => onChoose(i)}>
+            <button key={i} className="choice" disabled={busy || (o.kind === 'edition' && gold < o.price)} style={cssVars({ '--choice-color': info.color })} onClick={() => onChoose(i)}>
               <span className="choice-icon">
                 <info.icon className="icon" />
               </span>
@@ -444,9 +494,9 @@ export function CampModal({
     <Modal
       open={open}
       onClose={onClose}
-      icon={Tent}
-      title="Camp"
-      subtitle="Repose-toi entre deux combats."
+      icon={HeartPulse}
+      title="Soins"
+      subtitle="Paie de l’or pour récupérer tous tes PV entre deux étapes."
       footer={
         <>
           {reason && <span className="muted" style={{ marginRight: 'auto', alignSelf: 'center' }}>{reason}</span>}
@@ -506,9 +556,9 @@ export function NewRunModal({
   onStart: (mode: GameMode, palier?: number) => void;
 }) {
   const inProgress = !!run && run.phase !== 'dead' && run.level > 0;
-  // Defaults to the current run's tier until the player picks one.
+  // Defaults to the highest unlocked tier: that is where the challenge is.
   const [picked, setPalier] = useState<number | null>(null);
-  const chosen = Math.min(picked ?? run?.palier ?? 1, palierUnlocked);
+  const chosen = Math.min(picked ?? palierUnlocked, palierUnlocked);
   return (
     <Modal
       open={open}
@@ -581,45 +631,90 @@ export function NewRunModal({
   );
 }
 
+/** Ash flakes of the death screen: fixed positions so re-renders don't reshuffle them. */
+const ASH = Array.from({ length: 26 }, (_, i) => ({
+  left: (i * 37) % 100,
+  delay: (i * 0.53) % 6,
+  duration: 7 + ((i * 1.7) % 5),
+  size: 2 + (i % 4),
+}));
+
+/**
+ * Death screen: the run is over, and it has to read that way at a glance.
+ * The world goes grey, a flatline crosses the screen, ash falls slowly;
+ * the cause of death and the run's numbers sit under a large title.
+ */
 export function DefeatModal({
   open,
   run,
   best,
+  killer,
   onNewRun,
   onClose,
 }: {
   open: boolean;
   run: PublicRunState | null;
   best: number;
+  /** Who dealt the last blow ("L'Enragé", "une élite"…). */
+  killer: string;
   onNewRun: () => void;
   onClose: () => void;
 }) {
-  if (!run) return null;
-  return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      icon={Skull}
-      title="Défaite"
-      subtitle={`Mode ${MODE_INFO[runMode(run)].label}`}
-      footer={
-        <>
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+      if (e.key === 'Enter') onNewRun();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, onClose, onNewRun]);
+  if (!run || !open) return null;
+  const level = run.level + 1;
+  // The best score is already updated when the screen opens: a tie means this run set it.
+  const record = run.level > 0 && run.level >= best;
+  return createPortal(
+    <div className="death-screen" role="dialog" aria-modal="true" aria-labelledby="death-title">
+      <div className="death-veil" />
+      <div className="death-ash" aria-hidden>
+        {ASH.map((a, i) => (
+          <span key={i} style={cssVars({ '--x': `${a.left}%`, '--d': `${a.delay}s`, '--t': `${a.duration}s`, '--s': `${a.size}px` })} />
+        ))}
+      </div>
+      <svg className="death-ecg" viewBox="0 0 1200 120" preserveAspectRatio="none" aria-hidden>
+        <path d="M0 60 H380 L400 60 L415 20 L432 104 L448 38 L462 60 H520 L534 44 L548 76 L560 60 H1200" />
+      </svg>
+      <div className="death-card">
+        <div className="death-skull">
+          <Skull className="icon" />
+        </div>
+        <h1 id="death-title">Tu es mort</h1>
+        <p className="death-cause">
+          Vaincu par <strong>{killer}</strong> au niveau <strong>{level}</strong>
+        </p>
+        {record && (
+          <span className="badge badge-accent death-record">
+            <Trophy className="icon" /> Nouveau record
+          </span>
+        )}
+        <div className="stats-grid death-stats">
+          <StatCard icon={TrendingUp} label="Niveau atteint" value={level} />
+          <StatCard icon={Trophy} label="Record personnel" value={Math.max(best, run.level) + 1} />
+          <StatCard icon={Skull} label="Ennemis vaincus" value={fmt(run.stats.kills)} />
+          <StatCard icon={Swords} label="Dégâts infligés" value={fmt(run.stats.damageDealt)} />
+        </div>
+        <div className="death-actions">
           <button className="btn" onClick={onClose}>
-            Fermer
+            Revoir l'arène
           </button>
-          <button className="btn btn-primary" onClick={onNewRun}>
+          <button className="btn btn-primary btn-lg" onClick={onNewRun} autoFocus>
             <Play className="icon" /> Nouvelle partie
           </button>
-        </>
-      }
-    >
-      <div className="stats-grid">
-        <StatCard icon={TrendingUp} label="Niveau atteint" value={run.level + 1} />
-        <StatCard icon={Trophy} label="Record personnel" value={Math.max(best, run.level) + 1} />
-        <StatCard icon={Skull} label="Ennemis vaincus" value={fmt(run.stats.kills)} />
-        <StatCard icon={Swords} label="Dégâts infligés" value={fmt(run.stats.damageDealt)} />
+        </div>
+        <p className="death-mode muted">Mode {MODE_INFO[runMode(run)].label}</p>
       </div>
-    </Modal>
+    </div>,
+    document.body,
   );
 }
 

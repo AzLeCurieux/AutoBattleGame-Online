@@ -1,4 +1,4 @@
-import { BOSSES, bossRerollPrice, computeStats, deckLimit, forgePrice, nextBossAct, PACKS, sellValue, type DeckCard, type ModifierId, type PackKind, type PerkId, type PublicRunState } from '@autobattle/shared';
+import { BOSSES, bossRerollPrice, computeStats, deckLimit, forgePrice, ITEMS, MAX_ITEMS, MAX_STARS, nextBossAct, PACKS, sellValue, type DeckCard, type ModifierId, type PackKind, type PerkId, type PublicRunState } from '@autobattle/shared';
 import type { LucideIcon } from 'lucide-react';
 import {
   Backpack,
@@ -19,17 +19,20 @@ import {
   ShoppingBag,
   Shuffle,
   Sparkles,
+  Star,
   Store,
   Swords,
   Target,
   Vault,
   Zap,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { audio } from '../../common/audio';
 import { CARD_COLORS, cardMeta, MODIFIER_META } from '../../common/catalog';
 import { useCardHover } from '../../ui/CardHover';
 import { CardTile, cssVars, Modal, Panel } from '../../ui/components';
 import { BOSS_ICON } from './acts';
+import { ITEM_META } from './route';
 import { upgradeInfo } from './panels';
 
 export const PACK_META: Record<PackKind, { name: string; text: string; icon: LucideIcon; color: string }> = {
@@ -95,7 +98,28 @@ function statPreview(run: Run, deck: DeckCard[], title: string, note?: string) {
   );
 }
 
-const withCard = (run: Run, cardId: string, modifier: ModifierId | null) => [...run.deck, { cardId, modifier, price: 0 }];
+/** Deck after taking a card: a copy already in the deck is fused (one more star). */
+const withCard = (run: Run, cardId: string, modifier: ModifierId | null) =>
+  run.deck.some((d) => d.cardId === cardId)
+    ? run.deck.map((d) => (d.cardId === cardId ? { ...d, stars: Math.min(MAX_STARS, (d.stars ?? 1) + 1) } : d))
+    : [...run.deck, { cardId, modifier, price: 0 }];
+
+/** Stars the card would reach by fusion, or 0 if it is not in the deck. */
+const fusionStars = (run: Run, cardId: string) => {
+  const owned = run.deck.find((d) => d.cardId === cardId);
+  return owned ? (owned.stars ?? 1) + 1 : 0;
+};
+
+function FusionBadge({ stars }: { stars: number }) {
+  return (
+    <span className="badge fusion-badge" title={stars > MAX_STARS ? 'Déjà au maximum' : `Fusion : la carte du deck passe à ${stars} étoiles (+${(stars - 1) * 50} % sur ses effets)`}>
+      {stars > MAX_STARS ? 'Max' : 'Fusion'}
+      {Array.from({ length: Math.min(stars, MAX_STARS) }, (_, i) => (
+        <Star key={i} className="icon" />
+      ))}
+    </span>
+  );
+}
 
 /** Live summary at the top of the shop: gold, stats, last thing that happened. */
 function StatusStrip({ run, lastAction }: { run: Run; lastAction?: string }) {
@@ -209,7 +233,8 @@ function DeckSlot({
   return (
     <button
       {...hover}
-      className={`deck-slot ${selected ? 'selected' : ''} ${dropTarget ? 'drop' : ''}`}
+      className={`deck-slot r-${card.rarity} ${entry.modifier ? `ed-${entry.modifier}` : ''} ${selected ? 'selected' : ''} ${dropTarget ? 'drop' : ''}`}
+      data-glare
       style={cssVars({ '--rarity': CARD_COLORS[card.rarity] })}
       draggable
       onClick={onSelect}
@@ -225,6 +250,7 @@ function DeckSlot({
       }}
     >
       <img src={`/img/cartes/${card.image}`} alt="" draggable={false} />
+      <span className="card-sheen" aria-hidden />
       <span className="deck-slot-name">{card.name}</span>
       {entry.modifier && <span className={`modifier ${entry.modifier}`}>{MODIFIER_META[entry.modifier].name}</span>}
     </button>
@@ -288,6 +314,7 @@ export function ShopView({
   onReroll,
   onBuyPack,
   onBuyPerk,
+  onBuyItem,
   onForge,
   onBossReroll,
   onLeave,
@@ -302,6 +329,7 @@ export function ShopView({
   onReroll: () => void;
   onBuyPack: (index: number) => void;
   onBuyPerk: () => void;
+  onBuyItem: () => void;
   onForge: () => void;
   onBossReroll: () => void;
   onLeave: () => void;
@@ -346,22 +374,61 @@ export function ShopView({
                       Achetée
                     </div>
                   ) : (
-                    <CardTile
-                      key={index}
-                      cardId={item.cardId}
-                      modifier={item.modifier}
-                      hoverExtra={() => statPreview(run, withCard(run, item.cardId, item.modifier), 'Avec cette carte', deckFull ? 'Deck complet : vends une carte d’abord.' : undefined)}
-                      showEffect
-                      onClick={busy || gold < item.price || deckFull ? undefined : () => onBuy(index)}
-                      className={gold < item.price || deckFull ? 'unaffordable' : ''}
-                      cornerLeft={item.modifier ? <span className={`modifier ${item.modifier}`}>{MODIFIER_META[item.modifier].name}</span> : undefined}
-                      corner={<Price value={item.price} gold={gold} />}
-                    />
+                    (() => {
+                      const stars = fusionStars(run, item.cardId);
+                      const blocked = gold < item.price || (stars === 0 && deckFull) || stars > MAX_STARS;
+                      return (
+                        <CardTile
+                          key={index}
+                          cardId={item.cardId}
+                          modifier={item.modifier}
+                          hoverExtra={() =>
+                            statPreview(run, withCard(run, item.cardId, item.modifier), stars ? 'Après la fusion' : 'Avec cette carte', stars === 0 && deckFull ? 'Deck complet : vends une carte d’abord.' : undefined)
+                          }
+                          showEffect
+                          onClick={busy || blocked ? undefined : () => onBuy(index)}
+                          className={blocked ? 'unaffordable' : stars ? 'fusion' : ''}
+                          cornerLeft={
+                            stars ? <FusionBadge stars={stars} /> : item.modifier ? <span className={`modifier ${item.modifier}`}>{MODIFIER_META[item.modifier].name}</span> : undefined
+                          }
+                          corner={<Price value={item.price} gold={gold} />}
+                        />
+                      );
+                    })()
                   ),
                 )}
               </div>
               {deckFull && <p className="shop-warning">Deck complet : vends une carte ci-dessous pour en acheter une autre.</p>}
             </section>
+
+            {shop.item && (
+              <section className="shop-block">
+                <header>
+                  <h3>Objet</h3>
+                </header>
+                {(() => {
+                  const offer = shop.item;
+                  const meta = ITEM_META[offer.item];
+                  const full = (run.items ?? []).length >= MAX_ITEMS;
+                  return (
+                    <button
+                      className={`pack shop-item ${offer.sold ? 'sold' : ''}`}
+                      style={cssVars({ '--pack': meta.color })}
+                      disabled={offer.sold || busy || gold < offer.price || full}
+                      onClick={onBuyItem}
+                      title={full ? `${MAX_ITEMS} objets maximum` : undefined}
+                    >
+                      <span className="pack-art">
+                        <meta.icon className="icon" />
+                      </span>
+                      <span className="pack-name">{ITEMS[offer.item].name}</span>
+                      <span className="pack-text">{ITEMS[offer.item].text}</span>
+                      {offer.sold ? <span className="badge">Acheté</span> : <Price value={offer.price} gold={gold} />}
+                    </button>
+                  );
+                })()}
+              </section>
+            )}
 
             <section className="shop-block">
               <header>
@@ -442,6 +509,16 @@ export function PackView({
   onMove: (from: number, to: number) => void;
 }) {
   const pack = run?.pack;
+  // A new booster plays its opening once: shake, tear, burst, then the cards are dealt.
+  const packKey = pack ? `${pack.kind}:${pack.options.map((o) => (o.type === 'card' ? o.cardId : o.offer.kind)).join(',')}` : '';
+  const [openedKey, setOpenedKey] = useState('');
+  const opening = open && !!pack && openedKey !== packKey;
+  useEffect(() => {
+    if (!opening) return;
+    audio.packOpen();
+    const id = setTimeout(() => setOpenedKey(packKey), 1150);
+    return () => clearTimeout(id);
+  }, [opening, packKey]);
   if (!run || !pack) return null;
   const meta = PACK_META[pack.kind];
   const deck = run.deck;
@@ -454,7 +531,7 @@ export function PackView({
       size="xl"
       icon={PackageOpen}
       title={meta.name}
-      subtitle={`${pack.picksLeft > 1 ? `Encore ${pack.picksLeft} choix` : 'Un choix'} sur ${total}.${hasCards ? ' Les cartes vont directement dans ton deck.' : ''}`}
+      subtitle={`${pack.taken.length > 0 ? `Encore ${pack.picksLeft}` : `Choisis ${total}`} ${hasCards ? `carte${pack.picksLeft > 1 ? 's' : ''}` : `bonus`} parmi ${pack.options.length}.${hasCards ? ' Les cartes vont directement dans ton deck.' : ''}`}
       footer={
         <button className="btn" disabled={busy} onClick={onSkip}>
           {pack.taken.length > 0 ? 'Terminer' : 'Passer sans rien prendre'}
@@ -462,13 +539,24 @@ export function PackView({
       }
     >
       <StatusStrip run={run} />
-      <div className="pack-options">
+      {opening ? (
+        <div className="pack-opening" style={cssVars({ '--pack': meta.color })} aria-hidden>
+          <div className="pack-burst" />
+          <div className="pack-sealed">
+            <div className="pack-flap" />
+            <div className="pack-face">
+              <meta.icon className="icon" />
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="pack-options dealt">
         {pack.options.map((option, index) => {
           const taken = pack.taken.includes(index);
           if (option.type === 'stat') {
             const info = upgradeInfo(option.offer);
             return (
-              <button key={index} className="choice" disabled={busy || taken} style={cssVars({ '--choice-color': info.color })} onClick={() => onPick(index)}>
+              <button key={index} className="choice" disabled={busy || taken} style={cssVars({ '--choice-color': info.color, '--i': index })} onClick={() => onPick(index)}>
                 <span className="choice-icon">
                   <info.icon className="icon" />
                 </span>
@@ -478,30 +566,33 @@ export function PackView({
               </button>
             );
           }
-          const duplicate = deck.some((d) => d.cardId === option.cardId);
-          const blocked = deckFull || duplicate;
+          const stars = fusionStars(run, option.cardId);
+          const duplicate = stars > MAX_STARS;
+          const blocked = (stars === 0 && deckFull) || duplicate;
           return (
+            <div key={index} className="deal-slot" style={cssVars({ '--i': index })}>
             <CardTile
-              key={index}
               cardId={option.cardId}
               modifier={option.modifier}
-              hoverExtra={() => statPreview(run, withCard(run, option.cardId, option.modifier), 'Avec cette carte')}
+              hoverExtra={() => statPreview(run, withCard(run, option.cardId, option.modifier), stars ? 'Après la fusion' : 'Avec cette carte')}
               showEffect
               className={taken ? 'picked' : blocked ? 'unaffordable' : ''}
               onClick={busy || taken || blocked ? undefined : () => onPick(index)}
-              cornerLeft={option.modifier ? <span className={`modifier ${option.modifier}`}>{MODIFIER_META[option.modifier].name}</span> : undefined}
+              cornerLeft={stars ? <FusionBadge stars={stars} /> : option.modifier ? <span className={`modifier ${option.modifier}`}>{MODIFIER_META[option.modifier].name}</span> : undefined}
               corner={taken ? <span className="badge badge-accent">Prise</span> : undefined}
               footer={
                 blocked && !taken ? (
                   <div className="effect" style={{ color: 'var(--danger)' }}>
-                    {duplicate ? 'Déjà dans ton deck' : 'Deck complet'}
+                    {duplicate ? 'Déjà au maximum (3 étoiles)' : 'Deck complet'}
                   </div>
                 ) : undefined
               }
             />
+            </div>
           );
         })}
-      </div>
+        </div>
+      )}
       {hasCards && deckFull && <p className="shop-warning">Deck complet : vends une carte ci-dessous pour faire de la place.</p>}
       {hasCards && <DeckBar run={run} busy={busy} onSell={onSell} onMove={onMove} />}
     </Modal>

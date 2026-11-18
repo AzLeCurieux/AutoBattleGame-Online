@@ -1,4 +1,5 @@
-import { RULES, isFactorialNumber, isLucasNumber, palierRules, stageKind } from '../rules.js';
+import { RULES, isFactorialNumber, isLucasNumber, palierRules } from '../rules.js';
+import { nextEnemyKind } from './route.js';
 import { eliteBoss } from './shop.js';
 import type { Rng } from './rng.js';
 import { computeStats, createEnemy, deckEffects, ofKind, silencedIndex, srcOf, sumEffect } from './stats.js';
@@ -21,8 +22,10 @@ export interface CombatOutcome {
 export function simulateFight(run: RunState, rng: Rng): CombatOutcome {
   const mode = run.mode ?? 'deck';
   const tier = palierRules(mode === 'deck' ? run.palier : 1);
-  const effect = mode !== 'deck' ? null : stageKind(run.level + 1, mode) === 'elite' ? eliteBoss(run) : (run.nextBoss ?? null);
-  const enemy = createEnemy(run.level, mode, effect, mode === 'deck' ? run.palier : 1);
+  const kind = nextEnemyKind(run);
+  const effect = mode !== 'deck' ? null : kind === 'elite' ? eliteBoss(run) : kind === 'boss' ? (run.nextBoss ?? null) : null;
+  const enemy = createEnemy(run.level, mode, effect, mode === 'deck' ? run.palier : 1, kind);
+  const buffs = run.buffs ?? {};
   const stage = enemy.stage;
   const boss = enemy.bossId;
   const silenced = boss === 'silencer' ? silencedIndex(run.deck) : -1;
@@ -111,7 +114,7 @@ export function simulateFight(run: RunState, rng: Rng): CombatOutcome {
       multiplier *= 1 + bonus / 100;
       if (bonus > 0) procs.push(proc(e, bonus));
     }
-    dmg = Math.max(0, dmg * multiplier);
+    dmg = Math.max(0, dmg * multiplier * (1 + (buffs.damage ?? 0) / 100));
 
     const critBoost = dodgedLastAttack && critAfterDodge > 0;
     if (critBoost) for (const e of ofKind(fx, 'critAfterDodge')) procs.push(proc(e, e.value));
@@ -151,7 +154,7 @@ export function simulateFight(run: RunState, rng: Rng): CombatOutcome {
       return;
     }
     const rage = boss === 'berserk' ? 1 + 0.08 * turn : 1;
-    const raw = Math.floor(enemy.damage * rage * (1 - stats.damageReduction / 100));
+    const raw = Math.floor(enemy.damage * rage * (1 - stats.damageReduction / 100) * (1 - (buffs.shield ?? 0) / 100));
     // No one-shots: a single hit never takes more than maxHitPercent of max HP.
     const dmg = Math.min(raw, Math.max(1, Math.floor((stats.maxHp * RULES.acts.maxHitPercent) / 100)));
     run.hp = Math.max(0, run.hp - dmg);

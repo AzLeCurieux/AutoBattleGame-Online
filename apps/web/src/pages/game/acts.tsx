@@ -2,6 +2,7 @@ import { actOf, BOSSES, eliteBoss, PALIERS, RULES, stageKind, type BossId, type 
 import type { LucideIcon } from 'lucide-react';
 import { Asterisk, Ban, Crown, Droplet, Flame, HandCoins, Infinity as InfinityIcon, Mountain, Shield, Skull, Swords, Trophy, VolumeX, Zap } from 'lucide-react';
 import { caseMeta } from '../../common/catalog';
+import { NODE_META } from './route';
 import { cssVars, Modal } from '../../ui/components';
 
 export const BOSS_ICON: Record<BossId, LucideIcon> = {
@@ -37,13 +38,16 @@ export function ActTrack({ run, stage, fighting }: { run: PublicRunState; stage:
           const s = first + i;
           const kind = stageKind(s, 'deck');
           const state = s < stage ? 'done' : s === stage ? (fighting ? 'current fighting' : 'current') : '';
+          // Steps already played show what was chosen on the route.
+          const taken = s < stage ? run.path?.[i] : s === stage ? (run.node ?? undefined) : undefined;
+          const TakenIcon = taken && taken !== 'boss' && !(taken === 'elite' && kind === 'elite') ? NODE_META[taken].icon : null;
           return (
             <span
               key={s}
-              className={`pip ${kind} ${state}`}
-              title={`Niveau ${s}${kind === 'elite' ? ` · élite${elite ? ` · ${BOSSES[elite].name} : ${BOSSES[elite].text}` : ''}` : kind === 'boss' ? ' · boss' : ''}`}
+              className={`pip ${kind} ${state} ${taken ? `took-${taken}` : ''}`}
+              title={`Étape ${s}${taken ? ` · ${NODE_META[taken].name}` : kind === 'elite' ? ` · élite${elite ? ` · ${BOSSES[elite].name} : ${BOSSES[elite].text}` : ''}` : kind === 'boss' ? ' · boss' : ''}`}
             >
-              {kind === 'elite' ? <EliteIcon className="icon" /> : kind === 'boss' ? <BossIcon className="icon" /> : null}
+              {TakenIcon ? <TakenIcon className="icon" /> : kind === 'elite' ? <EliteIcon className="icon" /> : kind === 'boss' ? <BossIcon className="icon" /> : null}
             </span>
           );
         })}

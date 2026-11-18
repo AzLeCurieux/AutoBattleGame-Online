@@ -9,6 +9,8 @@ import {
   healCost,
   runMode,
   silencedIndex,
+  ITEMS,
+  nextEnemyKind,
   stageKind,
   type BossId,
   type EnemyInfo,
@@ -32,7 +34,7 @@ import {
   Skull,
   SkipForward,
   Swords,
-  Tent,
+  HeartPulse,
   Trophy,
   Volume2,
   VolumeX,
@@ -53,6 +55,8 @@ import { JokerBar } from './jokers';
 import { countProcs } from '../../common/procs';
 import { Arena } from './arena';
 import { useSoundtrack } from '../../common/MusicControl';
+import { ItemsPanel, NODE_META, RouteChoice } from './route';
+import { music } from '../../common/music';
 import { PackView, PACK_META, PerksPanel, PERK_META, ShopView } from './shop';
 import {
   CampModal,
@@ -268,6 +272,7 @@ export function GamePage({ initialUser, shader }: { initialUser: PublicUser; sha
   const onDefeat = useCallback(
     (res: ActResponse) => {
       arenaRef.current?.playerDie();
+      audio.death();
       setFighting(false);
       setRun(res.state);
       shader.reset();
@@ -293,6 +298,7 @@ export function GamePage({ initialUser, shader }: { initialUser: PublicUser; sha
     if (state.phase === 'upgrade') return setModal('upgrade');
     if (state.phase === 'shop') return setModal('shop');
     if (state.phase === 'pack') return setModal('pack');
+    if (state.route) return; // the route choice is on screen
 
     const res = await act({ type: 'fight' });
     if (!res?.fight) return;
@@ -389,6 +395,7 @@ export function GamePage({ initialUser, shader }: { initialUser: PublicUser; sha
       const kind: HistoryKind = offer.kind === 'bossPassive' ? 'passive' : offer.kind === 'fullHeal' ? 'heal' : 'upgrade';
       log(kind, offer.kind === 'bossPassive' ? `Passif obtenu · ${info.title}` : `${info.title}${info.value ? ` ${info.value}` : ''}`);
       setRun(res.state);
+      setShownLevel(res.state.level);
       paintPlayer(res.state);
       setModal(res.state.phase === 'shop' ? 'shop' : null);
       if (res.state.phase === 'shop' && res.state.shop && res.state.shop.interest > 0) {
@@ -459,6 +466,14 @@ export function GamePage({ initialUser, shader }: { initialUser: PublicUser; sha
     log('upgrade', `Amélioration acquise · ${PERK_META[offer.perk].name}`);
   }, [act, log, paintPlayer]);
 
+  const buyItem = useCallback(async () => {
+    const offer = runRef.current?.shop?.item;
+    const res = await act({ type: 'shopBuyItem' });
+    if (!res || !offer) return;
+    setRun(res.state);
+    log('shop', `Objet acheté · ${ITEMS[offer.item].name} (${offer.price} or)`);
+  }, [act, log]);
+
   const forge = useCallback(async () => {
     const price = runRef.current ? forgePrice(runRef.current) : 0;
     const res = await act({ type: 'shopForge' });
@@ -496,9 +511,42 @@ export function GamePage({ initialUser, shader }: { initialUser: PublicUser; sha
 
   const leaveShop = useCallback(async () => {
     const res = await act({ type: 'shopLeave' });
-    if (res) setRun(res.state);
+    if (res) {
+      setRun(res.state);
+      setShownLevel(res.state.level);
+    }
     setModal(null);
   }, [act]);
+
+  /** Route: pick the next step of the act. */
+  const chooseNode = useCallback(
+    async (index: number) => {
+      const node = runRef.current?.route?.[index];
+      if (!node) return;
+      const res = await act({ type: 'chooseNode', index });
+      if (!res) return;
+      setRun(res.state);
+      setShownLevel(res.state.level);
+      paintPlayer(res.state);
+      log('level', `Étape · ${NODE_META[node.kind].name}${node.kind === 'skip' && node.item ? ` · ${ITEMS[node.item].name}` : ''}`);
+      if (res.state.phase === 'upgrade') setModal('upgrade');
+      else if (res.state.phase === 'shop') setModal('shop');
+    },
+    [act, log, paintPlayer],
+  );
+
+  const applyItem = useCallback(
+    async (index: number) => {
+      const item = runRef.current?.items?.[index];
+      if (!item) return;
+      const res = await act({ type: 'useItem', index });
+      if (!res) return;
+      setRun(res.state);
+      paintPlayer(res.state);
+      log('upgrade', `Objet utilisé · ${ITEMS[item].name}`);
+    },
+    [act, log, paintPlayer],
+  );
 
   const changeSpeed = (v: Speed) => {
     setSpeed(v);
@@ -547,7 +595,8 @@ export function GamePage({ initialUser, shader }: { initialUser: PublicUser; sha
   const ModeIcon = MODE_INFO[mode].icon;
   const inFight = fighting || paused;
   const shownStage = inFight ? shownLevel : shownLevel + 1;
-  const enemyKind = inFight ? (enemy?.kind ?? 'normal') : stageKind(shownLevel + 1, mode);
+  const enemyKind = inFight ? (enemy?.kind ?? 'normal') : run && run.level === shownLevel ? nextEnemyKind(run) : stageKind(shownLevel + 1, mode);
+  const routePending = !!run?.route && run.phase === 'ready' && !inFight;
   const bossBadge = enemyKind === 'boss';
   // Tier 3+: the act's elite carries a boss effect too, announced before the fight.
   const eliteFx = mode === 'deck' && enemyKind === 'elite' ? (inFight ? (enemy?.bossId ?? null) : run ? eliteBoss(run) : null) : null;
@@ -579,9 +628,20 @@ export function GamePage({ initialUser, shader }: { initialUser: PublicUser; sha
               : 'boss'
             : 'main';
   useSoundtrack(track, muted);
+  useEffect(() => music.setSlow(run?.phase === 'dead'), [run?.phase]);
+  const killerBoss = enemy?.bossId ? BOSSES[enemy.bossId].name : null;
+  const killer = killerBoss
+    ? enemy?.kind === 'elite'
+      ? `une élite (${killerBoss})`
+      : killerBoss
+    : enemy?.kind === 'boss'
+      ? 'le boss'
+      : enemy?.kind === 'elite'
+        ? 'une élite'
+        : 'un ennemi';
   const dead = run?.phase === 'dead';
   const pending = run?.phase === 'upgrade' || run?.phase === 'shop' || run?.phase === 'pack';
-  const fightLabel = fighting ? 'Combat en cours' : paused ? 'Reprendre' : dead ? 'Nouvelle partie' : pending ? 'Choix en attente' : 'Combattre';
+  const fightLabel = fighting ? 'Combat en cours' : paused ? 'Reprendre' : dead ? 'Nouvelle partie' : pending ? 'Choix en attente' : routePending ? 'Choisis ta route' : 'Combattre';
   const FightIcon = paused ? Play : dead ? RotateCcw : Swords;
 
   return (
@@ -611,6 +671,7 @@ export function GamePage({ initialUser, shader }: { initialUser: PublicUser; sha
       <main className="page game-layout">
         <div className="game-col left">
           <CharacterPanel run={run} />
+          <ItemsPanel run={run} busy={busy || fighting} onUse={(i) => void applyItem(i)} />
           <PassivesPanel run={run} />
           <PerksPanel run={run} />
         </div>
@@ -678,6 +739,7 @@ export function GamePage({ initialUser, shader }: { initialUser: PublicUser; sha
                 </div>
               </div>
               <div className="fx" ref={el.fx} />
+              {routePending && run && <RouteChoice run={run} busy={busy} onChoose={(i) => void chooseNode(i)} />}
               {bossInfo && inFight && !paused && (
                 <div className="arena-status">
                   <span className="badge badge-boss">
@@ -699,7 +761,7 @@ export function GamePage({ initialUser, shader }: { initialUser: PublicUser; sha
             )}
 
             <div className="controls">
-              <button className="btn btn-primary btn-lg" disabled={fighting || busy} onClick={() => void fight()}>
+              <button className="btn btn-primary btn-lg" disabled={fighting || busy || routePending} onClick={() => void fight()}>
                 <FightIcon className="icon" /> {fightLabel}
                 {!fighting && <span className="kbd">Espace</span>}
               </button>
@@ -712,8 +774,8 @@ export function GamePage({ initialUser, shader }: { initialUser: PublicUser; sha
                   <SkipForward className="icon" /> Passer
                 </button>
               )}
-              <button className="btn btn-lg" disabled={inFight} onClick={() => setModal('camp')} title="Camp (C)">
-                <Tent className="icon" /> Camp
+              <button className="btn btn-lg" disabled={inFight} onClick={() => setModal('camp')} title="Soins contre de l’or (C)">
+                <HeartPulse className="icon" /> Soins
               </button>
               <button className="btn btn-lg btn-danger" disabled={fighting || busy} onClick={() => setModal('newRun')}>
                 <RotateCcw className="icon" /> Recommencer
@@ -744,7 +806,15 @@ export function GamePage({ initialUser, shader }: { initialUser: PublicUser; sha
       </main>
 
       <CampModal open={modal === 'camp'} run={run} busy={busy} onClose={() => setModal(null)} onHeal={() => void heal()} />
-      <UpgradeModal open={modal === 'upgrade'} offer={run?.offer ?? null} mode={run ? runMode(run) : 'deck'} busy={busy} onChoose={(i) => void chooseUpgrade(i)} />
+      <UpgradeModal
+        open={modal === 'upgrade'}
+        offer={run?.offer ?? null}
+        mode={run ? runMode(run) : 'deck'}
+        node={run?.node ?? null}
+        gold={run?.gold ?? 0}
+        busy={busy}
+        onChoose={(i) => void chooseUpgrade(i)}
+      />
       <ShopView
         open={modal === 'shop'}
         run={run}
@@ -756,6 +826,7 @@ export function GamePage({ initialUser, shader }: { initialUser: PublicUser; sha
         onReroll={() => void reroll()}
         onBuyPack={(i) => void buyPack(i)}
         onBuyPerk={() => void buyPerk()}
+        onBuyItem={() => void buyItem()}
         onForge={() => void forge()}
         onBossReroll={() => void bossReroll()}
         onLeave={() => void leaveShop()}
@@ -771,7 +842,7 @@ export function GamePage({ initialUser, shader }: { initialUser: PublicUser; sha
       />
       <HistoryModal open={modal === 'history'} history={history} onClose={() => setModal(null)} onClear={() => setHistory([])} />
       <NewRunModal open={modal === 'newRun'} run={run} busy={busy} onClose={() => setModal(null)} palierUnlocked={profileStats?.palierUnlocked ?? 1} onStart={(m, p) => void startRun(m, p)} />
-      <DefeatModal open={modal === 'defeat'} run={run} best={bests[mode]} onClose={() => setModal(null)} onNewRun={() => setModal('newRun')} />
+      <DefeatModal open={modal === 'defeat'} run={run} best={bests[mode]} killer={killer} onClose={() => setModal(null)} onNewRun={() => setModal('newRun')} />
       <VictoryModal open={modal === 'victory'} run={run} unlocked={unlockedPalier} onContinue={() => setModal('upgrade')} />
       <ProfileModal
         open={modal === 'profile'}

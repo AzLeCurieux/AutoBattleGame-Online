@@ -15,8 +15,11 @@ import {
   computeStats,
   createRun,
   healCost,
+  MAX_ITEMS,
+  MAX_STARS,
+  nextEnemyKind,
   RARITIES,
-  stageKind,
+  actOf,
   type GameMode,
   type RunAction,
   type RunState,
@@ -47,16 +50,41 @@ const effective = (s: RunState) => {
  * expected damage and max HP — crit chance and crit damage multiply each other,
  * which is exactly what strong human players exploit.
  */
+/** Camp, treasure and event offers: same for every skill except the novice (random). */
+function stepScore(o: UpgradeOffer, s: RunState): number | null {
+  const ratio = s.hp / computeStats(s).maxHp;
+  switch (o.kind) {
+    case 'heal':
+      return (1 - ratio) * o.percent * 1.4;
+    case 'item':
+      return (s.items ?? []).length < MAX_ITEMS ? 9 : 1;
+    case 'gamble':
+      return o.gold / 2 - (ratio < 0.6 ? 25 : 6);
+    case 'sacrifice':
+      return ratio > 0.5 ? 14 : 2;
+    case 'edition':
+      return s.gold >= o.price + healCost(s) ? 15 : -100;
+    case 'leave':
+      return 0;
+    default:
+      return null;
+  }
+}
+
 function expertScore(o: UpgradeOffer, s: RunState): number {
+  const step = stepScore(o, s);
+  if (step !== null) return step;
   if (o.kind === 'fullHeal') return (1 - s.hp / computeStats(s).maxHp) * 60;
   if (o.kind === 'gold') return 3 + o.value / 2;
+  if (o.kind === 'bossPassive' && o.passive === 'greed') return 26 - actOf(s.level + 1) * 3;
   const t: RunState = { ...s, base: { ...s.base }, bossPassives: [...s.bossPassives] };
   if (o.kind === 'damage') t.base.damage += o.value;
   else if (o.kind === 'maxHp') t.base.maxHp += o.value;
   else if (o.kind === 'critChance') t.base.critChance += o.value;
   else if (o.kind === 'critDamage') t.base.critDamage += o.value;
-  else if (o.passive === 'regen') return 22;
-  else t.bossPassives.push(o.passive);
+  else if (o.kind === 'bossPassive' && o.passive === 'regen') return 22;
+  else if (o.kind === 'bossPassive') t.bossPassives.push(o.passive);
+  else return 0;
   const dmg = effective(t) / effective(s) - 1;
   const hp = computeStats(t).maxHp / computeStats(s).maxHp - 1;
   // Plan like a human: build crit chance toward the cap, then crit damage — the
@@ -68,6 +96,8 @@ function expertScore(o: UpgradeOffer, s: RunState): number {
 
 function score(o: UpgradeOffer, s: RunState, expert = false): number {
   if (expert) return expertScore(o, s);
+  const step = stepScore(o, s);
+  if (step !== null) return step;
   const st = computeStats(s);
   // Experts know survival wins runs: they value max HP and Vitality much more.
   const hp = expert ? 1.9 : 1;
@@ -85,8 +115,55 @@ function score(o: UpgradeOffer, s: RunState, expert = false): number {
     case 'critDamage':
       return (o.value * st.critChance) / 100;
     case 'bossPassive':
-      return o.passive === 'rage' ? 30 : o.passive === 'regen' ? 28 : expert ? 34 : 22;
+      return { rage: 30, regen: 28, vitality: 22, fury: 26, bulwark: 24, greed: 18 }[o.passive];
+    default:
+      return 0;
   }
+}
+
+/** Route: which step to take next. */
+function chooseNode(s: RunState, skill: Skill, rnd: (k: number) => number): number {
+  const route = s.route!;
+  if (skill === 'novice') return Math.floor(rnd(7) * route.length) % route.length;
+  const ratio = s.hp / computeStats(s).maxHp;
+  const expert = skill === 'expert';
+  const value = (kind: string) => {
+    switch (kind) {
+      case 'fight':
+        return 10;
+      case 'elite':
+        return ratio > (expert ? 0.65 : 0.8) ? 12 : 1;
+      case 'camp':
+        return (1 - ratio) * 32 + 3;
+      case 'treasure':
+        return 9;
+      case 'event':
+        return expert ? 8 : 6;
+      case 'shop':
+        return s.gold >= 15 ? 13 : 2;
+      case 'skip':
+        return ratio > 0.65 ? 4 : 11;
+      default:
+        return 0;
+    }
+  };
+  return route.map((n, i) => [value(n.kind), i] as const).sort((a, b) => b[0] - a[0])[0]![1];
+}
+
+/** Items: potion when low, buffs before the hard fights, prism right away. */
+function chooseItem(s: RunState, skill: Skill): number {
+  if (skill === 'novice') return -1;
+  const items = s.items ?? [];
+  const ratio = s.hp / computeStats(s).maxHp;
+  const kind = nextEnemyKind(s);
+  const hard = kind !== 'normal' && !s.route;
+  return items.findIndex(
+    (it) =>
+      (it === 'potion' && ratio < 0.45) ||
+      (it === 'prism' && s.deck.some((d) => !d.modifier)) ||
+      ((it === 'whetstone' || it === 'shield') && hard && !(s.buffs ?? {})[it === 'whetstone' ? 'damage' : 'shield']) ||
+      (it === 'luckyCoin' && !s.route && !(s.buffs ?? {}).gold),
+  );
 }
 
 /** Quick estimate of the chance to beat the announced boss at full HP. */
@@ -98,7 +175,10 @@ function decide(s: RunState, skill: Skill, step: number): RunAction {
 
   if (s.phase === 'upgrade') {
     const offers = s.offer!;
-    if (skill === 'novice') return { type: 'chooseUpgrade', index: Math.floor(rnd(1) * offers.length) % offers.length };
+    if (skill === 'novice') {
+      const ok = offers.map((o, i) => ({ o, i })).filter(({ o }) => o.kind !== 'edition' || s.gold >= o.price);
+      return { type: 'chooseUpgrade', index: ok[Math.floor(rnd(1) * ok.length) % ok.length]!.i };
+    }
     const best = offers.map((o, i) => [score(o, s, skill === 'expert'), i] as const).sort((a, b) => b[0] - a[0])[0]![1];
     return { type: 'chooseUpgrade', index: best };
   }
@@ -108,7 +188,12 @@ function decide(s: RunState, skill: Skill, step: number): RunAction {
     const free = st.emptySlots > 0;
     const options = pack.options
       .map((o, i) => ({ o, i }))
-      .filter(({ o, i }) => !pack.taken.includes(i) && (o.type === 'stat' || (free && !s.deck.some((d) => d.cardId === o.cardId))));
+      .filter(({ o, i }) => {
+        if (pack.taken.includes(i)) return false;
+        if (o.type === 'stat') return true;
+        const owned = s.deck.find((d) => d.cardId === o.cardId);
+        return owned ? (owned.stars ?? 1) < MAX_STARS : free;
+      });
     if (options.length === 0) return { type: 'packSkip' };
     if (skill === 'novice') return { type: 'packPick', index: options[0]!.i };
     const value = ({ o }: (typeof options)[number]) => (o.type === 'stat' ? score(o.offer, s, skill === 'expert') : 10 + rank(o.cardId) * 6 + (o.modifier ? 4 : 0));
@@ -121,6 +206,7 @@ function decide(s: RunState, skill: Skill, step: number): RunAction {
     const reserve = skill === 'novice' ? 0 : healCost(s);
     const spendable = s.gold - reserve;
     const cards = shop.cards.map((it, i) => ({ it, i })).filter(({ it }) => !it.sold && !s.deck.some((d) => d.cardId === it.cardId));
+    const fusions = shop.cards.map((it, i) => ({ it, i })).filter(({ it }) => !it.sold && s.deck.some((d) => d.cardId === it.cardId && (d.stars ?? 1) < MAX_STARS));
     const free = st.emptySlots > 0;
 
     if (skill === 'novice') {
@@ -134,6 +220,9 @@ function decide(s: RunState, skill: Skill, step: number): RunAction {
     // The expert stops buying economy perks once the run is under way: raw power wins late.
     const perkWorth = skill !== 'expert' || nextBossAct(s) <= 4 || ['satchel', 'stuffedPacks', 'flair'].includes(shop.perk?.perk ?? '');
     if (shop.perk && !shop.perk.sold && shop.perk.price <= spendable && perkWorth) return { type: 'shopBuyPerk' };
+    const fuse = fusions.find(({ it }) => it.price <= spendable && rank(it.cardId) >= 2);
+    if (fuse) return { type: 'shopBuy', index: fuse.i };
+    if (skill === 'expert' && shop.item && !shop.item.sold && shop.item.price <= spendable - 4 && (s.items ?? []).length < MAX_ITEMS) return { type: 'shopBuyItem' };
     const best = cards.filter(({ it }) => it.price <= spendable).sort((a, b) => rank(b.it.cardId) - rank(a.it.cardId))[0];
     if (best && free) return { type: 'shopBuy', index: best.i };
     if (best && skill === 'expert') {
@@ -154,9 +243,12 @@ function decide(s: RunState, skill: Skill, step: number): RunAction {
     return { type: 'shopLeave' };
   }
 
-  // phase 'ready': heal or fight
+  // phase 'ready': items, route, heal or fight
+  const item = chooseItem(s, skill);
+  if (item >= 0) return { type: 'useItem', index: item };
+  if (s.route) return { type: 'chooseNode', index: chooseNode(s, skill, rnd) };
   const ratio = s.hp / st.maxHp;
-  const kind = stageKind(s.level + 1, s.mode);
+  const kind = nextEnemyKind(s);
   const threshold = skill === 'novice' ? 0.25 : skill === 'average' ? (kind === 'normal' ? 0.45 : 0.6) : kind === 'normal' ? 0.4 : kind === 'elite' ? 0.6 : 0.75;
   if (ratio < threshold && s.gold >= healCost(s)) return { type: 'heal' };
   return { type: 'fight' };

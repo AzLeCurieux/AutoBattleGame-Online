@@ -251,7 +251,8 @@ export function CardTile({
   return (
     <div
       {...hover}
-      className={`card-tile ${onClick ? 'interactive' : ''} ${locked ? 'locked' : ''} ${selected ? 'selected' : ''} ${className}`}
+      className={`card-tile r-${card.rarity} ${modifier ? `ed-${modifier}` : ''} ${onClick ? 'interactive' : ''} ${locked ? 'locked' : ''} ${selected ? 'selected' : ''} ${className}`}
+      data-glare
       style={cssVars({ '--rarity': color })}
       onClick={onClick}
       role={onClick ? 'button' : undefined}
@@ -260,6 +261,7 @@ export function CardTile({
     >
       <div className="art">
         <img src={`/img/cartes/${card.image}`} alt={card.name} loading="lazy" draggable={false} />
+        <span className="card-sheen" aria-hidden />
       </div>
       {cornerLeft && <div className="corner-left">{cornerLeft}</div>}
       {corner && <div className="corner">{corner}</div>}
@@ -274,5 +276,30 @@ export function CardTile({
         {footer}
       </div>
     </div>
+  );
+}
+
+// ------------------------------------------------------------------ glare
+
+/**
+ * Cards marked `data-glare` tilt slightly and catch the light under the
+ * pointer. One delegated listener for the whole page: it only writes CSS
+ * variables on the hovered card, the rendering is pure CSS.
+ */
+if (typeof document !== 'undefined') {
+  document.addEventListener(
+    'pointermove',
+    (e) => {
+      const el = e.target instanceof Element ? (e.target.closest('[data-glare]') as HTMLElement | null) : null;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const x = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+      const y = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height));
+      el.style.setProperty('--mx', `${(x * 100).toFixed(1)}%`);
+      el.style.setProperty('--my', `${(y * 100).toFixed(1)}%`);
+      el.style.setProperty('--rx', `${((0.5 - y) * 9).toFixed(2)}deg`);
+      el.style.setProperty('--ry', `${((x - 0.5) * 11).toFixed(2)}deg`);
+    },
+    { passive: true },
   );
 }

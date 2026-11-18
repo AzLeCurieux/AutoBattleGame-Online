@@ -18,6 +18,9 @@ export const RunActionSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('bossReroll') }),
   z.object({ type: z.literal('packPick'), index: z.number().int().min(0).max(9) }),
   z.object({ type: z.literal('packSkip') }),
+  z.object({ type: z.literal('chooseNode'), index: z.number().int().min(0).max(4) }),
+  z.object({ type: z.literal('useItem'), index: z.number().int().min(0).max(9) }),
+  z.object({ type: z.literal('shopBuyItem') }),
   z.object({ type: z.literal('newRun'), mode: z.enum(GAME_MODES).optional(), palier: z.number().int().min(1).max(MAX_PALIER).optional() }),
 ]);
 export type RunAction = z.infer<typeof RunActionSchema>;

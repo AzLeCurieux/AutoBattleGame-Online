@@ -11,6 +11,32 @@ export interface DeckCard {
   modifier: ModifierId | null;
   /** Price paid, used to compute the sell-back value. */
   price: number;
+  /** Fusion level: buying the same card again raises it (1 to 3, missing = 1). */
+  stars?: number;
+}
+
+/** Steps of an act's route. The player picks among 2-3 of them at each step. */
+export const NODE_KINDS = ['fight', 'elite', 'camp', 'event', 'treasure', 'shop', 'boss', 'skip'] as const;
+export type NodeKind = (typeof NODE_KINDS)[number];
+
+export interface RouteNode {
+  kind: NodeKind;
+  /** Item granted by this node (skipping the elite), shown before choosing. */
+  item?: ItemId;
+}
+
+/** One-use items: bought in the shop, found in treasures, or earned by skipping the elite. */
+export const ITEM_IDS = ['potion', 'whetstone', 'shield', 'luckyCoin', 'prism', 'compass'] as const;
+export type ItemId = (typeof ITEM_IDS)[number];
+
+/** Effects waiting for the next fight (items). */
+export interface Buffs {
+  /** % extra damage. */
+  damage?: number;
+  /** % less damage taken. */
+  shield?: number;
+  /** Gold multiplier on the next kill. */
+  gold?: number;
 }
 
 export type UpgradeOffer =
@@ -20,9 +46,26 @@ export type UpgradeOffer =
   | { kind: 'gold'; value: number }
   | { kind: 'critDamage'; value: number }
   | { kind: 'critChance'; value: number }
-  | { kind: 'bossPassive'; passive: BossPassive };
+  | { kind: 'bossPassive'; passive: BossPassive }
+  /** Camp: heal a share of max HP. */
+  | { kind: 'heal'; percent: number }
+  /** Treasure / event: receive an item. */
+  | { kind: 'item'; item: ItemId }
+  /** Event "Pari": lose a share of current HP, win gold. */
+  | { kind: 'gamble'; hpPercent: number; gold: number }
+  /** Event "Autel": lose a share of base max HP for good, gain one Forge level. */
+  | { kind: 'sacrifice'; hpPercent: number }
+  /** Event "Atelier": pay gold, a random card of the deck gets an edition. */
+  | { kind: 'edition'; price: number }
+  /** Event: walk away. */
+  | { kind: 'leave' };
 
-export type BossPassive = 'regen' | 'rage' | 'vitality';
+/**
+ * Boss passives. The first three are plain bonuses; the others are pacts: a
+ * stronger bonus with a drawback.
+ */
+export const BOSS_PASSIVES = ['regen', 'rage', 'vitality', 'fury', 'bulwark', 'greed'] as const;
+export type BossPassive = (typeof BOSS_PASSIVES)[number];
 
 export interface ShopItem {
   cardId: string;
@@ -59,6 +102,8 @@ export interface ShopState {
   rerollCost: number;
   /** Gold earned as interest when this shop opened (shown in the UI). */
   interest: number;
+  /** One item for sale (missing on shops saved before items existed). */
+  item?: { item: ItemId; price: number; sold: boolean } | null;
 }
 
 export type PackOption = { type: 'card'; cardId: string; modifier: ModifierId | null } | { type: 'stat'; offer: UpgradeOffer };
@@ -108,6 +153,16 @@ export interface RunState {
   won: boolean;
   /** Act in which the boss was last swapped (once per act). */
   bossRerollAct: number;
+  /** Deck mode: choices for the next step of the route (null once chosen, or when forced). */
+  route?: RouteNode[] | null;
+  /** Deck mode: the step being played (fight, elite, camp…), null between steps. */
+  node?: NodeKind | null;
+  /** Steps taken in the current act, in order (for the act track). */
+  path?: NodeKind[];
+  /** One-use items held (at most MAX_ITEMS). */
+  items?: ItemId[];
+  /** Item effects waiting for the next fight. */
+  buffs?: Buffs;
   stats: { kills: number; bossKills: number; damageDealt: number; goldEarned: number };
   startedAt: number;
   /** PRNG state. Never sent to clients. */

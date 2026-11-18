@@ -1472,3 +1472,554 @@ button.service:disabled {
 .palier-unlock small {
   color: var(--muted);
 }
+
+/* ---------------------------------------------------------------- death */
+
+.death-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  overflow: auto;
+}
+.death-veil {
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 45%, rgba(90, 8, 14, 0.55), rgba(5, 2, 4, 0.94) 70%),
+    rgba(0, 0, 0, 0.35);
+  backdrop-filter: grayscale(1) blur(3px);
+  -webkit-backdrop-filter: grayscale(1) blur(3px);
+  animation: death-fade 1.1s ease both;
+}
+.death-ash span {
+  position: fixed;
+  top: -10px;
+  left: var(--x);
+  width: var(--s);
+  height: var(--s);
+  border-radius: 50%;
+  background: rgba(200, 190, 190, 0.35);
+  animation: death-ash var(--t) linear var(--d) infinite;
+  pointer-events: none;
+}
+.death-ecg {
+  position: fixed;
+  left: 0;
+  top: 50%;
+  width: 100%;
+  height: 120px;
+  margin-top: -60px;
+  opacity: 0.22;
+  pointer-events: none;
+}
+.death-ecg path {
+  fill: none;
+  stroke: #ff4d5e;
+  stroke-width: 2;
+  stroke-dasharray: 1600;
+  stroke-dashoffset: 1600;
+  filter: drop-shadow(0 0 6px #ff4d5e);
+  animation: death-ecg 2.4s ease-out 0.3s forwards;
+}
+.death-card {
+  position: relative;
+  width: min(560px, 100%);
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  text-align: center;
+  animation: death-rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.35s both;
+}
+.death-skull {
+  width: 96px;
+  height: 96px;
+  border-radius: 28px;
+  display: grid;
+  place-items: center;
+  color: #ffd9dc;
+  background: radial-gradient(circle at 50% 35%, #b3202b, #4a070d);
+  box-shadow:
+    0 0 0 8px rgba(239, 68, 68, 0.12),
+    0 0 60px rgba(239, 68, 68, 0.45);
+  animation:
+    death-drop 0.7s cubic-bezier(0.5, 0, 0.75, 0) 0.25s both,
+    death-throb 2.4s ease-in-out 1.2s infinite;
+}
+.death-skull .icon {
+  width: 52px;
+  height: 52px;
+}
+.death-card h1 {
+  font-size: clamp(34px, 6vw, 56px);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #ffe4e6;
+  text-shadow: 0 0 30px rgba(239, 68, 68, 0.55);
+  animation: death-title 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.55s both;
+}
+.death-cause {
+  font-size: 16px;
+  color: #f1c4c8;
+}
+.death-cause strong {
+  color: #fff;
+}
+.death-record {
+  animation: death-rise 0.6s ease 1.1s both;
+}
+.death-stats {
+  width: 100%;
+  margin-top: 6px;
+  animation: death-rise 0.7s ease 0.9s both;
+}
+.death-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 6px;
+  animation: death-rise 0.7s ease 1.1s both;
+}
+.death-mode {
+  font-size: 12px;
+}
+@keyframes death-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes death-ash {
+  from {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  to {
+    transform: translate(40px, 105vh);
+    opacity: 0;
+  }
+}
+@keyframes death-ecg {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes death-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+@keyframes death-drop {
+  0% {
+    opacity: 0;
+    transform: translateY(-60px) scale(1.4);
+  }
+  80% {
+    opacity: 1;
+    transform: translateY(4px) scale(0.96);
+  }
+  100% {
+    transform: none;
+  }
+}
+@keyframes death-throb {
+  50% {
+    box-shadow:
+      0 0 0 10px rgba(239, 68, 68, 0.08),
+      0 0 80px rgba(239, 68, 68, 0.55);
+  }
+}
+@keyframes death-title {
+  from {
+    opacity: 0;
+    letter-spacing: 0.4em;
+    filter: blur(8px);
+  }
+}
+
+/* ------------------------------------------------------- booster opening */
+
+.pack-opening {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 300px;
+  overflow: hidden;
+}
+.pack-opening > * {
+  grid-area: 1 / 1;
+}
+.pack-sealed {
+  position: relative;
+  width: 150px;
+  height: 210px;
+  animation:
+    pack-in 0.3s cubic-bezier(0.2, 1.3, 0.4, 1) both,
+    pack-shake 0.45s ease-in-out 0.25s both,
+    pack-gone 0.25s ease-in 0.95s forwards;
+}
+.pack-face {
+  position: absolute;
+  inset: 22px 0 0;
+  border-radius: 6px 6px 14px 14px;
+  display: grid;
+  place-items: center;
+  color: rgba(255, 255, 255, 0.92);
+  background:
+    linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.35) 45%, transparent 60%) 0 0 / 260% 100%,
+    linear-gradient(160deg, color-mix(in srgb, var(--pack) 85%, #fff), color-mix(in srgb, var(--pack) 70%, #000));
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--pack) 60%, #fff),
+    0 18px 40px rgba(0, 0, 0, 0.55),
+    0 0 40px color-mix(in srgb, var(--pack) 45%, transparent);
+  animation: pack-sheen 0.9s ease-in-out both;
+}
+.pack-face .icon {
+  width: 56px;
+  height: 56px;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.35));
+}
+/* Torn strip on top: flies off when the pack opens. */
+.pack-flap {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 24px;
+  border-radius: 14px 14px 2px 2px;
+  background: repeating-linear-gradient(90deg, color-mix(in srgb, var(--pack) 80%, #fff) 0 8px, color-mix(in srgb, var(--pack) 60%, #fff) 8px 16px);
+  transform-origin: 0 100%;
+  animation: pack-tear 0.4s cubic-bezier(0.5, 0, 0.8, 0.6) 0.65s forwards;
+}
+.pack-burst {
+  width: 360px;
+  height: 360px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(255, 255, 255, 0.95) 0, color-mix(in srgb, var(--pack) 70%, transparent) 25%, transparent 60%),
+    repeating-conic-gradient(color-mix(in srgb, var(--pack) 50%, transparent) 0deg 8deg, transparent 8deg 20deg);
+  opacity: 0;
+  mask-image: radial-gradient(circle, #000 35%, transparent 70%);
+  -webkit-mask-image: radial-gradient(circle, #000 35%, transparent 70%);
+  animation: pack-burst 0.6s ease-out 0.75s both;
+}
+@keyframes pack-in {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.6) rotate(-6deg);
+  }
+}
+@keyframes pack-shake {
+  0%,
+  100% {
+    transform: none;
+  }
+  20% {
+    transform: rotate(-4deg) translateX(-4px);
+  }
+  40% {
+    transform: rotate(4deg) translateX(4px);
+  }
+  60% {
+    transform: rotate(-3deg) translateX(-3px);
+  }
+  80% {
+    transform: rotate(3deg) translateX(3px);
+  }
+}
+@keyframes pack-tear {
+  to {
+    transform: translate(90px, -80px) rotate(38deg);
+    opacity: 0;
+  }
+}
+@keyframes pack-sheen {
+  from {
+    background-position: 150% 0, 0 0;
+  }
+  to {
+    background-position: -100% 0, 0 0;
+  }
+}
+@keyframes pack-burst {
+  0% {
+    opacity: 0;
+    transform: scale(0.2) rotate(0);
+  }
+  35% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.6) rotate(40deg);
+  }
+}
+@keyframes pack-gone {
+  to {
+    opacity: 0;
+    transform: scale(1.25);
+  }
+}
+/* Cards are dealt one by one, face down, then flip. */
+.deal-slot {
+  display: grid;
+}
+.pack-options.dealt > .deal-slot,
+.pack-options.dealt > .choice {
+  animation: deal 0.55s cubic-bezier(0.2, 1.1, 0.4, 1) both;
+  animation-delay: calc(var(--i, 0) * 110ms);
+}
+@keyframes deal {
+  0% {
+    opacity: 0;
+    transform: perspective(900px) translateY(-60px) rotateY(180deg) scale(0.7);
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    transform: none;
+  }
+}
+
+/* ------------------------------------------------------------- route */
+
+.route-choice {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 12px;
+  padding: 14px;
+  background: radial-gradient(ellipse at 50% 50%, rgba(8, 10, 18, 0.55), rgba(8, 10, 18, 0.85));
+  backdrop-filter: blur(2px);
+  animation: route-in 0.3s var(--ease) both;
+}
+.route-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.route-options {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+}
+.route-node {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 6px;
+  width: min(190px, 30%);
+  min-width: 140px;
+  padding: 16px 12px 14px;
+  border-radius: 16px;
+  text-align: center;
+  color: var(--text);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--node) 18%, #141826), #0f121c);
+  border: 1px solid color-mix(in srgb, var(--node) 50%, transparent);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  transition:
+    transform 0.18s var(--ease),
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
+  animation: route-deal 0.45s cubic-bezier(0.2, 1.1, 0.4, 1) both;
+  animation-delay: calc(var(--i, 0) * 90ms);
+}
+.route-node:hover:not(:disabled) {
+  transform: translateY(-4px);
+  border-color: var(--node);
+  box-shadow:
+    0 14px 34px rgba(0, 0, 0, 0.45),
+    0 0 24px color-mix(in srgb, var(--node) 35%, transparent);
+}
+.route-node:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.route-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  color: var(--node);
+  background: color-mix(in srgb, var(--node) 16%, transparent);
+}
+.route-icon .icon {
+  width: 22px;
+  height: 22px;
+}
+.route-node strong {
+  font-size: 15px;
+}
+.route-node small {
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--muted);
+}
+.route-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 2px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.06);
+}
+@keyframes route-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes route-deal {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.94);
+  }
+}
+.pip[class*='took-'] {
+  height: 22px;
+  border-radius: 7px;
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+.pip.took-camp {
+  background: rgba(74, 222, 128, 0.25);
+}
+.pip.took-event {
+  background: rgba(192, 132, 252, 0.25);
+}
+.pip.took-treasure {
+  background: rgba(245, 178, 68, 0.25);
+}
+.pip.took-shop {
+  background: rgba(56, 189, 248, 0.25);
+}
+.pip.took-skip {
+  background: rgba(148, 163, 184, 0.25);
+}
+
+/* ------------------------------------------------------------- items */
+
+.item-list {
+  display: grid;
+  gap: 6px;
+}
+.item-slot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  text-align: left;
+  color: var(--text);
+  background: color-mix(in srgb, var(--item) 10%, rgba(255, 255, 255, 0.03));
+  border: 1px solid color-mix(in srgb, var(--item) 35%, transparent);
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.15s var(--ease);
+}
+.item-slot:hover:not(:disabled) {
+  border-color: var(--item);
+  transform: translateX(2px);
+}
+.item-slot:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.item-slot > .icon {
+  color: var(--item);
+  flex: none;
+}
+.item-slot span {
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 0;
+}
+.item-slot small {
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--muted);
+}
+.item-buffs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #fbbf24;
+}
+
+/* ------------------------------------------------------ teams & fusion */
+
+.family-chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-left: auto;
+}
+.family-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--line);
+}
+.family-chip.on {
+  color: #bfdbfe;
+  background: rgba(59, 130, 246, 0.14);
+  border-color: rgba(96, 165, 250, 0.45);
+}
+.family-chip em {
+  font-style: normal;
+  color: #fff;
+}
+.joker-stars {
+  position: absolute;
+  left: 2px;
+  bottom: 2px;
+  z-index: 3;
+  display: flex;
+  color: #fbbf24;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8));
+}
+.joker-stars .icon {
+  width: 9px;
+  height: 9px;
+  fill: currentColor;
+}
+.fusion-badge {
+  gap: 3px;
+  color: #1b1405;
+  background: linear-gradient(90deg, #ffe58a, #f5b244);
+}
+.fusion-badge .icon {
+  width: 10px;
+  height: 10px;
+  fill: currentColor;
+}
+.card-tile.fusion {
+  box-shadow: 0 0 0 1px #f5b244, 0 0 18px rgba(245, 178, 68, 0.3);
+}

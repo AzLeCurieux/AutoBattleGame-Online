@@ -6,6 +6,7 @@ import {
   Rng,
   applyAction,
   computeStats,
+  deckEffects,
   createEnemy,
   createRun,
   passivePower,
@@ -22,6 +23,13 @@ import {
 } from '../src/index.js';
 
 const ctx = { ownedCardIds: [] as string[], newSeed: 42, now: 0 };
+
+/** Deck mode: when the route offers a choice, take the fight (or the elite). */
+function takeFight(s: RunState): RunState {
+  if (!s.route) return s;
+  const i = s.route.findIndex((n) => n.kind === 'fight' || n.kind === 'elite');
+  return applyAction(s, { type: 'chooseNode', index: i }, ctx).state;
+}
 
 function play(state: RunState, actions: RunAction[]) {
   let s = state;
@@ -112,7 +120,7 @@ describe('run engine', () => {
     let s = { ...createRun(99, 0), gold: 20 };
     let sawCases = false;
     for (let i = 0; i < 10; i++) {
-      s = { ...s, hp: computeStats(s).maxHp, base: { ...s.base, damage: 100000 } };
+      s = takeFight({ ...s, hp: computeStats(s).maxHp, base: { ...s.base, damage: 100000 } });
       const r = applyAction(s, { type: 'fight' }, ctx);
       if (r.fight?.reward?.cases.length) sawCases = true;
       s = applyAction(r.state, { type: 'chooseUpgrade', index: 0 }, ctx).state;
@@ -205,8 +213,10 @@ describe('run engine', () => {
   });
 
   it('sells and reorders the deck, even while a booster is open', () => {
-    const owned = { ...ctx, ownedCardIds: CARDS.map((c) => c.id) };
-    const deck = ['complet', 'iut', 'gagou_fornite', 'glamal_csgo', 'ibra_kart'].map((cardId) => ({ cardId, modifier: null, price: 4 }));
+    const ids = ['complet', 'iut', 'gagou_fornite', 'glamal_csgo', 'ibra_kart'];
+    // Cards of the deck could come back as a fusion: keep them out of the booster.
+    const owned = { ...ctx, ownedCardIds: CARDS.map((c) => c.id).filter((id) => !ids.includes(id)) };
+    const deck = ids.map((cardId) => ({ cardId, modifier: null, price: 4 }));
     const s = shopRun({ deck }, { packs: [{ kind: 'combat', price: 4, sold: false }] });
     const moved = applyAction(s, { type: 'deckMove', from: 0, to: 4 }, owned).state;
     expect(moved.deck.map((d) => d.cardId)).toEqual(['iut', 'gagou_fornite', 'glamal_csgo', 'ibra_kart', 'complet']);
@@ -421,9 +431,107 @@ describe('acts and bosses (deck mode)', () => {
     const before = computeStats(s).attack;
     s = applyAction(s, { type: 'shopForge' }, ctx).state;
     expect(s.forge).toBe(1);
-    expect(s.gold).toBe(100 - 8);
+    expect(s.gold).toBe(100 - 10);
     expect(computeStats(s).attack).toBeGreaterThan(before * 1.07);
     s = applyAction(s, { type: 'shopForge' }, ctx).state;
-    expect(s.gold).toBe(100 - 8 - 12);
+    expect(s.gold).toBe(100 - 10 - 15);
+  });
+});
+
+describe('route, items, fusion, team bonuses (deck mode)', () => {
+  const owned = { ...ctx, ownedCardIds: CARDS.map((c) => c.id) };
+  const strong = (s: RunState): RunState => ({ ...s, hp: 99999, base: { ...s.base, maxHp: 99999, damage: 100000 } });
+
+  it('starts each act with a forced fight, then offers 2-3 steps with at least one fight', () => {
+    let s = createRun(5, 0);
+    expect(s.node).toBe('fight');
+    expect(() => applyAction({ ...s, node: null, route: [{ kind: 'camp' }] }, { type: 'fight' }, ctx)).toThrow(/prochaine étape/);
+    s = applyAction(strong(s), { type: 'fight' }, ctx).state;
+    s = applyAction(s, { type: 'chooseUpgrade', index: 0 }, ctx).state;
+    expect(s.node).toBeNull();
+    expect(s.route!.length).toBeGreaterThanOrEqual(2);
+    expect(s.route!.some((n) => n.kind === 'fight')).toBe(true);
+    expect(s.path).toEqual(['fight']);
+  });
+
+  it('plays a camp, a treasure and an event as one step each, without a fight', () => {
+    const base = { ...createRun(6, 0), level: 2, node: null, gold: 50 };
+    for (const kind of ['camp', 'treasure', 'event'] as const) {
+      let s: RunState = { ...base, route: [{ kind }, { kind: 'fight' }], deck: [{ cardId: 'iut', modifier: null, price: 4 }] };
+      s = applyAction(s, { type: 'chooseNode', index: 0 }, ctx).state;
+      expect(s.phase).toBe('upgrade');
+      expect(s.offer!.length).toBeGreaterThanOrEqual(2);
+      s = applyAction(s, { type: 'chooseUpgrade', index: 0 }, ctx).state;
+      expect(s.level).toBe(3);
+      expect(s.stats.kills).toBe(0);
+      expect(s.phase).toBe('ready');
+      expect(s.path!.at(-1)).toBe(kind);
+    }
+  });
+
+  it('opens a shop mid-act, and leaving it moves to the next step', () => {
+    let s: RunState = { ...createRun(7, 0), level: 6, node: null, route: [{ kind: 'shop' }, { kind: 'fight' }], gold: 30 };
+    s = applyAction(s, { type: 'chooseNode', index: 0 }, owned).state;
+    expect(s.phase).toBe('shop');
+    expect(s.shop!.interest).toBe(0);
+    s = applyAction(s, { type: 'shopLeave' }, owned).state;
+    expect(s.level).toBe(7);
+    expect(s.phase).toBe('ready');
+  });
+
+  it('lets the player skip the elite for an item and a little gold', () => {
+    let s = { ...createRun(8, 0), level: 4, node: null };
+    s = { ...s, route: [{ kind: 'elite' as const }, { kind: 'skip' as const, item: 'potion' as const }] };
+    s = applyAction(s, { type: 'chooseNode', index: 1 }, ctx).state;
+    expect(s.items).toEqual(['potion']);
+    expect(s.gold).toBe(3);
+    expect(s.level).toBe(5);
+  });
+
+  it('uses items: potion heals, whetstone and shield last one fight, compass rerolls the route', () => {
+    let s: RunState = { ...createRun(9, 0), items: ['potion', 'whetstone', 'shield'], hp: 100 };
+    s = applyAction(s, { type: 'useItem', index: 0 }, ctx).state;
+    expect(s.hp).toBe(600);
+    s = applyAction(s, { type: 'useItem', index: 0 }, ctx).state;
+    s = applyAction(s, { type: 'useItem', index: 0 }, ctx).state;
+    expect(s.buffs).toEqual({ damage: 50, shield: 40 });
+    const r = applyAction(s, { type: 'fight' }, ctx);
+    expect((r.fight!.events.find((e) => e.type === 'hit' && e.by === 'player') as { damage: number }).damage).toBeGreaterThanOrEqual(300);
+    expect(r.state.buffs).toEqual({});
+    expect(() => applyAction(createRun(9, 0), { type: 'useItem', index: 0 }, ctx)).toThrow(/inconnu/);
+  });
+
+  it('fuses a duplicate card into a starred one instead of taking a slot', () => {
+    const deck = [{ cardId: 'gagou_fornite', modifier: null, price: 4 }];
+    let s: RunState = { ...createRun(10, 0), phase: 'shop', gold: 50, deck, shop: { cards: [{ cardId: 'gagou_fornite', modifier: null, price: 4, sold: false }], packs: [], perk: null, rerollCost: 2, interest: 0 } };
+    s = applyAction(s, { type: 'shopBuy', index: 0 }, owned).state;
+    expect(s.deck).toHaveLength(1);
+    expect(s.deck[0]!.stars).toBe(2);
+    // +10 % damage card, ×1.5 with the star: +15 %.
+    expect(deckEffects(s.deck)[0]).toMatchObject({ kind: 'percentDamage', value: 15 });
+  });
+
+  it('grants team bonuses for 2, 3 and 4 cards of the same friend', () => {
+    const run = (ids: string[]) => ({ ...createRun(11, 0), deck: ids.map((cardId) => ({ cardId, modifier: null, price: 4 })) });
+    const cc = (ids: string[]) => computeStats(run(ids)).critChance;
+    const base = cc(['glamal_csgo']);
+    expect(cc(['glamal_csgo', 'glamal_neige'])).toBe(base + 5);
+    expect(cc(['glamal_csgo', 'glamal_neige', 'glamal_onsen'])).toBe(base + 10);
+  });
+
+  it('offers three boss passives including a pact, and pacts trade a bonus for a drawback', () => {
+    let s: RunState = { ...createRun(12, 0), level: 9, hp: 99999, base: { ...createRun(12, 0).base, maxHp: 99999, damage: 10_000_000 } };
+    s = applyAction(s, { type: 'fight' }, ctx).state;
+    expect(s.offer).toHaveLength(3);
+    expect(s.offer!.some((o) => o.kind === 'bossPassive' && ['fury', 'bulwark', 'greed'].includes(o.passive))).toBe(true);
+    const fury = passivePower(['fury']);
+    expect(fury.damagePercent).toBe(30);
+    expect(fury.hpPercent).toBe(-15);
+  });
+
+  it('counts only one Negative card for the deck size', () => {
+    const neg = (cardId: string) => ({ cardId, modifier: 'negative' as const, price: 4 });
+    const s = { ...createRun(13, 0), deck: [neg('iut'), neg('complet')] };
+    expect(computeStats(s).emptySlots).toBe(RULES.baseDeckSize + 1 - 2);
   });
 });

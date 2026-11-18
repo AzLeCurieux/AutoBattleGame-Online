@@ -125,6 +125,28 @@ Variables (validées au démarrage, voir `.env.example`) :
 
 Le mode se choisit avec **Recommencer** ; une nouvelle partie garde le mode précédent par défaut.
 
+### Route d'un acte
+
+Un acte compte toujours 10 étapes (le « niveau » compte les étapes), mais la
+plupart se choisissent parmi 2 ou 3 options :
+
+- étape 1 : un combat ; étape 5 : l'élite, ou la **contourner** contre un objet
+  et 3 or ; étape 10 : le boss ;
+- les autres : **combat** (amélioration + or), **élite** (plus dure, plus d'or),
+  **camp** (soin de 45 % ou gros bonus de dégâts / PV), **événement** (pari,
+  autel de la Forge, atelier d'édition, objet), **trésor** (or ou objet),
+  **boutique** (une fois par acte, sans intérêts). Il y a toujours au moins un
+  combat parmi les options.
+
+**Objets** (3 au maximum, utilisables entre deux étapes ou en boutique) :
+potion, pierre à aiguiser, bouclier, pièce porte-bonheur, prisme, boussole.
+
+**Fusion** : acheter une carte déjà dans le deck lui ajoute une étoile (jusqu'à
+3) au lieu de prendre un emplacement ; chaque étoile ajoute 50 % à ses effets.
+
+**Clans** : 2, 3 ou 4 cartes du même ami (Glamal, Lucas, Andres, Aurélien, Axel,
+Kilian, Quentin) donnent un bonus d'équipe croissant (`families.ts`).
+
 ### Progression du mode Deck
 
 - **Boss d'acte** : annoncé dès le début de l'acte, il change une règle du combat
@@ -133,6 +155,10 @@ Le mode se choisit avec **Recommencer** ; une nouvelle partie garde le mode pré
 - **Courbe** : la puissance des ennemis est fixée par acte (`ACT_SCALE` dans
   `rules.ts`) et monte un peu à chaque niveau de l'acte. Après l'acte 8, elle
   double (puis plus) à chaque acte.
+- **Passifs de boss** : 3 au choix après chaque boss, dont toujours un **pacte**
+  (bonus plus fort avec un défaut : Furie +30 % de dégâts / −15 % de PV,
+  Rempart +30 % de PV / −12 % de dégâts, Avarice +2 or par victoire / −10 % de
+  dégâts).
 - **Anti-boule de neige** :
   - les passifs de boss donnent un bonus permanent en pourcentage (Rage +15 % de
     dégâts, Vitalité +15 % de PV, rendement décroissant en racine carrée ;
@@ -220,7 +246,8 @@ combat. Une carte coupée par Le Muet est grisée.
   affiche ses effets et l'impact chiffré sur tes stats.
 - **Amélioration** : une par visite, 10 or, permanente pour la partie (Étal élargi,
   Marchandage, Relance offerte, Coffre-fort, Sacoche, Flair, Infirmerie, Boosters garnis).
-- **Services** : la **Forge** (+8 % de dégâts, 8 or puis +4 à chaque passage) et
+- **Objet** : un objet à usage unique en vente à chaque passage.
+- **Services** : la **Forge** (+8 % de dégâts, 10 or puis +5 à chaque passage) et
   **Changer de boss** (une fois par acte, 6 + 2 × acte or) pour éviter un boss qui
   contre ton build.
 - **Économie** : 1 or par victoire (+1 tous les 3 actes), bonus d'élite et de boss, **intérêts** de +1 or par tranche

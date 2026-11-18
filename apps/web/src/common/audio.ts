@@ -96,6 +96,30 @@ class AudioManager {
     src.stop(at + dur + 0.05);
   }
 
+  /** Death: a heavy hit, a falling tone, then two heartbeats and a flatline. */
+  death() {
+    const ctx = this.context();
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    this.note(ctx, 120, t, 0.7, 0.55, 'sine', 35);
+    this.burst(ctx, t, 0.4, 0.3, 700, 90, 'lowpass');
+    this.note(ctx, 330, t + 0.15, 1.2, 0.18, 'triangle', 110);
+    this.note(ctx, 60, t + 0.9, 0.18, 0.4, 'sine', 40);
+    this.note(ctx, 60, t + 1.15, 0.18, 0.3, 'sine', 40);
+    this.note(ctx, 880, t + 1.6, 1.6, 0.06, 'sine');
+  }
+
+  /** Booster: rattle, rip, then a small chime as the cards fan out. */
+  packOpen() {
+    const ctx = this.context();
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    for (let i = 0; i < 5; i++) this.burst(ctx, t + i * 0.09, 0.07, 0.12, 2200, 1400);
+    this.burst(ctx, t + 0.55, 0.35, 0.35, 900, 6000, 'highpass');
+    this.note(ctx, 90, t + 0.55, 0.3, 0.35, 'sine', 50);
+    [659.25, 783.99, 1046.5, 1318.51].forEach((f, i) => this.note(ctx, f, t + 0.7 + i * 0.07, 0.4, 0.16));
+  }
+
   /** Card passing under the marker. */
   tick(pitch = 1) {
     const ctx = this.context();
