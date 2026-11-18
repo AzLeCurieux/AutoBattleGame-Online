@@ -10,3 +10,5 @@ coverage/
 
 # Images du jeu (cartes, caisses) : non versionnées
 apps/web/public/img/
+# Musique (pistes du mod Balatro-Takanaka) : non versionnée
+apps/web/public/sounds/

@@ -2,6 +2,7 @@ import {
   BOSSES,
   eliteBoss,
   PALIERS,
+  RULES,
   bossRerollPrice,
   computeStats,
   forgePrice,
@@ -51,6 +52,7 @@ import { ActTrack, BOSS_ICON, VictoryModal } from './acts';
 import { JokerBar } from './jokers';
 import { countProcs } from '../../common/procs';
 import { Arena } from './arena';
+import { MusicControl, useSoundtrack } from './music';
 import { PackView, PACK_META, PerksPanel, PERK_META, ShopView } from './shop';
 import {
   CampModal,
@@ -562,6 +564,21 @@ export function GamePage({ initialUser, shader }: { initialUser: PublicUser; sha
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only react to the previewed boss changing
   }, [previewBoss]);
   const BossIcon = bossInfo ? BOSS_ICON[bossInfo.id] : Crown;
+  // Soundtrack follows the situation: shop, booster, boss, final boss (act 8+), victory.
+  const finalStage = RULES.acts.winAct * RULES.acts.length;
+  const track =
+    modal === 'victory'
+      ? 'celestial'
+      : run?.phase === 'pack'
+        ? 'arcana'
+        : run?.phase === 'shop'
+          ? 'shop'
+          : bossBadge && run?.phase !== 'dead'
+            ? mode === 'deck' && shownStage >= finalStage
+              ? 'celestial'
+              : 'boss'
+            : 'main';
+  useSoundtrack(track, muted);
   const dead = run?.phase === 'dead';
   const pending = run?.phase === 'upgrade' || run?.phase === 'shop' || run?.phase === 'pack';
   const fightLabel = fighting ? 'Combat en cours' : paused ? 'Reprendre' : dead ? 'Nouvelle partie' : pending ? 'Choix en attente' : 'Combattre';
@@ -577,6 +594,7 @@ export function GamePage({ initialUser, shader }: { initialUser: PublicUser; sha
             <button className="name" onClick={openProfile} title="Profil">
               {user.username}
             </button>
+            <MusicControl />
             <button
               className="btn btn-sm btn-ghost btn-icon"
               title={muted ? 'Activer le son (Ctrl+M)' : 'Couper le son (Ctrl+M)'}

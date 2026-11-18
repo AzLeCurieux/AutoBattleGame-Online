@@ -45,6 +45,15 @@ Les images du jeu (cartes, caisses) ne sont pas versionnées : récupérer le
 dossier `img/` de la v1 (commit `1fd9584` de ce dépôt) et le copier dans
 `apps/web/public/img/` (`cartes/`, `case/Caisse_icons/`, `case/Caisse_trimmed/`).
 
+La musique (non versionnée non plus) vient du mod
+[Balatro-Takanaka](https://github.com/Wanyatta/Balatro-Takanaka) de Wanyatta :
+télécharger les 5 pistes de `assets/sounds/original/` et les convertir en AAC
+dans `apps/web/public/sounds/` (`main`, `shop`, `boss`, `celestial`, `arcana`) :
+
+```bash
+for t in main shop boss celestial arcana; do curl -sL -o /tmp/$t.ogg https://raw.githubusercontent.com/Wanyatta/Balatro-Takanaka/main/assets/sounds/original/takanaka_$t.ogg && ffmpeg -v error -y -i /tmp/$t.ogg -c:a aac -b:a 160k apps/web/public/sounds/$t.m4a; done
+```
+
 Compte de test avec les 50 cartes débloquées et 10 caisses de chaque type
 (identifiants par défaut dans `apps/server/scripts/seed-collector.ts`, refusé si
 `NODE_ENV=production`) :
@@ -228,6 +237,10 @@ combat. Une carte coupée par Le Muet est grisée.
 - Animations du combat via la Web Animations API, uniquement sur
   `transform`/`opacity`. La v1 clignotait parce que plusieurs minuteurs basculaient
   `display`, `visibility` et `opacity` sur les mêmes éléments.
+- Musique : les 5 pistes sont des variantes du même morceau (même durée) ; le jeu
+  passe de l'une à l'autre en fondu sans perdre la position : combat, boutique,
+  booster, boss, et « celestial » pour les boss de fin (acte 8 et au-delà) et
+  l'écran de victoire. Bouton et volume dans la barre du haut, `Ctrl+M` coupe tout.
 - Vitesse ×1/×2/×4, pause, « Passer », raccourcis : `Espace` combattre,
   `P` pause, `C` camp, `H` historique, `Ctrl+M` son.
 
