@@ -1472,22 +1472,3 @@ button.service:disabled {
 .palier-unlock small {
   color: var(--muted);
 }
-
-/* ---------------------------------------------------------------- music */
-
-.music-ctl {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-}
-.music-ctl input[type='range'] {
-  width: 64px;
-  accent-color: var(--primary);
-  opacity: 0.75;
-}
-.music-ctl.off .icon {
-  opacity: 0.4;
-}
-.music-ctl.off input[type='range'] {
-  opacity: 0.3;
-}

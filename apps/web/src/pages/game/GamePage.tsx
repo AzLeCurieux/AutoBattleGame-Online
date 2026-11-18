@@ -52,7 +52,7 @@ import { ActTrack, BOSS_ICON, VictoryModal } from './acts';
 import { JokerBar } from './jokers';
 import { countProcs } from '../../common/procs';
 import { Arena } from './arena';
-import { MusicControl, useSoundtrack } from './music';
+import { useSoundtrack } from '../../common/MusicControl';
 import { PackView, PACK_META, PerksPanel, PERK_META, ShopView } from './shop';
 import {
   CampModal,
@@ -594,7 +594,6 @@ export function GamePage({ initialUser, shader }: { initialUser: PublicUser; sha
             <button className="name" onClick={openProfile} title="Profil">
               {user.username}
             </button>
-            <MusicControl />
             <button
               className="btn btn-sm btn-ghost btn-icon"
               title={muted ? 'Activer le son (Ctrl+M)' : 'Couper le son (Ctrl+M)'}

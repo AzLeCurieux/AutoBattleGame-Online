@@ -1,3 +1,4 @@
+import { MusicControl } from './MusicControl';
 import { Dices, Package } from 'lucide-react';
 import type { ReactNode } from 'react';
 
@@ -25,7 +26,10 @@ export function Navbar({ page, userInfo }: { page: 'home' | 'gambling' | 'invent
           <span className="icon-btn-label">Inventaire</span>
         </div>
       </div>
-      <div className="topbar-right">{userInfo ? <div id="user-info">{userInfo}</div> : null}</div>
+      <div className="topbar-right">
+        <MusicControl />
+        {userInfo ? <div id="user-info">{userInfo}</div> : null}
+      </div>
     </header>
   );
 }

@@ -67,9 +67,36 @@
 .reel-panel {
   padding: 14px;
 }
+.reel-stack {
+  display: grid;
+  gap: var(--row-gap, 10px);
+  --card-w: 168px;
+  --img-h: 148px;
+}
+.reel-stack.rows-m {
+  --card-w: 132px;
+  --img-h: 104px;
+  --row-gap: 8px;
+}
+.reel-stack.rows-s {
+  --card-w: 104px;
+  --img-h: 76px;
+  --row-gap: 6px;
+}
+.reel-stack.rows-xs {
+  --card-w: 78px;
+  --img-h: 54px;
+  --row-gap: 5px;
+}
+.reel-stack.rows-s .reel-name,
+.reel-stack.rows-xs .reel-name {
+  display: none;
+}
+.reel-stack:not(.rows-1) .reel {
+  padding: 8px 0;
+}
 .reel-viewport {
   position: relative;
-  height: 214px;
   overflow: hidden;
   border-radius: 12px;
   background: rgba(0, 0, 0, 0.35);
@@ -82,8 +109,9 @@
   will-change: transform;
 }
 .reel-card {
+  position: relative;
   flex: none;
-  width: 168px;
+  width: var(--card-w);
   border-radius: 12px;
   overflow: hidden;
   background: linear-gradient(180deg, color-mix(in srgb, var(--rarity) 22%, #121624), #0f121c);
@@ -92,7 +120,7 @@
 }
 .reel-card img {
   width: 100%;
-  height: 148px;
+  height: var(--img-h);
   object-fit: cover;
 }
 .reel-name {
@@ -102,6 +130,75 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+/* A stopped reel dims everything but its card, which lights up by rarity. */
+.reel-viewport.stopped .reel-card:not(.won) {
+  opacity: 0.35;
+  transition: opacity 0.4s ease;
+}
+.reel-card.won {
+  z-index: 1;
+  animation: won-pop 0.5s var(--ease) both;
+  box-shadow:
+    inset 0 -3px 0 var(--rarity),
+    0 0 calc(8px + var(--tier) * 6px) color-mix(in srgb, var(--rarity) 80%, transparent);
+}
+.reel-viewport.stopped.tier-4,
+.reel-viewport.stopped.tier-5,
+.reel-viewport.stopped.tier-6 {
+  animation: row-flare 1.2s ease-out both;
+}
+.reel-viewport.stopped.tier-5 .reel-card.won,
+.reel-viewport.stopped.tier-6 .reel-card.won {
+  animation:
+    won-pop 0.5s var(--ease) both,
+    won-pulse 1.1s ease-in-out 0.5s infinite;
+}
+.reel-viewport.stopped.tier-6 .reel-card.won::after,
+.reel-viewport.stopped.tier-5 .reel-card.won::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.55) 50%, transparent 70%);
+  background-size: 250% 100%;
+  animation: shine 1.4s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes won-pop {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(calc(1.06 + var(--tier) * 0.015));
+    filter: brightness(1.8);
+  }
+  100% {
+    transform: scale(1.04);
+  }
+}
+@keyframes won-pulse {
+  50% {
+    filter: brightness(1.35);
+    box-shadow:
+      inset 0 -3px 0 var(--rarity),
+      0 0 44px var(--rarity);
+  }
+}
+@keyframes row-flare {
+  0% {
+    box-shadow: inset 0 0 0 2px var(--accent), 0 0 0 transparent;
+  }
+  30% {
+    box-shadow: inset 0 0 0 2px #fff, 0 0 40px rgba(255, 255, 255, 0.35);
+  }
+}
+@keyframes shine {
+  from {
+    background-position: 150% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
 }
 .reel-marker {
   position: absolute;
@@ -185,8 +282,41 @@
   justify-content: center;
 }
 .reveal-item {
+  position: relative;
+  border-radius: 14px;
   animation: reveal 0.45s var(--ease) both;
   animation-delay: calc(var(--i) * 90ms);
+}
+.reveal-item > .card-tile {
+  height: 100%;
+}
+/* Rarer cards keep glowing in the summary. */
+.reveal-item.tier-3,
+.reveal-item.tier-4 {
+  box-shadow: 0 0 22px color-mix(in srgb, var(--rarity) 45%, transparent);
+}
+.reveal-item.tier-5,
+.reveal-item.tier-6 {
+  animation:
+    reveal 0.45s var(--ease) both,
+    item-glow 1.6s ease-in-out calc(var(--i) * 90ms + 0.45s) infinite;
+  animation-delay: calc(var(--i) * 90ms);
+}
+.reveal-item.tier-5::after,
+.reveal-item.tier-6::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, 0.35) 50%, transparent 65%);
+  background-size: 250% 100%;
+  animation: shine 2.2s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes item-glow {
+  50% {
+    box-shadow: 0 0 36px color-mix(in srgb, var(--rarity) 75%, transparent);
+  }
 }
 @keyframes reveal {
   from {
@@ -258,5 +388,222 @@
   }
   .odd-row {
     grid-template-columns: 10px 110px 1fr 56px;
+  }
+}
+
+/* ------------------------------------------------------- full-screen reveal */
+
+.reveal-fx {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  overflow: hidden;
+  cursor: pointer;
+  --size: calc(220px + var(--t, 0) * 14px);
+}
+.reveal-fx.tier-1 { --t: 1; }
+.reveal-fx.tier-2 { --t: 2; }
+.reveal-fx.tier-3 { --t: 3; }
+.reveal-fx.tier-4 { --t: 4; }
+.reveal-fx.tier-5 { --t: 5; }
+.reveal-fx.tier-6 { --t: 6; }
+/* Everything is centred with margins: transform is kept for the animations. */
+.fx-glow,
+.fx-rays,
+.fx-ring,
+.fx-card {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+}
+.reveal-fx.closing {
+  animation: fx-out 0.26s ease forwards;
+}
+@keyframes fx-out {
+  to {
+    opacity: 0;
+  }
+}
+.fx-backdrop {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--rarity) calc(10% + var(--t, 0) * 6%), rgba(4, 6, 12, 0.6)), rgba(4, 6, 12, 0.92) 70%);
+  animation: fx-fade 0.3s ease both;
+}
+.fx-glow {
+  width: calc(var(--size) * 2.2);
+  height: calc(var(--size) * 2.2);
+  margin: calc(var(--size) * -1.1) 0 0 calc(var(--size) * -1.1);
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--rarity) 70%, transparent), transparent 65%);
+  filter: blur(10px);
+  animation: fx-breathe 1.6s ease-in-out infinite;
+  opacity: calc(0.35 + var(--t, 0) * 0.1);
+}
+.fx-rays {
+  width: 220vmax;
+  height: 220vmax;
+  margin: -110vmax 0 0 -110vmax;
+  background: repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--rarity) 55%, transparent) 0deg 6deg, transparent 6deg 18deg);
+  mask-image: radial-gradient(circle, #000 0, transparent 45%);
+  -webkit-mask-image: radial-gradient(circle, #000 0, transparent 45%);
+  opacity: calc(0.15 + var(--t, 0) * 0.08);
+  animation:
+    fx-fade 0.5s ease both,
+    fx-spin calc(26s - var(--t, 0) * 2.5s) linear infinite;
+}
+.fx-rays-2 {
+  background: repeating-conic-gradient(from 9deg, rgba(255, 255, 255, 0.4) 0deg 2deg, transparent 2deg 24deg);
+  animation:
+    fx-fade 0.5s ease both,
+    fx-spin 18s linear infinite reverse;
+}
+.fx-ring {
+  width: var(--size);
+  height: var(--size);
+  margin: calc(var(--size) / -2) 0 0 calc(var(--size) / -2);
+  border-radius: 50%;
+  border: 3px solid var(--rarity);
+  box-shadow:
+    0 0 30px var(--rarity),
+    inset 0 0 30px var(--rarity);
+  opacity: 0;
+  animation: fx-ring 1s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+.fx-particles {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.fx-card {
+  width: var(--size);
+  margin: calc(var(--size) / -2 - 2px) 0 0 calc(var(--size) / -2 - 2px);
+  border-radius: 18px;
+  overflow: hidden;
+  border: 2px solid var(--rarity);
+  box-shadow:
+    0 0 calc(20px + var(--t, 0) * 10px) var(--rarity),
+    0 30px 60px rgba(0, 0, 0, 0.6);
+  animation: fx-card-pop 0.55s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+.fx-card img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+.reveal-fx.tier-2 .fx-card,
+.reveal-fx.tier-3 .fx-card {
+  animation: fx-card-flip 0.8s cubic-bezier(0.2, 1.2, 0.4, 1) both;
+}
+/* Covert and Gold slam in from above the screen. */
+.reveal-fx.tier-4 .fx-card,
+.reveal-fx.tier-5 .fx-card,
+.reveal-fx.tier-6 .fx-card {
+  animation:
+    fx-card-slam 0.6s cubic-bezier(0.5, 0, 0.75, 0) both,
+    fx-float 2.4s ease-in-out 0.8s infinite;
+}
+.fx-shine {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.7) 50%, transparent 70%);
+  background-size: 260% 100%;
+  animation: shine 1.3s ease-in-out 0.6s infinite;
+  mix-blend-mode: overlay;
+}
+.reveal-fx.tier-6 .fx-card {
+  border-color: #ffe08a;
+  box-shadow:
+    0 0 50px #f5b244,
+    0 0 120px rgba(245, 178, 68, 0.6),
+    0 30px 60px rgba(0, 0, 0, 0.6);
+}
+.fx-flash {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+}
+.reveal-fx.tier-3 .fx-flash,
+.reveal-fx.tier-4 .fx-flash,
+.reveal-fx.tier-5 .fx-flash,
+.reveal-fx.tier-6 .fx-flash {
+  animation: fx-flash 0.7s ease-out 0.12s both;
+}
+.reveal-fx.tier-6 .fx-flash {
+  background: radial-gradient(circle, #fff, #ffe08a 60%, #f5b244);
+}
+@keyframes fx-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes fx-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes fx-breathe {
+  50% {
+    transform: scale(1.12);
+  }
+}
+@keyframes fx-ring {
+  0% {
+    opacity: 0.95;
+    transform: scale(0.4);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(calc(2.5 + var(--t, 0) * 0.35));
+  }
+}
+@keyframes fx-flash {
+  0% {
+    opacity: calc(0.25 + var(--t, 0) * 0.1);
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes fx-card-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+}
+@keyframes fx-card-flip {
+  from {
+    opacity: 0;
+    transform: perspective(900px) rotateY(180deg) scale(0.5);
+  }
+}
+@keyframes fx-card-slam {
+  0% {
+    opacity: 0;
+    transform: scale(2.6) rotate(-6deg);
+    filter: brightness(3);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+    filter: brightness(1);
+  }
+}
+@keyframes fx-float {
+  50% {
+    transform: translateY(-10px) scale(1.02);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fx-rays,
+  .fx-glow,
+  .fx-ring,
+  .fx-shine {
+    animation: none;
   }
 }

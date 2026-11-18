@@ -3,6 +3,7 @@ import { ArrowDownWideNarrow, Coins, Dices, Layers, Lock, Package, Search, Spark
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../../common/api';
 import { CASE_ORDER, caseMeta, cardMeta, LOOT_CATEGORIES } from '../../common/catalog';
+import { useSoundtrack } from '../../common/MusicControl';
 import { Navbar } from '../../common/Navbar';
 import { useSocketEvent } from '../../common/socket';
 import { Bar, CardTile, cssVars } from '../../ui/components';
@@ -19,6 +20,7 @@ const rarityRank = (r: Rarity) => RARITIES.indexOf(r);
 
 /** Collection page: every card (owned or locked), filters, sort, search and a detail panel. */
 export function InventoryPage() {
+  useSoundtrack('shop');
   const [owned, setOwned] = useState<Map<string, InventoryCard> | null>(null);
   const [cases, setCases] = useState<InventoryCase[]>([]);
   const [query, setQuery] = useState('');

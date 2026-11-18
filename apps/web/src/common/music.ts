@@ -99,6 +99,9 @@ class MusicPlayer {
     this.started = true;
     this.current = this.wanted;
     const el = this.el(this.current);
+    // Changing page: pick the piece up where the previous page left it.
+    const resume = readResume();
+    if (resume !== null) el.currentTime = resume;
     el.play().then(
       () => this.fade(el, this.level),
       () => {
@@ -140,6 +143,12 @@ class MusicPlayer {
     this.emit();
   }
 
+  /** Playback position, or null when nothing plays. */
+  position(): number | null {
+    const el = this.els.get(this.current);
+    return el && this.started && !el.paused ? el.currentTime : null;
+  }
+
   setEnabled(on: boolean) {
     this.enabled = on;
     write(PREF_ON, on ? 'on' : 'off');
@@ -166,8 +175,35 @@ class MusicPlayer {
   }
 }
 
+const PREF_POSITION = 'autobattle.musicPosition';
+
+function readResume(): number | null {
+  try {
+    const raw = sessionStorage.getItem(PREF_POSITION);
+    if (!raw) return null;
+    const { t, at } = JSON.parse(raw) as { t: number; at: number };
+    const elapsed = (Date.now() - at) / 1000;
+    return elapsed < 30 ? (t + elapsed) % TRACK_SECONDS : null;
+  } catch {
+    return null;
+  }
+}
+
+/** All variants last exactly this long (205.24 s). */
+const TRACK_SECONDS = 205.2;
+
 function clamp(v: number) {
   return Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 0.35;
 }
 
 export const music = new MusicPlayer();
+
+window.addEventListener('pagehide', () => {
+  const t = music.position();
+  if (t === null) return;
+  try {
+    sessionStorage.setItem(PREF_POSITION, JSON.stringify({ t, at: Date.now() }));
+  } catch {
+    /* not remembered */
+  }
+});

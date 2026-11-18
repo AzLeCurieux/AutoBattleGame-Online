@@ -1,6 +1,6 @@
 import { Music } from 'lucide-react';
 import { useEffect, useSyncExternalStore } from 'react';
-import { music, TRACK_LABEL, type Track } from '../../common/music';
+import { music, TRACK_LABEL, type Track } from './music';
 
 const subscribe = (fn: () => void) => music.subscribe(fn);
 const snapshot = () => `${music.enabled}|${music.volume}|${music.track}`;
@@ -33,7 +33,7 @@ export function MusicControl() {
 }
 
 /** Starts the soundtrack on the first gesture and follows the situation. */
-export function useSoundtrack(track: Track, muted: boolean) {
+export function useSoundtrack(track: Track, muted = false) {
   useEffect(() => {
     const kick = () => music.start();
     window.addEventListener('pointerdown', kick, { once: true });
