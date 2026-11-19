@@ -88,15 +88,21 @@
   white-space: nowrap;
 }
 .fighter .hp {
-  width: 100%;
+  /* As wide as the square: when two squares touch, their health bars sit side
+     by side instead of the attacker's bar covering the target's. */
+  width: var(--hp-w, 92px);
   display: grid;
   gap: 4px;
+}
+.fighter.enemy.boss {
+  --hp-w: 112px;
 }
 .fighter .hp .bar {
   height: 10px;
 }
 .fighter .hp-text {
-  font-size: 12px;
+  font-size: 11px;
+  white-space: nowrap;
   font-weight: 600;
   text-align: center;
   font-variant-numeric: tabular-nums;
@@ -697,6 +703,9 @@
   .token {
     width: 72px;
     height: 72px;
+  }
+  .fighter {
+    --hp-w: 72px;
   }
   .fighter {
     width: 130px;
@@ -1895,27 +1904,6 @@ button.service:disabled {
     transform: translateY(14px) scale(0.94);
   }
 }
-.pip[class*='took-'] {
-  height: 22px;
-  border-radius: 7px;
-  color: var(--text);
-  background: color-mix(in srgb, var(--accent) 22%, transparent);
-}
-.pip.took-camp {
-  background: rgba(74, 222, 128, 0.25);
-}
-.pip.took-event {
-  background: rgba(192, 132, 252, 0.25);
-}
-.pip.took-treasure {
-  background: rgba(245, 178, 68, 0.25);
-}
-.pip.took-shop {
-  background: rgba(56, 189, 248, 0.25);
-}
-.pip.took-skip {
-  background: rgba(148, 163, 184, 0.25);
-}
 
 /* ------------------------------------------------------------- items */
 
@@ -1996,30 +1984,315 @@ button.service:disabled {
   font-style: normal;
   color: #fff;
 }
-.joker-stars {
+
+/* ------------------------------------------------------- travel map */
+
+.act-pips {
+  position: relative;
+  gap: 6px;
+}
+/* The road the markers sit on. */
+.act-pips::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  top: 50%;
+  height: 2px;
+  margin-top: -1px;
+  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.18) 0 6px, transparent 6px 11px);
+  pointer-events: none;
+}
+.act-pips .pip {
+  position: relative;
+  z-index: 1;
+}
+.pip[class*='took-'] {
+  height: 24px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--node, #fff) 55%, transparent);
+  background: color-mix(in srgb, var(--node, #fff) 22%, #10131d);
+  color: var(--node, var(--text));
+}
+.pip.took-fight { --node: #60a5fa; }
+.pip.took-elite { --node: #f87171; }
+.pip.took-camp { --node: #4ade80; }
+.pip.took-event { --node: #c084fc; }
+.pip.took-treasure { --node: #f5b244; }
+.pip.took-shop { --node: #38bdf8; }
+.pip.took-skip { --node: #94a3b8; }
+.pip.done[class*='took-'] {
+  background: color-mix(in srgb, var(--node) 40%, #10131d);
+  color: #fff;
+}
+.pip.planned {
+  opacity: 0.55;
+  border-style: dashed;
+}
+.pip.current[class*='took-'] {
+  background: var(--node);
+  color: #0b0d14;
+  box-shadow: 0 0 14px color-mix(in srgb, var(--node) 70%, transparent);
+}
+/* Upcoming junction: a fork marker. */
+.pip.junction {
+  height: 14px;
+  width: 14px;
+  justify-self: center;
+  border-radius: 4px;
+  transform: rotate(45deg);
+  background: rgba(245, 178, 68, 0.35);
+  border: 1px solid rgba(245, 178, 68, 0.6);
+}
+
+/* ------------------------------------------------------- path cards */
+
+.route-steps {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+.route-step {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  color: var(--step);
+  background: color-mix(in srgb, var(--step) 16%, #10131d);
+  border: 1px solid color-mix(in srgb, var(--step) 50%, transparent);
+}
+.route-step + .route-step::before {
+  content: '';
+  position: absolute;
+  right: 100%;
+  width: 4px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.25);
+}
+.route-step .icon {
+  width: 14px;
+  height: 14px;
+}
+.route-node {
+  background:
+    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--node) 28%, transparent), transparent 60%),
+    linear-gradient(180deg, color-mix(in srgb, var(--node) 14%, #141826), #0f121c);
+}
+.route-node .route-icon {
+  box-shadow: 0 0 18px color-mix(in srgb, var(--node) 35%, transparent);
+}
+
+/* ------------------------------------------------------- arrival scenes */
+
+.node-arrival {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  background: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--node) 22%, rgba(8, 10, 18, 0.7)), rgba(8, 10, 18, 0.9) 70%);
+  animation: arrive-fade 1.1s ease both;
+  overflow: hidden;
+}
+.node-arrival > * {
+  grid-area: 1 / 1;
+}
+.arrive-name {
+  grid-area: auto;
+  margin-top: 150px;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--node);
+  text-shadow: 0 0 18px color-mix(in srgb, var(--node) 60%, transparent);
+  animation: arrive-rise 0.6s var(--ease) 0.15s both;
+}
+.arrive-glow {
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--node) 55%, transparent), transparent 65%);
+  filter: blur(8px);
+  animation: arrive-breathe 1.1s ease-in-out both;
+}
+.arrive-token {
+  width: 104px;
+  height: 104px;
+  border-radius: 30px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--node) 80%, #fff), color-mix(in srgb, var(--node) 55%, #000));
+  box-shadow:
+    0 0 0 6px color-mix(in srgb, var(--node) 20%, transparent),
+    0 0 40px color-mix(in srgb, var(--node) 55%, transparent);
+  animation: arrive-pop 0.55s cubic-bezier(0.2, 1.3, 0.4, 1) both;
+}
+.arrive-token .icon {
+  width: 52px;
+  height: 52px;
+}
+/* Camp: the fire flickers, embers rise. */
+.arrive-camp .arrive-token .icon {
+  animation: flicker 0.35s ease-in-out infinite alternate;
+  color: #fde68a;
+}
+.arrive-embers span {
+  position: absolute;
+  left: calc(50% - 30px + var(--e) * 5px);
+  top: 55%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #fbbf24;
+  box-shadow: 0 0 6px #f59e0b;
+  animation: ember 1.1s ease-out calc(var(--e) * 60ms) both;
+}
+/* Treasure: the chest shakes, then light bursts out. */
+.arrive-treasure .arrive-token {
+  animation:
+    arrive-pop 0.4s cubic-bezier(0.2, 1.3, 0.4, 1) both,
+    chest-shake 0.4s ease-in-out 0.35s both;
+}
+.arrive-rays {
+  width: 420px;
+  height: 420px;
+  background: repeating-conic-gradient(rgba(255, 220, 140, 0.45) 0deg 7deg, transparent 7deg 20deg);
+  mask-image: radial-gradient(circle, #000 20%, transparent 65%);
+  -webkit-mask-image: radial-gradient(circle, #000 20%, transparent 65%);
+  animation: rays-burst 0.8s ease-out 0.6s both;
+}
+/* Event: a card flips over. */
+.arrive-event .arrive-token {
+  animation: card-flip 0.8s cubic-bezier(0.2, 1, 0.3, 1) both;
+}
+/* Shop: slides in like a sign. */
+.arrive-shop .arrive-token {
+  animation: shop-swing 0.8s cubic-bezier(0.2, 1.2, 0.4, 1) both;
+  transform-origin: 50% -20px;
+}
+@keyframes arrive-fade {
+  0% {
+    opacity: 0;
+  }
+  15%,
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes arrive-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+}
+@keyframes arrive-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+    letter-spacing: 0.4em;
+  }
+}
+@keyframes arrive-breathe {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+}
+@keyframes flicker {
+  from {
+    transform: scale(1) rotate(-3deg);
+    filter: brightness(1);
+  }
+  to {
+    transform: scale(1.08) rotate(3deg);
+    filter: brightness(1.3);
+  }
+}
+@keyframes ember {
+  from {
+    opacity: 1;
+    transform: translate(0, 0);
+  }
+  to {
+    opacity: 0;
+    transform: translate(calc((var(--e) - 6) * 6px), -120px);
+  }
+}
+@keyframes chest-shake {
+  25% {
+    transform: rotate(-6deg);
+  }
+  50% {
+    transform: rotate(6deg);
+  }
+  75% {
+    transform: rotate(-4deg) scale(1.05);
+  }
+}
+@keyframes rays-burst {
+  from {
+    opacity: 0;
+    transform: scale(0.3) rotate(0);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(25deg);
+  }
+}
+@keyframes card-flip {
+  from {
+    opacity: 0;
+    transform: perspective(600px) rotateY(180deg) scale(0.6);
+  }
+}
+@keyframes shop-swing {
+  0% {
+    opacity: 0;
+    transform: translateY(-60px) rotate(-12deg);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(0) rotate(6deg);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+/* ------------------------------------------------------- misc */
+
+.chain-switch {
+  margin-left: 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.joker-level {
   position: absolute;
   left: 2px;
   bottom: 2px;
   z-index: 3;
-  display: flex;
-  color: #fbbf24;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8));
-}
-.joker-stars .icon {
-  width: 9px;
-  height: 9px;
-  fill: currentColor;
-}
-.fusion-badge {
-  gap: 3px;
+  padding: 0 4px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 800;
   color: #1b1405;
-  background: linear-gradient(90deg, #ffe58a, #f5b244);
+  background: #fbbf24;
 }
-.fusion-badge .icon {
-  width: 10px;
-  height: 10px;
-  fill: currentColor;
-}
-.card-tile.fusion {
-  box-shadow: 0 0 0 1px #f5b244, 0 0 18px rgba(245, 178, 68, 0.3);
+.deck-slot-level {
+  font-style: normal;
+  color: #fbbf24;
 }

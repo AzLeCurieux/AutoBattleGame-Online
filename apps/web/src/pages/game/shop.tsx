@@ -1,4 +1,4 @@
-import { BOSSES, bossRerollPrice, computeStats, deckLimit, forgePrice, ITEMS, MAX_ITEMS, MAX_STARS, nextBossAct, PACKS, sellValue, type DeckCard, type ModifierId, type PackKind, type PerkId, type PublicRunState } from '@autobattle/shared';
+import { BOSSES, bossRerollPrice, computeStats, deckLimit, forgePrice, ITEMS, MAX_ITEMS, nextBossAct, PACKS, sellValue, type DeckCard, type ModifierId, type PackKind, type PerkId, type PublicRunState } from '@autobattle/shared';
 import type { LucideIcon } from 'lucide-react';
 import {
   Backpack,
@@ -19,7 +19,6 @@ import {
   ShoppingBag,
   Shuffle,
   Sparkles,
-  Star,
   Store,
   Swords,
   Target,
@@ -98,28 +97,7 @@ function statPreview(run: Run, deck: DeckCard[], title: string, note?: string) {
   );
 }
 
-/** Deck after taking a card: a copy already in the deck is fused (one more star). */
-const withCard = (run: Run, cardId: string, modifier: ModifierId | null) =>
-  run.deck.some((d) => d.cardId === cardId)
-    ? run.deck.map((d) => (d.cardId === cardId ? { ...d, stars: Math.min(MAX_STARS, (d.stars ?? 1) + 1) } : d))
-    : [...run.deck, { cardId, modifier, price: 0 }];
-
-/** Stars the card would reach by fusion, or 0 if it is not in the deck. */
-const fusionStars = (run: Run, cardId: string) => {
-  const owned = run.deck.find((d) => d.cardId === cardId);
-  return owned ? (owned.stars ?? 1) + 1 : 0;
-};
-
-function FusionBadge({ stars }: { stars: number }) {
-  return (
-    <span className="badge fusion-badge" title={stars > MAX_STARS ? 'Déjà au maximum' : `Fusion : la carte du deck passe à ${stars} étoiles (+${(stars - 1) * 50} % sur ses effets)`}>
-      {stars > MAX_STARS ? 'Max' : 'Fusion'}
-      {Array.from({ length: Math.min(stars, MAX_STARS) }, (_, i) => (
-        <Star key={i} className="icon" />
-      ))}
-    </span>
-  );
-}
+const withCard = (run: Run, cardId: string, modifier: ModifierId | null) => [...run.deck, { cardId, modifier, price: 0 }];
 
 /** Live summary at the top of the shop: gold, stats, last thing that happened. */
 function StatusStrip({ run, lastAction }: { run: Run; lastAction?: string }) {
@@ -251,7 +229,10 @@ function DeckSlot({
     >
       <img src={`/img/cartes/${card.image}`} alt="" draggable={false} />
       <span className="card-sheen" aria-hidden />
-      <span className="deck-slot-name">{card.name}</span>
+      <span className="deck-slot-name">
+        {card.name}
+        {(entry.stars ?? 1) > 1 && <em className="deck-slot-level"> · Niv. {entry.stars}</em>}
+      </span>
       {entry.modifier && <span className={`modifier ${entry.modifier}`}>{MODIFIER_META[entry.modifier].name}</span>}
     </button>
   );
@@ -374,27 +355,17 @@ export function ShopView({
                       Achetée
                     </div>
                   ) : (
-                    (() => {
-                      const stars = fusionStars(run, item.cardId);
-                      const blocked = gold < item.price || (stars === 0 && deckFull) || stars > MAX_STARS;
-                      return (
-                        <CardTile
-                          key={index}
-                          cardId={item.cardId}
-                          modifier={item.modifier}
-                          hoverExtra={() =>
-                            statPreview(run, withCard(run, item.cardId, item.modifier), stars ? 'Après la fusion' : 'Avec cette carte', stars === 0 && deckFull ? 'Deck complet : vends une carte d’abord.' : undefined)
-                          }
-                          showEffect
-                          onClick={busy || blocked ? undefined : () => onBuy(index)}
-                          className={blocked ? 'unaffordable' : stars ? 'fusion' : ''}
-                          cornerLeft={
-                            stars ? <FusionBadge stars={stars} /> : item.modifier ? <span className={`modifier ${item.modifier}`}>{MODIFIER_META[item.modifier].name}</span> : undefined
-                          }
-                          corner={<Price value={item.price} gold={gold} />}
-                        />
-                      );
-                    })()
+                    <CardTile
+                      key={index}
+                      cardId={item.cardId}
+                      modifier={item.modifier}
+                      hoverExtra={() => statPreview(run, withCard(run, item.cardId, item.modifier), 'Avec cette carte', deckFull ? 'Deck complet : vends une carte d’abord.' : undefined)}
+                      showEffect
+                      onClick={busy || gold < item.price || deckFull ? undefined : () => onBuy(index)}
+                      className={gold < item.price || deckFull ? 'unaffordable' : ''}
+                      cornerLeft={item.modifier ? <span className={`modifier ${item.modifier}`}>{MODIFIER_META[item.modifier].name}</span> : undefined}
+                      corner={<Price value={item.price} gold={gold} />}
+                    />
                   ),
                 )}
               </div>
@@ -566,24 +537,23 @@ export function PackView({
               </button>
             );
           }
-          const stars = fusionStars(run, option.cardId);
-          const duplicate = stars > MAX_STARS;
-          const blocked = (stars === 0 && deckFull) || duplicate;
+          const duplicate = deck.some((d) => d.cardId === option.cardId);
+          const blocked = deckFull || duplicate;
           return (
             <div key={index} className="deal-slot" style={cssVars({ '--i': index })}>
             <CardTile
               cardId={option.cardId}
               modifier={option.modifier}
-              hoverExtra={() => statPreview(run, withCard(run, option.cardId, option.modifier), stars ? 'Après la fusion' : 'Avec cette carte')}
+              hoverExtra={() => statPreview(run, withCard(run, option.cardId, option.modifier), 'Avec cette carte')}
               showEffect
               className={taken ? 'picked' : blocked ? 'unaffordable' : ''}
               onClick={busy || taken || blocked ? undefined : () => onPick(index)}
-              cornerLeft={stars ? <FusionBadge stars={stars} /> : option.modifier ? <span className={`modifier ${option.modifier}`}>{MODIFIER_META[option.modifier].name}</span> : undefined}
+              cornerLeft={option.modifier ? <span className={`modifier ${option.modifier}`}>{MODIFIER_META[option.modifier].name}</span> : undefined}
               corner={taken ? <span className="badge badge-accent">Prise</span> : undefined}
               footer={
                 blocked && !taken ? (
                   <div className="effect" style={{ color: 'var(--danger)' }}>
-                    {duplicate ? 'Déjà au maximum (3 étoiles)' : 'Deck complet'}
+                    {duplicate ? 'Déjà dans ton deck' : 'Deck complet'}
                   </div>
                 ) : undefined
               }

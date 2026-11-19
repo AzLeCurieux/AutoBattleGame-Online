@@ -152,7 +152,8 @@ export class Arena {
     const cx = w * (left ? 0.1 + Math.random() * 0.33 : 0.57 + Math.random() * 0.33);
     const maxLeft = Math.max(pad, w - pad - node.offsetWidth);
     const nx = Math.min(maxLeft, Math.max(pad, cx - node.offsetWidth / 2));
-    const maxTop = Math.max(top, h - pad - node.offsetHeight);
+    // Keep a margin: a boss square grows a little once the fight starts.
+    const maxTop = Math.max(top, h - pad - node.offsetHeight - 24);
     const ny = top + Math.random() * (maxTop - top);
     return { x: nx - node.offsetLeft, y: ny - node.offsetTop };
   }

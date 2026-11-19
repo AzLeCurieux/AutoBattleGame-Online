@@ -16,7 +16,16 @@ export const TRACK_LABEL: Record<Track, string> = {
   arcana: 'Booster',
 };
 
-const FADE_MS = 1400;
+const FADE_MS = 900;
+/** Switching tracks: the old one fades out quickly before the new one comes in (no muddy overlap). */
+const OUT_MS = 450;
+const IN_DELAY_MS = 220;
+
+/** The shop plays the slowed version of its theme (longer file). */
+const FILE: Partial<Record<Track, string>> = { shop: 'shop_slow' };
+/** Length of each file in seconds, to keep the same point of the piece when switching. */
+const LENGTH: Record<Track, number> = { main: 205.24, shop: 236.73, boss: 205.24, celestial: 205.24, arcana: 205.24 };
+const BASE_LENGTH = 205.24;
 const STEP_MS = 50;
 const PREF_ON = 'autobattle.music';
 const PREF_VOLUME = 'autobattle.musicVolume';
@@ -54,8 +63,26 @@ class MusicPlayer {
   /** Death screen: the piece slows down and drops in pitch. */
   private slow = false;
 
+  /** Lowered while a sound effect plays over the music (reveal, death…). */
+  private ducked = 1;
+  private duckTimer: ReturnType<typeof setTimeout> | undefined;
+
   private get level() {
-    return this.enabled && !this.muted ? this.volume * (this.slow ? 0.6 : 1) : 0;
+    return this.enabled && !this.muted ? this.volume * (this.slow ? 0.6 : 1) * this.ducked : 0;
+  }
+
+  /** Lowers the music for `ms`, so a jingle is heard on its own instead of piling on top. */
+  duck(ms = 1500, factor = 0.3) {
+    const el = this.els.get(this.current);
+    if (!el || !this.started || el.paused) return;
+    clearTimeout(this.duckTimer);
+    this.ducked = factor;
+    this.fade(el, this.level, undefined, 180);
+    this.duckTimer = setTimeout(() => {
+      this.ducked = 1;
+      const now = this.els.get(this.current);
+      if (now && !now.paused) this.fade(now, this.level, undefined, 700);
+    }, ms);
   }
 
   private rate(el: HTMLAudioElement) {
@@ -83,7 +110,7 @@ class MusicPlayer {
   private el(track: Track) {
     let el = this.els.get(track);
     if (!el) {
-      el = new Audio(`/sounds/${track}.m4a`);
+      el = new Audio(`/sounds/${FILE[track] ?? track}.m4a`);
       el.loop = true;
       el.preload = 'auto';
       el.volume = 0;
@@ -93,10 +120,10 @@ class MusicPlayer {
     return el;
   }
 
-  private fade(el: HTMLAudioElement, target: number, done?: () => void) {
+  private fade(el: HTMLAudioElement, target: number, done?: () => void, ms = FADE_MS) {
     clearInterval(this.fades.get(el));
     const from = el.volume;
-    const steps = Math.max(1, Math.round(FADE_MS / STEP_MS));
+    const steps = Math.max(1, Math.round(ms / STEP_MS));
     let i = 0;
     const id = setInterval(() => {
       i++;
@@ -118,7 +145,7 @@ class MusicPlayer {
     const el = this.el(this.current);
     // Changing page: pick the piece up where the previous page left it.
     const resume = readResume();
-    if (resume !== null) el.currentTime = resume;
+    if (resume !== null) el.currentTime = (resume * LENGTH[this.current]) / BASE_LENGTH;
     el.play().then(
       () => this.settle(el),
       () => {
@@ -132,15 +159,27 @@ class MusicPlayer {
     this.wanted = track;
     this.emit();
     if (!this.started || this.level === 0 || track === this.current) return;
-    const from = this.el(this.current);
+    const fromTrack = this.current;
+    const from = this.el(fromTrack);
     const to = this.el(track);
-    to.currentTime = from.currentTime;
+    // Same point of the piece, even when the files have different lengths.
+    to.currentTime = (from.currentTime / LENGTH[fromTrack]) * LENGTH[track];
     to.volume = 0;
     this.current = track;
-    void to.play().then(() => this.settle(to), () => {});
-    this.fade(from, 0, () => {
-      if (from !== this.el(this.current)) from.pause();
-    });
+    // Anything else still audible (a fade in progress) is cut right away.
+    for (const [t, other] of this.els) if (t !== track && t !== fromTrack && !other.paused) this.fade(other, 0, () => other.pause(), 150);
+    this.fade(
+      from,
+      0,
+      () => {
+        if (from !== this.els.get(this.current)) from.pause();
+      },
+      OUT_MS,
+    );
+    setTimeout(() => {
+      if (this.current !== track) return;
+      void to.play().then(() => this.settle(to), () => {});
+    }, IN_DELAY_MS);
   }
 
   /**
@@ -149,7 +188,7 @@ class MusicPlayer {
    */
   private settle(el: HTMLAudioElement) {
     if (el === this.els.get(this.current) && this.level > 0) this.fade(el, this.level);
-    else this.fade(el, 0, () => el.pause());
+    else this.fade(el, 0, () => el.pause(), 200);
   }
 
   private apply() {
@@ -173,7 +212,7 @@ class MusicPlayer {
   /** Playback position, or null when nothing plays. */
   position(): number | null {
     const el = this.els.get(this.current);
-    return el && this.started && !el.paused ? el.currentTime : null;
+    return el && this.started && !el.paused ? (el.currentTime * BASE_LENGTH) / LENGTH[this.current] : null;
   }
 
   setEnabled(on: boolean) {

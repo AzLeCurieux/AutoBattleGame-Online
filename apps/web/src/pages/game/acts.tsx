@@ -38,13 +38,15 @@ export function ActTrack({ run, stage, fighting }: { run: PublicRunState; stage:
           const s = first + i;
           const kind = stageKind(s, 'deck');
           const state = s < stage ? 'done' : s === stage ? (fighting ? 'current fighting' : 'current') : '';
-          // Steps already played show what was chosen on the route.
-          const taken = s < stage ? run.path?.[i] : s === stage ? (run.node ?? undefined) : undefined;
+          // Played steps show what was taken; the chosen path shows what is coming.
+          const planned = s > stage ? run.plan?.[s - stage - 1]?.kind : undefined;
+          const taken = s < stage ? run.path?.[i] : s === stage ? (run.node ?? undefined) : planned;
           const TakenIcon = taken && taken !== 'boss' && !(taken === 'elite' && kind === 'elite') ? NODE_META[taken].icon : null;
+          const junction = !taken && (i === 1 || i === 4 || i === 7) && s >= stage;
           return (
             <span
               key={s}
-              className={`pip ${kind} ${state} ${taken ? `took-${taken}` : ''}`}
+              className={`pip ${kind} ${state} ${taken ? `took-${taken}` : ''} ${planned ? 'planned' : ''} ${junction ? 'junction' : ''}`}
               title={`Étape ${s}${taken ? ` · ${NODE_META[taken].name}` : kind === 'elite' ? ` · élite${elite ? ` · ${BOSSES[elite].name} : ${BOSSES[elite].text}` : ''}` : kind === 'boss' ? ' · boss' : ''}`}
             >
               {TakenIcon ? <TakenIcon className="icon" /> : kind === 'elite' ? <EliteIcon className="icon" /> : kind === 'boss' ? <BossIcon className="icon" /> : null}

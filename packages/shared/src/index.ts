@@ -7,7 +7,7 @@ export * from './rules.js';
 export * from './bosses.js';
 export * from './families.js';
 export * from './items.js';
-export { forcedNode, isFightNode, nextEnemyKind, stepOf } from './engine/route.js';
+export { cardLines, forcedNode, isFightNode, isJunction, nextEnemyKind, stepOf } from './engine/route.js';
 export * from './protocol.js';
 export * from './engine/types.js';
 export * from './engine/rng.js';

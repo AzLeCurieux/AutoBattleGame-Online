@@ -1,3 +1,5 @@
+import { music } from './music';
+
 /** AudioManager.js from v1: small synthesized WebAudio sounds. Ctrl+M toggles. */
 type SoundName = 'hit' | 'crit' | 'heal' | 'levelUp' | 'button';
 
@@ -14,8 +16,19 @@ class AudioManager {
   volume = 0.5;
   private ctx: AudioContext | null = null;
 
+  /** Last time each sound started: the same sound never stacks on itself. */
+  private last = new Map<string, number>();
+  private gate(key: string, gapMs: number): boolean {
+    const now = performance.now();
+    if (now - (this.last.get(key) ?? -Infinity) < gapMs) return false;
+    this.last.set(key, now);
+    return true;
+  }
+
   play(name: SoundName) {
     if (!this.enabled) return;
+    // Hits and crits share a gate: at ×4 speed they would pile into noise.
+    if (!this.gate(name === 'crit' ? 'hit' : name, name === 'hit' || name === 'crit' ? 70 : 120)) return;
     try {
       this.ctx ??= new AudioContext();
     } catch {
@@ -99,7 +112,8 @@ class AudioManager {
   /** Death: a heavy hit, a falling tone, then two heartbeats and a flatline. */
   death() {
     const ctx = this.context();
-    if (!ctx) return;
+    if (!ctx || !this.gate('death', 2000)) return;
+    music.duck(2600, 0.25);
     const t = ctx.currentTime;
     this.note(ctx, 120, t, 0.7, 0.55, 'sine', 35);
     this.burst(ctx, t, 0.4, 0.3, 700, 90, 'lowpass');
@@ -112,7 +126,8 @@ class AudioManager {
   /** Booster: rattle, rip, then a small chime as the cards fan out. */
   packOpen() {
     const ctx = this.context();
-    if (!ctx) return;
+    if (!ctx || !this.gate('pack', 800)) return;
+    music.duck(1300, 0.4);
     const t = ctx.currentTime;
     for (let i = 0; i < 5; i++) this.burst(ctx, t + i * 0.09, 0.07, 0.12, 2200, 1400);
     this.burst(ctx, t + 0.55, 0.35, 0.35, 900, 6000, 'highpass');
@@ -123,7 +138,7 @@ class AudioManager {
   /** Card passing under the marker. */
   tick(pitch = 1) {
     const ctx = this.context();
-    if (!ctx) return;
+    if (!ctx || !this.gate('tick', 28)) return;
     const t = ctx.currentTime;
     this.note(ctx, 1900 * pitch, t, 0.03, 0.09, 'square');
     this.burst(ctx, t, 0.03, 0.05, 5000, 3000, 'highpass');
@@ -132,14 +147,15 @@ class AudioManager {
   /** Reels start spinning. */
   spinStart() {
     const ctx = this.context();
-    if (!ctx) return;
+    if (!ctx || !this.gate('spin', 400)) return;
     this.burst(ctx, ctx.currentTime, 0.45, 0.25, 300, 2400);
   }
 
   /** A reel stops on its card: a short cue that already hints at the rarity. */
   reelStop(tier: number) {
     const ctx = this.context();
-    if (!ctx) return;
+    // Ten reels stop in a cascade: keep each cue apart instead of a single chord of noise.
+    if (!ctx || !this.gate('reel', 90)) return;
     const t = ctx.currentTime;
     const base = [392, 440, 494, 523, 587, 659, 784][tier] ?? 392;
     this.note(ctx, base, t, 0.18 + tier * 0.04, 0.25 + tier * 0.03, tier >= 4 ? 'sawtooth' : 'triangle');
@@ -153,7 +169,8 @@ class AudioManager {
    */
   reveal(tier: number) {
     const ctx = this.context();
-    if (!ctx) return;
+    if (!ctx || !this.gate('reveal', 600)) return;
+    music.duck(900 + tier * 450, tier >= 5 ? 0.2 : 0.4);
     const t = ctx.currentTime + 0.02;
     // C major pentatonic, from C5 upwards.
     const scale = [523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66, 1318.51, 1567.98, 1760, 2093, 2349.32, 2637.02];

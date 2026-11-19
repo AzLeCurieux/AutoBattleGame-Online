@@ -31,7 +31,7 @@ export const FAMILY_SRC = -2;
 
 /** Each fusion star adds 50 % to the card's positive values (and caps). Drawbacks are not amplified. */
 export const STAR_BONUS = 0.5;
-function starred(e: CardEffect, stars: number): CardEffect {
+export function starred(e: CardEffect, stars: number): CardEffect {
   if (stars <= 1) return { ...e };
   const k = 1 + STAR_BONUS * (stars - 1);
   const out = { ...e } as CardEffect & { value?: number; max?: number; threshold?: number; healthPercent?: number };

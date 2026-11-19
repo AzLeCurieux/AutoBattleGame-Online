@@ -54,6 +54,9 @@ dans `apps/web/public/sounds/` (`main`, `shop`, `boss`, `celestial`, `arcana`) :
 for t in main shop boss celestial arcana; do curl -sL -o /tmp/$t.ogg https://raw.githubusercontent.com/Wanyatta/Balatro-Takanaka/main/assets/sounds/original/takanaka_$t.ogg && ffmpeg -v error -y -i /tmp/$t.ogg -c:a aac -b:a 160k apps/web/public/sounds/$t.m4a; done
 ```
 
+La boutique joue la version ralentie de son thème (`assets/sounds/slowed/takanaka_shop.ogg`,
+à convertir en `apps/web/public/sounds/shop_slow.m4a`).
+
 Compte de test avec les 50 cartes débloquées et 10 caisses de chaque type
 (identifiants par défaut dans `apps/server/scripts/seed-collector.ts`, refusé si
 `NODE_ENV=production`) :
@@ -92,6 +95,7 @@ Variables (validées au démarrage, voir `.env.example`) :
 | Variable | Défaut | Notes |
 |---|---|---|
 | `APP_ORIGIN` | `http://localhost:5173` | Origine publique exacte. Sert au contrôle CSRF. En `https://`, les cookies passent en `Secure` et la CSP force HTTPS. |
+| `EXTRA_ORIGINS` | — | Autres origines exactes acceptées, séparées par des virgules (ex. la même machine par son IP Tailscale et par son nom). |
 | `DATABASE_PATH` | `./data/autobattle.db` | Fichier SQLite (WAL). Monter un volume en production. |
 | `WEB_DIST` | — | Dossier du build Vite à servir (`/app/apps/web/dist` dans l'image). |
 | `TRUST_PROXY` | `false` | À activer derrière un reverse proxy, pour que le rate limit voie la vraie IP. |

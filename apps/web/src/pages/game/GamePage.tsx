@@ -10,7 +10,9 @@ import {
   runMode,
   silencedIndex,
   ITEMS,
+  isFightNode,
   nextEnemyKind,
+  type NodeKind,
   stageKind,
   type BossId,
   type EnemyInfo,
@@ -55,7 +57,7 @@ import { JokerBar } from './jokers';
 import { countProcs } from '../../common/procs';
 import { Arena } from './arena';
 import { useSoundtrack } from '../../common/MusicControl';
-import { ItemsPanel, NODE_META, RouteChoice } from './route';
+import { ItemsPanel, NodeArrival, PATH_META, RouteChoice } from './route';
 import { music } from '../../common/music';
 import { PackView, PACK_META, PerksPanel, PERK_META, ShopView } from './shop';
 import {
@@ -82,6 +84,20 @@ type Speed = '1' | '2' | '4';
 const MAX_HISTORY = 150;
 const pad = (n: number) => String(n).padStart(2, '0');
 const fmt = (n: number) => n.toLocaleString('fr-FR');
+const readPref = (key: string): string | null => {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+};
+const writePref = (key: string, value: string) => {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    /* private mode */
+  }
+};
 const readSpeed = (): Speed => {
   try {
     const v = localStorage.getItem('ab:speed');
@@ -110,6 +126,12 @@ export function GamePage({ initialUser, shader }: { initialUser: PublicUser; sha
   const [unlockedPalier, setUnlockedPalier] = useState<number | null>(null);
   const [bests, setBests] = useState<Record<GameMode, number>>({ deck: initialUser.bestLevel, classic: 0 });
 
+  /** Step being entered (camp, treasure…): its arrival scene plays before the window opens. */
+  const [arrival, setArrival] = useState<NodeKind | null>(null);
+  /** "Enchaîner": the next fight of a path starts on its own. */
+  const [chain, setChain] = useState(() => readPref('autobattle.chain') !== 'off');
+  const chainRef = useRef(chain);
+  chainRef.current = chain;
   const arenaRef = useRef<Arena | null>(null);
   const runRef = useRef(run);
   runRef.current = run;
@@ -338,6 +360,34 @@ export function GamePage({ initialUser, shader }: { initialUser: PublicUser; sha
     });
   }, [act, log, onDefeat, onVictory, shader, tintForLevel]);
 
+  /**
+   * After a choice: opens what the new state needs. A camp, treasure, event or
+   * shop on the path plays its arrival scene first; a fight on the path starts
+   * on its own when "Enchaîner" is on.
+   */
+  const fightRef = useRef<() => void>(() => {});
+  fightRef.current = () => void fight();
+  const enterPhase = useCallback((state: PublicRunState) => {
+    const next: ModalName = state.phase === 'upgrade' ? 'upgrade' : state.phase === 'shop' ? 'shop' : state.phase === 'pack' ? 'pack' : null;
+    const node = state.node ?? null;
+    const scene = next && node && !isFightNode(node) && (next === 'upgrade' || node === 'shop');
+    if (scene) {
+      setModal(null);
+      setArrival(node);
+      audio.play(node === 'treasure' ? 'levelUp' : 'heal');
+      setTimeout(() => {
+        setArrival(null);
+        setModal(next);
+      }, 1100);
+      return;
+    }
+    setModal(next);
+    if (!next && state.phase === 'ready' && !state.route && isFightNode(node) && chainRef.current) {
+      setTimeout(() => fightRef.current(), 650);
+    }
+  }, []);
+
+
   const pause = useCallback(() => {
     const arena = arenaRef.current;
     if (!arena?.isFighting) return;
@@ -397,12 +447,12 @@ export function GamePage({ initialUser, shader }: { initialUser: PublicUser; sha
       setRun(res.state);
       setShownLevel(res.state.level);
       paintPlayer(res.state);
-      setModal(res.state.phase === 'shop' ? 'shop' : null);
+      enterPhase(res.state);
       if (res.state.phase === 'shop' && res.state.shop && res.state.shop.interest > 0) {
         log('gold', `Intérêts · +${res.state.shop.interest} or`);
       }
     },
-    [act, log, paintPlayer],
+    [act, enterPhase, log, paintPlayer],
   );
 
   const buy = useCallback(
@@ -511,28 +561,27 @@ export function GamePage({ initialUser, shader }: { initialUser: PublicUser; sha
 
   const leaveShop = useCallback(async () => {
     const res = await act({ type: 'shopLeave' });
-    if (res) {
-      setRun(res.state);
-      setShownLevel(res.state.level);
-    }
-    setModal(null);
-  }, [act]);
+    if (!res) return setModal(null);
+    setRun(res.state);
+    setShownLevel(res.state.level);
+    paintPlayer(res.state);
+    enterPhase(res.state);
+  }, [act, enterPhase, paintPlayer]);
 
   /** Route: pick the next step of the act. */
   const chooseNode = useCallback(
     async (index: number) => {
-      const node = runRef.current?.route?.[index];
-      if (!node) return;
+      const path = runRef.current?.route?.[index];
+      if (!path) return;
       const res = await act({ type: 'chooseNode', index });
       if (!res) return;
       setRun(res.state);
       setShownLevel(res.state.level);
       paintPlayer(res.state);
-      log('level', `Étape · ${NODE_META[node.kind].name}${node.kind === 'skip' && node.item ? ` · ${ITEMS[node.item].name}` : ''}`);
-      if (res.state.phase === 'upgrade') setModal('upgrade');
-      else if (res.state.phase === 'shop') setModal('shop');
+      log('level', `Chemin · ${PATH_META[path.theme].name}`);
+      enterPhase(res.state);
     },
-    [act, log, paintPlayer],
+    [act, enterPhase, log, paintPlayer],
   );
 
   const applyItem = useCallback(
@@ -704,6 +753,19 @@ export function GamePage({ initialUser, shader }: { initialUser: PublicUser; sha
                 <FastForward className="icon" /> Vitesse
               </span>
               <Tabs value={speed} onChange={changeSpeed} options={[['1', '×1'], ['2', '×2'], ['4', '×4']] as const} />
+              {mode === 'deck' && (
+                <label className="switch chain-switch" title="Sur un chemin, le combat suivant se lance tout seul après ton choix d’amélioration.">
+                  <input
+                    type="checkbox"
+                    checked={chain}
+                    onChange={(e) => {
+                      setChain(e.target.checked);
+                      writePref('autobattle.chain', e.target.checked ? 'on' : 'off');
+                    }}
+                  />
+                  Enchaîner
+                </label>
+              )}
             </div>
 
             {run && mode === 'deck' && <ActTrack run={run} stage={shownStage} fighting={inFight} />}
@@ -739,7 +801,8 @@ export function GamePage({ initialUser, shader }: { initialUser: PublicUser; sha
                 </div>
               </div>
               <div className="fx" ref={el.fx} />
-              {routePending && run && <RouteChoice run={run} busy={busy} onChoose={(i) => void chooseNode(i)} />}
+              {routePending && run && !arrival && <RouteChoice run={run} busy={busy} onChoose={(i) => void chooseNode(i)} />}
+              <NodeArrival kind={arrival} />
               {bossInfo && inFight && !paused && (
                 <div className="arena-status">
                   <span className="badge badge-boss">

@@ -1,5 +1,5 @@
-import { deckLimit, type DeckCard, type PublicRunState } from '@autobattle/shared';
-import { Layers, Star, VolumeX } from 'lucide-react';
+import { cardLines, deckLimit, type DeckCard, type PublicRunState } from '@autobattle/shared';
+import { Layers, VolumeX } from 'lucide-react';
 import { forwardRef, memo } from 'react';
 import { CARD_COLORS, cardMeta } from '../../common/catalog';
 import { useCardHover } from '../../ui/CardHover';
@@ -9,7 +9,23 @@ import { FamilyChips } from './route';
 /** One card: just its art. Effects are in the hover tooltip; triggers are animated by the Arena. */
 const JokerTile = memo(function JokerTile({ entry, slot, silenced }: { entry: DeckCard; slot: number; silenced: boolean }) {
   const card = cardMeta(entry.cardId)!;
-  const hover = useCardHover(entry.cardId, entry.modifier);
+  const level = entry.stars ?? 1;
+  const hover = useCardHover(
+    entry.cardId,
+    entry.modifier,
+    level > 1
+      ? () => (
+          <div className="hover-extra">
+            <strong>Niveau {level}</strong> · effets +{(level - 1) * 50} %
+            <ul>
+              {cardLines(entry.cardId, level).map((l, i) => (
+                <li key={i}>{l}</li>
+              ))}
+            </ul>
+          </div>
+        )
+      : undefined,
+  );
   return (
     <div
       {...hover}
@@ -23,13 +39,7 @@ const JokerTile = memo(function JokerTile({ entry, slot, silenced }: { entry: De
       <img src={`/img/cartes/${card.image}`} alt="" draggable={false} />
       <span className="card-sheen" aria-hidden />
       {entry.modifier && <span className="joker-mod" />}
-      {(entry.stars ?? 1) > 1 && (
-        <span className="joker-stars" aria-label={`${entry.stars} étoiles`}>
-          {Array.from({ length: entry.stars! }, (_, i) => (
-            <Star key={i} className="icon" />
-          ))}
-        </span>
-      )}
+      {level > 1 && <span className="joker-level">Niv. {level}</span>}
       {silenced && (
         <span className="joker-muted" title="Désactivée par Le Muet pendant ce combat">
           <VolumeX className="icon" />

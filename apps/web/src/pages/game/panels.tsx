@@ -3,6 +3,7 @@ import {
   deckLimit,
   healCost,
   ITEMS,
+  cardLines,
   PASSIVE_RULES,
   passivePower,
   runMode,
@@ -143,6 +144,12 @@ export function upgradeInfo(offer: UpgradeOffer, mode: GameMode = 'deck'): { tit
       return { title: 'Atelier', value: `${offer.price} or`, text: 'Une carte du deck sans édition en reçoit une au hasard.', icon: Wand2, color: '#38bdf8' };
     case 'leave':
       return { title: 'Passer son chemin', text: 'Ne rien faire.', icon: DoorOpen, color: '#94a3b8' };
+    case 'cardLevel': {
+      const before = cardLines(offer.cardId, offer.level - 1);
+      const after = cardLines(offer.cardId, offer.level);
+      const diff = after.map((line, i) => (line === before[i] ? line : `${before[i]} → ${line}`)).join(' · ');
+      return { title: `Améliorer ${cardMeta(offer.cardId)?.name ?? 'une carte'}`, value: `Niv. ${offer.level}`, text: diff, icon: ArrowUpCircle, color: '#fbbf24' };
+    }
   }
 }
 

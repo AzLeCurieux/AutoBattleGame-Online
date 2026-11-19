@@ -11,11 +11,11 @@ export interface DeckCard {
   modifier: ModifierId | null;
   /** Price paid, used to compute the sell-back value. */
   price: number;
-  /** Fusion level: buying the same card again raises it (1 to 3, missing = 1). */
+  /** Card level, raised at the camp (1 to 3, missing = 1). Each level adds 50 % to its effects. */
   stars?: number;
 }
 
-/** Steps of an act's route. The player picks among 2-3 of them at each step. */
+/** Steps of an act's route. Three times per act the player picks a path of 2-3 steps. */
 export const NODE_KINDS = ['fight', 'elite', 'camp', 'event', 'treasure', 'shop', 'boss', 'skip'] as const;
 export type NodeKind = (typeof NODE_KINDS)[number];
 
@@ -23,6 +23,15 @@ export interface RouteNode {
   kind: NodeKind;
   /** Item granted by this node (skipping the elite), shown before choosing. */
   item?: ItemId;
+}
+
+/** Themed paths offered at each junction of the act. */
+export const PATH_THEMES = ['battle', 'calm', 'mystery', 'market', 'challenge', 'bypass'] as const;
+export type PathTheme = (typeof PATH_THEMES)[number];
+
+export interface RoutePath {
+  theme: PathTheme;
+  steps: RouteNode[];
 }
 
 /** One-use items: bought in the shop, found in treasures, or earned by skipping the elite. */
@@ -58,7 +67,9 @@ export type UpgradeOffer =
   /** Event "Atelier": pay gold, a random card of the deck gets an edition. */
   | { kind: 'edition'; price: number }
   /** Event: walk away. */
-  | { kind: 'leave' };
+  | { kind: 'leave' }
+  /** Camp: raise a deck card to the next level (`index` in the deck). */
+  | { kind: 'cardLevel'; index: number; cardId: string; level: number };
 
 /**
  * Boss passives. The first three are plain bonuses; the others are pacts: a
@@ -153,8 +164,12 @@ export interface RunState {
   won: boolean;
   /** Act in which the boss was last swapped (once per act). */
   bossRerollAct: number;
-  /** Deck mode: choices for the next step of the route (null once chosen, or when forced). */
-  route?: RouteNode[] | null;
+  /** Deck mode: paths offered at a junction (null between junctions). */
+  route?: RoutePath[] | null;
+  /** Steps left on the chosen path; they start on their own. */
+  plan?: RouteNode[];
+  /** Item attached to the step being played (treasure, skipped elite). */
+  nodeItem?: ItemId | null;
   /** Deck mode: the step being played (fight, elite, camp…), null between steps. */
   node?: NodeKind | null;
   /** Steps taken in the current act, in order (for the act track). */

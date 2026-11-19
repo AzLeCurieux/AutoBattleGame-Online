@@ -1,59 +1,64 @@
 import { RULES, actOf, stageKind, type EnemyKind } from '../rules.js';
+import { getCard } from '../cards.js';
+import { describeEffect } from '../effects.js';
 import type { Rng } from './rng.js';
-import type { ItemId, NodeKind, RouteNode, RunState, UpgradeOffer } from './types.js';
+import { starred } from './stats.js';
+import type { ItemId, NodeKind, PathTheme, RouteNode, RoutePath, RunState, UpgradeOffer } from './types.js';
 import { ITEM_IDS } from './types.js';
 
 /**
  * Route of an act (deck mode). An act is still 10 steps (the "level" counts
- * steps), but most of them are chosen among 2-3 options:
- * - step 1: a fight (warm-up);
- * - step 5: the elite, or skip it for an item;
- * - step 10: the boss;
- * - the others: fight, elite, camp, event, treasure or (once per act) a shop.
- * Fights give the level-up pick and gold; the other steps trade that for HP,
- * items, gold or a gamble.
+ * steps). Step 1 is a fight and step 10 the boss; three times per act — before
+ * steps 2, 5 and 8 — the player picks a themed path for the next 3, 3 and 2
+ * steps, which then play on their own. Few interruptions, real choices.
  */
 
 /** Position of the next step inside its act, 1..10. */
 export const stepOf = (level: number) => (level % RULES.acts.length) + 1;
 
-const WEIGHTS: [NodeKind, number][] = [
-  ['fight', 30],
-  ['elite', 12],
-  ['camp', 18],
-  ['event', 20],
-  ['treasure', 12],
-  ['shop', 8],
-];
+/** Junctions: step where a path starts → how many steps the path covers. */
+const JUNCTIONS: Record<number, number> = { 2: 3, 5: 3, 8: 2 };
 
-/** Options offered for the next step, or null when it is forced (first step, boss). */
-export function rollRoute(state: RunState, rng: Rng): RouteNode[] | null {
+export const isJunction = (level: number) => stepOf(level) in JUNCTIONS;
+
+const THEMES: Record<Exclude<PathTheme, 'challenge' | 'bypass'>, NodeKind[]> = {
+  battle: ['fight', 'fight', 'fight'],
+  calm: ['fight', 'camp', 'treasure'],
+  mystery: ['event', 'fight', 'event'],
+  market: ['fight', 'shop', 'treasure'],
+};
+
+/** Paths for the junction at the next step, or null when the next step is not a junction. */
+export function rollRoute(state: RunState, rng: Rng): RoutePath[] | null {
   const step = stepOf(state.level);
-  if (step === 1 || step === RULES.acts.length) return null;
-  if (step === RULES.acts.eliteAt) return [{ kind: 'elite' }, { kind: 'skip', item: rng.pick(ITEM_IDS) }];
-  const taken = state.path ?? [];
-  const shopTaken = taken.includes('shop');
-  // At least one fight among the options, so a player can always level up.
-  const options: RouteNode[] = [{ kind: 'fight' }];
-  const count = rng.chance(35) ? 3 : 2;
-  while (options.length < count) {
-    const pool = WEIGHTS.filter(([k]) => !options.some((o) => o.kind === k) && !(k === 'shop' && (shopTaken || step < 3)));
-    const kind = weighted(rng, pool);
-    options.push(kind === 'treasure' ? { kind, item: rng.pick(ITEM_IDS) } : { kind });
+  const length = JUNCTIONS[step];
+  if (!length) return null;
+  const shopTaken = (state.path ?? []).includes('shop');
+  const node = (kind: NodeKind): RouteNode => (kind === 'treasure' || kind === 'skip' ? { kind, item: rng.pick(ITEM_IDS) } : { kind });
+  const path = (theme: PathTheme, kinds: NodeKind[]): RoutePath => ({ theme, steps: kinds.slice(0, length).map(node) });
+
+  if (step === RULES.acts.eliteAt) {
+    // The elite junction: face it, or go around it for an item.
+    const tails: NodeKind[][] = [
+      ['fight', 'camp'],
+      ['event', 'fight'],
+      ['fight', 'treasure'],
+    ];
+    const [a, b] = rng.sample(tails, 2);
+    return [path('challenge', ['elite', ...a!]), path('bypass', ['skip', ...b!])];
   }
-  return rng.sample(options, options.length);
+
+  const pool = (Object.keys(THEMES) as (keyof typeof THEMES)[]).filter((t) => !(t === 'market' && shopTaken));
+  const themes = rng.sample(pool, rng.chance(40) ? 3 : 2);
+  // Last junction before the boss: two steps, the second one leans towards rest.
+  return themes.map((t) => path(t, length === 2 ? lastLeg(t) : THEMES[t]));
 }
 
-function weighted(rng: Rng, pool: [NodeKind, number][]): NodeKind {
-  let roll = rng.next() * pool.reduce((a, [, w]) => a + w, 0);
-  for (const [k, w] of pool) {
-    roll -= w;
-    if (roll < 0) return k;
-  }
-  return pool[pool.length - 1]![0];
+function lastLeg(theme: keyof typeof THEMES): NodeKind[] {
+  return { battle: ['fight', 'fight'], calm: ['treasure', 'camp'], mystery: ['event', 'camp'], market: ['shop', 'camp'] }[theme] as NodeKind[];
 }
 
-/** Forced node of the next step (when there is no choice). */
+/** Forced node of the next step: first fight, boss, or a plain fight when nothing is planned (old saves). */
 export function forcedNode(level: number): NodeKind | null {
   const step = stepOf(level);
   return step === 1 ? 'fight' : step === RULES.acts.length ? 'boss' : null;
@@ -69,16 +74,28 @@ export function nextEnemyKind(state: Pick<RunState, 'level' | 'mode' | 'node'>):
   return stageKind(state.level + 1, mode);
 }
 
+/** Text of a card at a level, effect by effect (for the camp's "before → after"). */
+export function cardLines(cardId: string, level: number): string[] {
+  const card = getCard(cardId);
+  return card ? card.effects.map((e) => describeEffect(starred(e, level))) : [];
+}
+
 /** What a non-fight step offers (shown like the level-up choice). */
-export function nodeOffers(state: RunState, node: NodeKind, rng: Rng, item?: ItemId): UpgradeOffer[] {
+export function nodeOffers(state: RunState, node: NodeKind, rng: Rng, item?: ItemId | null): UpgradeOffer[] {
   const act = actOf(state.level + 1);
   switch (node) {
-    case 'camp':
-      return [
-        { kind: 'heal', percent: 45 },
+    case 'camp': {
+      // Rest, train, or raise one of the deck's cards to the next level.
+      const offers: UpgradeOffer[] = [{ kind: 'heal', percent: 45 }];
+      const levels = state.deck.map((d, index) => ({ d, index })).filter(({ d }) => (d.stars ?? 1) < 3);
+      for (const { d, index } of rng.sample(levels, 2)) offers.push({ kind: 'cardLevel', index, cardId: d.cardId, level: (d.stars ?? 1) + 1 });
+      const stats: UpgradeOffer[] = [
         { kind: 'damage', value: rng.int(30, 50) + act * 10 },
         { kind: 'maxHp', value: rng.int(90, 140) + act * 25 },
       ];
+      offers.push(...rng.sample(stats, offers.length >= 3 ? 1 : 2));
+      return offers;
+    }
     case 'treasure':
       return [
         { kind: 'gold', value: 6 + act * 2 },

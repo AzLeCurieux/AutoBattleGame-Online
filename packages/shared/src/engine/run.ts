@@ -5,7 +5,7 @@ import type { RunAction } from '../protocol.js';
 import { ITEMS, MAX_ITEMS } from '../items.js';
 import { RULES, isLootLevel, maxCasesForLevel } from '../rules.js';
 import { simulateFight } from './combat.js';
-import { forcedNode, isFightNode, nodeOffers, rollRoute, stepOf } from './route.js';
+import { forcedNode, isFightNode, isJunction, nodeOffers, rollRoute, stepOf } from './route.js';
 import { Rng } from './rng.js';
 import { bossRerollPrice, forgePrice, healCost, nextBossAct, normalizeRun, openPack, openShop, rerollCards } from './shop.js';
 import { computeStats, deckEffects, deckLimit, ofKind, passivePower, srcOf, sumEffect } from './stats.js';
@@ -22,6 +22,7 @@ import type {
   GameMode,
   PublicRunState,
   RunState,
+  RouteNode,
   UpgradeOffer,
 } from './types.js';
 
@@ -77,6 +78,8 @@ export function createRun(seed: number, now: number, mode: GameMode = 'deck', pa
     won: false,
     bossRerollAct: 0,
     route: null,
+    plan: [],
+    nodeItem: null,
     node: mode === 'deck' ? 'fight' : null,
     path: [],
     items: [],
@@ -88,15 +91,59 @@ export function createRun(seed: number, now: number, mode: GameMode = 'deck', pa
 }
 
 /**
- * Deck mode: sets up the next step of the route — forced (first fight, boss)
- * or a choice among 2-3 options. Called whenever the run is back to 'ready'.
+ * Deck mode: sets up the next step — forced (first fight, boss), a junction
+ * (choose a path), or the next step of the chosen path, which starts on its
+ * own. Called whenever the run is back to 'ready'.
  */
-function prepareStep(state: RunState, rng: Rng) {
+function prepareStep(state: RunState, rng: Rng, ctx: ActionContext) {
   if (runMode(state) !== 'deck') return;
-  if (stepOf(state.level) === 1) state.path = [];
+  if (stepOf(state.level) === 1) {
+    state.path = [];
+    state.plan = [];
+  }
+  state.route = null;
   const forced = forcedNode(state.level);
-  state.node = forced;
-  state.route = forced ? null : rollRoute(state, rng);
+  if (forced) {
+    state.node = forced;
+    return;
+  }
+  if (isJunction(state.level)) {
+    state.node = null;
+    state.plan = [];
+    state.route = rollRoute(state, rng);
+    return;
+  }
+  const next = state.plan?.[0];
+  state.plan = (state.plan ?? []).slice(1);
+  startNode(state, next ?? { kind: 'fight' }, rng, ctx);
+}
+
+/** Enters a step: fights wait for "Combattre", the others open their choice right away. */
+function startNode(state: RunState, node: RouteNode, rng: Rng, ctx: ActionContext) {
+  state.node = node.kind;
+  state.nodeItem = node.item ?? null;
+  switch (node.kind) {
+    case 'camp':
+    case 'treasure':
+    case 'event':
+      state.offer = nodeOffers(state, node.kind, rng, node.item);
+      state.phase = 'upgrade';
+      break;
+    case 'shop':
+      state.shop = openShop(rng, state, ctx.ownedCardIds);
+      state.phase = 'shop';
+      break;
+    case 'skip':
+      // Going around the elite: no fight, no level-up pick, but an item and a little gold.
+      if (!node.item || !giveItem(state, node.item)) state.gold += 4;
+      state.gold += 3;
+      earnGold(state, 3);
+      finishStep(state);
+      prepareStep(state, rng, ctx);
+      break;
+    default:
+      break; // fights: the player presses "Combattre"
+  }
 }
 
 /** A non-fight step is over: it counts as one step of the act. */
@@ -170,33 +217,11 @@ export function applyAction(input: RunState, action: RunAction, ctx: ActionConte
 
     case 'chooseNode': {
       requirePhase(state, 'ready');
-      const route = state.route ?? fail('NO_ROUTE', 'Aucun choix d’étape en attente');
-      const node = route[action.index] ?? fail('BAD_INDEX', 'Étape inconnue');
+      const route = state.route ?? fail('NO_ROUTE', 'Aucun chemin à choisir');
+      const path = route[action.index] ?? fail('BAD_INDEX', 'Chemin inconnu');
       state.route = null;
-      state.node = node.kind;
-      switch (node.kind) {
-        case 'camp':
-        case 'treasure':
-        case 'event':
-          state.offer = nodeOffers(state, node.kind, rng, node.item);
-          state.phase = 'upgrade';
-          break;
-        case 'shop':
-          state.shop = openShop(rng, state, ctx.ownedCardIds);
-          state.phase = 'shop';
-          break;
-        case 'skip': {
-          // Skipping the elite: no fight, no level-up pick, but an item and a little gold.
-          if (!node.item || !giveItem(state, node.item)) state.gold += 4;
-          state.gold += 3;
-          earnGold(state, 3);
-          finishStep(state);
-          prepareStep(state, rng);
-          break;
-        }
-        default:
-          break; // fights: the player now presses "Combattre"
-      }
+      state.plan = path.steps.slice(1);
+      startNode(state, path.steps[0]!, rng, ctx);
       return done();
     }
 
@@ -212,7 +237,7 @@ export function applyAction(input: RunState, action: RunAction, ctx: ActionConte
         state.phase = 'shop';
       } else {
         state.phase = 'ready';
-        prepareStep(state, rng);
+        prepareStep(state, rng, ctx);
       }
       return done();
     }
@@ -357,7 +382,7 @@ export function applyAction(input: RunState, action: RunAction, ctx: ActionConte
       state.shop = null;
       state.phase = 'ready';
       if (state.node === 'shop') finishStep(state);
-      prepareStep(state, rng);
+      prepareStep(state, rng, ctx);
       return done();
     }
   }
@@ -372,20 +397,11 @@ export function sellValue(entry: DeckCard): number {
   return Math.max(1, Math.floor(entry.price * RULES.sellBackRate));
 }
 
-/** Fusion: the same card bought again gains a star (up to MAX_STARS) instead of a slot. */
+/** Highest card level (raised at the camp). */
 export const MAX_STARS = 3;
 
 function addToDeck(state: RunState, entry: DeckCard) {
-  const owned = state.deck.findIndex((c) => c.cardId === entry.cardId);
-  if (owned >= 0) {
-    const card = state.deck[owned]!;
-    if ((card.stars ?? 1) >= MAX_STARS) fail('MAX_STARS', `Cette carte est déjà au maximum (${MAX_STARS} étoiles)`);
-    const deck = state.deck.map((c, i) =>
-      i === owned ? { ...c, stars: (c.stars ?? 1) + 1, price: c.price + entry.price, modifier: c.modifier ?? entry.modifier } : c,
-    );
-    changeDeck(state, deck);
-    return;
-  }
+  if (state.deck.some((c) => c.cardId === entry.cardId)) fail('DUPLICATE', 'Cette carte est déjà dans le deck');
   const next = [...state.deck, entry];
   if (next.length > deckLimit(next, state.perks)) fail('DECK_FULL', 'Deck complet : vends une carte d’abord');
   changeDeck(state, next);
@@ -538,7 +554,7 @@ function useItem(state: RunState, item: ItemId, rng: Rng) {
       if (!addEdition(state, rng)) fail('NO_TARGET', 'Toutes les cartes du deck ont déjà une édition');
       break;
     case 'compass':
-      if (state.phase !== 'ready' || !state.route) fail('NO_ROUTE', 'Utilisable quand tu choisis ta prochaine étape');
+      if (state.phase !== 'ready' || !state.route) fail('NO_ROUTE', 'Utilisable quand tu choisis ton prochain chemin');
       state.route = rollRoute(state, rng);
       break;
   }
@@ -600,6 +616,12 @@ function applyUpgrade(state: RunState, offer: UpgradeOffer, rng?: Rng) {
       break;
     case 'leave':
       break;
+    case 'cardLevel': {
+      const card = state.deck[offer.index];
+      if (!card || card.cardId !== offer.cardId) fail('BAD_INDEX', 'Carte introuvable dans le deck');
+      changeDeck(state, state.deck.map((c, i) => (i === offer.index ? { ...c, stars: Math.min(MAX_STARS, (c.stars ?? 1) + 1) } : c)));
+      break;
+    }
   }
 }
 

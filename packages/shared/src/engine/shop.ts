@@ -112,13 +112,10 @@ function rollModifier(rng: Rng, guaranteed = false): ModifierId | null {
   return null;
 }
 
-/**
- * Cards that can show up: the player's collection. Cards already in the deck
- * can come back (buying one fuses it), except those already at max stars.
- */
+/** Cards that can show up: the player's collection, minus what is already in the deck. */
 function cardPool(state: RunState, ownedCardIds: readonly string[], exclude: readonly string[]): Card[] {
   const owned = new Set(ownedCardIds);
-  const banned = new Set([...state.deck.filter((d) => (d.stars ?? 1) >= 3).map((d) => d.cardId), ...exclude]);
+  const banned = new Set([...state.deck.map((d) => d.cardId), ...exclude]);
   let pool = CARDS.filter((c) => owned.has(c.id) && !banned.has(c.id));
   // New players have (almost) no collection: top the pool up with common cards.
   if (pool.length < 6) pool = [...pool, ...CARDS.filter((c) => c.rarity === 'consumer' && !owned.has(c.id) && !banned.has(c.id))];
@@ -230,6 +227,13 @@ export function normalizeRun<T extends RunState | Omit<RunState, 'rng'>>(state: 
   s.buffs ??= {};
   s.path ??= [];
   s.route ??= null;
+  s.plan ??= [];
+  s.nodeItem ??= null;
+  // Routes saved before paths existed (a list of single steps): fall back to a fight.
+  if (s.route && s.route.some((p) => !('steps' in p))) {
+    s.route = null;
+    s.node = 'fight';
+  }
   // Runs saved before the route existed: the pending step is a plain fight.
   if (s.node === undefined) s.node = (s.mode ?? 'deck') === 'deck' && s.phase === 'ready' ? (forcedNode(s.level) ?? 'fight') : null;
   s.won ??= (s.mode ?? 'deck') === 'deck' && s.level >= RULES.acts.winAct * RULES.acts.length;

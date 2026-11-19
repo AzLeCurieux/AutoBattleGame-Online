@@ -24,11 +24,20 @@ import {
 
 const ctx = { ownedCardIds: [] as string[], newSeed: 42, now: 0 };
 
-/** Deck mode: when the route offers a choice, take the fight (or the elite). */
+/**
+ * Deck mode: gets to the next fight — at a junction take the path that starts
+ * with a fight, play through camps / treasures / events / shops on the way.
+ */
 function takeFight(s: RunState): RunState {
-  if (!s.route) return s;
-  const i = s.route.findIndex((n) => n.kind === 'fight' || n.kind === 'elite');
-  return applyAction(s, { type: 'chooseNode', index: i }, ctx).state;
+  for (let i = 0; i < 10; i++) {
+    if (s.route) {
+      const k = s.route.findIndex((p) => ['fight', 'elite'].includes(p.steps[0]!.kind));
+      s = applyAction(s, { type: 'chooseNode', index: Math.max(0, k) }, ctx).state;
+    } else if (s.phase === 'upgrade') s = applyAction(s, { type: 'chooseUpgrade', index: s.offer!.findIndex((o) => o.kind !== 'edition') }, ctx).state;
+    else if (s.phase === 'shop' && s.node === 'shop') s = applyAction(s, { type: 'shopLeave' }, ctx).state;
+    else return s;
+  }
+  return s;
 }
 
 function play(state: RunState, actions: RunAction[]) {
@@ -124,7 +133,8 @@ describe('run engine', () => {
       const r = applyAction(s, { type: 'fight' }, ctx);
       if (r.fight?.reward?.cases.length) sawCases = true;
       s = applyAction(r.state, { type: 'chooseUpgrade', index: 0 }, ctx).state;
-      if (s.level === 5) expect(s.phase).toBe('ready'); // no shop after the elite any more
+      if (s.level === 5) expect(s.phase).not.toBe('shop'); // no boss shop after the elite
+      if (s.level >= 10) break;
     }
     expect(sawCases).toBe(true);
     expect(s.level).toBe(10);
@@ -442,50 +452,69 @@ describe('route, items, fusion, team bonuses (deck mode)', () => {
   const owned = { ...ctx, ownedCardIds: CARDS.map((c) => c.id) };
   const strong = (s: RunState): RunState => ({ ...s, hp: 99999, base: { ...s.base, maxHp: 99999, damage: 100000 } });
 
-  it('starts each act with a forced fight, then offers 2-3 steps with at least one fight', () => {
+  it('starts each act with a fight, then offers 2-3 themed paths at steps 2, 5 and 8', () => {
     let s = createRun(5, 0);
     expect(s.node).toBe('fight');
-    expect(() => applyAction({ ...s, node: null, route: [{ kind: 'camp' }] }, { type: 'fight' }, ctx)).toThrow(/prochaine étape/);
+    expect(() => applyAction({ ...s, node: null, route: [{ theme: 'calm', steps: [{ kind: 'camp' }] }] }, { type: 'fight' }, ctx)).toThrow(/prochaine étape/);
     s = applyAction(strong(s), { type: 'fight' }, ctx).state;
     s = applyAction(s, { type: 'chooseUpgrade', index: 0 }, ctx).state;
     expect(s.node).toBeNull();
     expect(s.route!.length).toBeGreaterThanOrEqual(2);
-    expect(s.route!.some((n) => n.kind === 'fight')).toBe(true);
+    expect(s.route!.every((p) => p.steps.length === 3)).toBe(true);
     expect(s.path).toEqual(['fight']);
   });
 
-  it('plays a camp, a treasure and an event as one step each, without a fight', () => {
-    const base = { ...createRun(6, 0), level: 2, node: null, gold: 50 };
+  it('plays the chosen path on its own: non-fight steps open right away, one step each', () => {
+    const deck = [{ cardId: 'iut', modifier: null, price: 4 }];
+    let s: RunState = { ...strong(createRun(6, 0)), level: 1, node: null, gold: 50, deck };
+    s = { ...s, route: [{ theme: 'calm', steps: [{ kind: 'camp' }, { kind: 'treasure', item: 'potion' }, { kind: 'event' }] }] };
+    s = applyAction(s, { type: 'chooseNode', index: 0 }, ctx).state;
     for (const kind of ['camp', 'treasure', 'event'] as const) {
-      let s: RunState = { ...base, route: [{ kind }, { kind: 'fight' }], deck: [{ cardId: 'iut', modifier: null, price: 4 }] };
-      s = applyAction(s, { type: 'chooseNode', index: 0 }, ctx).state;
+      expect(s.node).toBe(kind);
       expect(s.phase).toBe('upgrade');
-      expect(s.offer!.length).toBeGreaterThanOrEqual(2);
-      s = applyAction(s, { type: 'chooseUpgrade', index: 0 }, ctx).state;
-      expect(s.level).toBe(3);
-      expect(s.stats.kills).toBe(0);
-      expect(s.phase).toBe('ready');
-      expect(s.path!.at(-1)).toBe(kind);
+      s = applyAction(s, { type: 'chooseUpgrade', index: s.offer!.findIndex((o) => o.kind !== 'edition') }, ctx).state;
     }
+    expect(s.level).toBe(4);
+    expect(s.stats.kills).toBe(0);
+    expect(s.path).toEqual(['camp', 'treasure', 'event']);
+    // Step 5 is a junction again: the elite or the way around it.
+    expect(s.route!.map((p) => p.steps[0]!.kind).sort()).toEqual(['elite', 'skip']);
   });
 
-  it('opens a shop mid-act, and leaving it moves to the next step', () => {
-    let s: RunState = { ...createRun(7, 0), level: 6, node: null, route: [{ kind: 'shop' }, { kind: 'fight' }], gold: 30 };
+  it('opens a shop on the path, and leaving it moves on', () => {
+    let s: RunState = { ...createRun(7, 0), level: 1, node: null, gold: 30, route: [{ theme: 'market', steps: [{ kind: 'shop' }, { kind: 'fight' }, { kind: 'fight' }] }] };
     s = applyAction(s, { type: 'chooseNode', index: 0 }, owned).state;
     expect(s.phase).toBe('shop');
     expect(s.shop!.interest).toBe(0);
     s = applyAction(s, { type: 'shopLeave' }, owned).state;
-    expect(s.level).toBe(7);
+    expect(s.level).toBe(2);
     expect(s.phase).toBe('ready');
+    expect(s.node).toBe('fight');
   });
 
-  it('lets the player skip the elite for an item and a little gold', () => {
+  it('lets the player go around the elite for an item and a little gold', () => {
     let s = { ...createRun(8, 0), level: 4, node: null };
-    s = { ...s, route: [{ kind: 'elite' as const }, { kind: 'skip' as const, item: 'potion' as const }] };
+    s = { ...s, route: [{ theme: 'challenge' as const, steps: [{ kind: 'elite' as const }] }, { theme: 'bypass' as const, steps: [{ kind: 'skip' as const, item: 'potion' as const }, { kind: 'fight' as const }] }] };
     s = applyAction(s, { type: 'chooseNode', index: 1 }, ctx).state;
     expect(s.items).toEqual(['potion']);
     expect(s.gold).toBe(3);
     expect(s.level).toBe(5);
+    expect(s.node).toBe('fight');
+  });
+
+  it('raises a deck card to the next level at the camp, with stronger effects', () => {
+    const deck = [{ cardId: 'gagou_fornite', modifier: null, price: 4 }];
+    let s: RunState = { ...createRun(10, 0), level: 1, node: null, deck, route: [{ theme: 'calm', steps: [{ kind: 'camp' }] }] };
+    s = applyAction(s, { type: 'chooseNode', index: 0 }, ctx).state;
+    const i = s.offer!.findIndex((o) => o.kind === 'cardLevel');
+    expect(s.offer![i]).toMatchObject({ kind: 'cardLevel', cardId: 'gagou_fornite', level: 2 });
+    s = applyAction(s, { type: 'chooseUpgrade', index: i }, ctx).state;
+    expect(s.deck[0]!.stars).toBe(2);
+    // +10 % damage card, +50 % at level 2: +15 %.
+    expect(deckEffects(s.deck)[0]).toMatchObject({ kind: 'percentDamage', value: 15 });
+    // Buying a card already in the deck is refused (no more fusion by duplicates).
+    const shop = { ...s, phase: 'shop' as const, gold: 50, shop: { cards: [{ cardId: 'gagou_fornite', modifier: null, price: 4, sold: false }], packs: [], perk: null, rerollCost: 2, interest: 0 } };
+    expect(() => applyAction(shop, { type: 'shopBuy', index: 0 }, owned)).toThrow(/déjà dans le deck/);
   });
 
   it('uses items: potion heals, whetstone and shield last one fight, compass rerolls the route', () => {
@@ -499,16 +528,6 @@ describe('route, items, fusion, team bonuses (deck mode)', () => {
     expect((r.fight!.events.find((e) => e.type === 'hit' && e.by === 'player') as { damage: number }).damage).toBeGreaterThanOrEqual(300);
     expect(r.state.buffs).toEqual({});
     expect(() => applyAction(createRun(9, 0), { type: 'useItem', index: 0 }, ctx)).toThrow(/inconnu/);
-  });
-
-  it('fuses a duplicate card into a starred one instead of taking a slot', () => {
-    const deck = [{ cardId: 'gagou_fornite', modifier: null, price: 4 }];
-    let s: RunState = { ...createRun(10, 0), phase: 'shop', gold: 50, deck, shop: { cards: [{ cardId: 'gagou_fornite', modifier: null, price: 4, sold: false }], packs: [], perk: null, rerollCost: 2, interest: 0 } };
-    s = applyAction(s, { type: 'shopBuy', index: 0 }, owned).state;
-    expect(s.deck).toHaveLength(1);
-    expect(s.deck[0]!.stars).toBe(2);
-    // +10 % damage card, ×1.5 with the star: +15 %.
-    expect(deckEffects(s.deck)[0]).toMatchObject({ kind: 'percentDamage', value: 15 });
   });
 
   it('grants team bonuses for 2, 3 and 4 cards of the same friend', () => {

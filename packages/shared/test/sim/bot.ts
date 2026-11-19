@@ -66,6 +66,8 @@ function stepScore(o: UpgradeOffer, s: RunState): number | null {
       return s.gold >= o.price + healCost(s) ? 15 : -100;
     case 'leave':
       return 0;
+    case 'cardLevel':
+      return 10 + rank(o.cardId) * 2;
     default:
       return null;
   }
@@ -147,7 +149,8 @@ function chooseNode(s: RunState, skill: Skill, rnd: (k: number) => number): numb
         return 0;
     }
   };
-  return route.map((n, i) => [value(n.kind), i] as const).sort((a, b) => b[0] - a[0])[0]![1];
+  // A path is worth the sum of its steps.
+  return route.map((p, i) => [p.steps.reduce((a, n) => a + value(n.kind), 0), i] as const).sort((a, b) => b[0] - a[0])[0]![1];
 }
 
 /** Items: potion when low, buffs before the hard fights, prism right away. */
