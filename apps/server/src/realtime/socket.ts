@@ -26,7 +26,7 @@ export function attachRealtime(
     serveClient: false,
     allowRequest: (req, callback) => {
       const origin = req.headers.origin;
-      callback(null, !origin || origin === config.APP_ORIGIN);
+      callback(null, !origin || config.allowedOrigins.has(origin));
     },
   });
 

@@ -89,7 +89,7 @@ export async function buildApp(config: Config, db: Db): Promise<FastifyInstance>
   app.decorateRequest('userId', null);
   app.addHook('onRequest', async (req, reply) => {
     // CSRF defence in depth (cookies are already SameSite=Strict).
-    if (STATE_CHANGING.has(req.method) && req.headers.origin !== config.APP_ORIGIN) {
+    if (STATE_CHANGING.has(req.method) && !config.allowedOrigins.has(req.headers.origin ?? '')) {
       return sendError(reply, 403, 'BAD_ORIGIN', 'Origine refusée');
     }
     req.userId = sessions.resolve(req.cookies[SESSION_COOKIE]);
